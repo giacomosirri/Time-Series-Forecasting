@@ -3,7 +3,14 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.5.33516.290
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Mnist", "Mnist\Mnist.csproj", "{023BE10D-B71D-478F-BC37-552E8A46A0A1}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Mnist", "Mnist\Mnist.csproj", "{023BE10D-B71D-478F-BC37-552E8A46A0A1}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Elementi di soluzione", "Elementi di soluzione", "{C068A201-2716-4536-BE73-51ED1DF59BF5}"
+	ProjectSection(SolutionItems) = preProject
+		.gitignore = .gitignore
+	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RNN_Model_Creation", "RNN_Model_Creation\RNN_Model_Creation.csproj", "{E4CB5774-3E52-4A37-942C-46D0DE789D55}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -15,6 +22,10 @@ Global
 		{023BE10D-B71D-478F-BC37-552E8A46A0A1}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{023BE10D-B71D-478F-BC37-552E8A46A0A1}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{023BE10D-B71D-478F-BC37-552E8A46A0A1}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E4CB5774-3E52-4A37-942C-46D0DE789D55}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E4CB5774-3E52-4A37-942C-46D0DE789D55}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E4CB5774-3E52-4A37-942C-46D0DE789D55}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E4CB5774-3E52-4A37-942C-46D0DE789D55}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
