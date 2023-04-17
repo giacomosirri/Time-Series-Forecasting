@@ -1,6 +1,5 @@
 ﻿using Google.Protobuf.WellKnownTypes;
 using System.Data;
-using System.Net.Http.Headers;
 
 namespace RNN_Model_Creation
 {
@@ -18,14 +17,16 @@ namespace RNN_Model_Creation
         public int TrainingSetPercentage { get; private set; }
         public int ValidationSetPercentage { get; private set; }
         public int TestSetPercentage { get; private set; }
+        public string Normalization { get; set; }
         
-        public DataPreprocessor(IList<Record> records) : this(records, new Tuple<int, int, int>(70,20,10)) { }
+        public DataPreprocessor(IList<Record> records) : this(records, new Tuple<int, int, int>(70,20,10), "None") { }
 
-        public DataPreprocessor(IList<Record> records, Tuple<int, int, int> splitter)
+        public DataPreprocessor(IList<Record> records, Tuple<int, int, int> splitter, string normalization)
         {
             TrainingSetPercentage = splitter.Item1;
             ValidationSetPercentage = splitter.Item2;
             TestSetPercentage = splitter.Item3;
+            Normalization = normalization;
             // remove duplicate elements according to the primary key (date)
             var uniqueRecords = RemoveDuplicateRecords(records);
             // store data in table format
@@ -46,24 +47,20 @@ namespace RNN_Model_Creation
             _processedData = ProcessData();
         }
 
-        public DataTable GetProcessedNormalizedTrainingSet()
+        public DataTable GetTrainingSet()
         {
-            // implement standardization
-            return _rawData.AsEnumerable().Take(TrainingSetPercentage).CopyToDataTable();
+            return ComputeNormalization().AsEnumerable().Take(TrainingSetPercentage).CopyToDataTable();
         }
 
-        public DataTable GetProcessedNormalizedValidationSet()
+        public DataTable GetValidationSet()
         {
-            // implement standardization
-            return _rawData.AsEnumerable().Take(ValidationSetPercentage).CopyToDataTable();
-        }
-        public DataTable GetProcessedNormalizedTestSet()
-        {
-            // implement standardization
-            return _rawData.AsEnumerable().Take(TestSetPercentage).CopyToDataTable();
+            return ComputeNormalization().AsEnumerable().Take(ValidationSetPercentage).CopyToDataTable();
         }
 
-        private static IList<Record> RemoveDuplicateRecords(IList<Record> records) => records.DistinctBy(r => r.TimeStamp).ToList();
+        public DataTable GetTestSet()
+        {
+            return ComputeNormalization().AsEnumerable().Take(TestSetPercentage).CopyToDataTable();
+        }
 
         private DataTable ProcessData()
         {
@@ -121,6 +118,21 @@ namespace RNN_Model_Creation
                 row["year cos"] = Math.Cos(secondsSinceEpoch * (2 * Math.PI / SecondsInYear));
             }
             return processedData;
+        }
+
+        private static IList<Record> RemoveDuplicateRecords(IList<Record> records) => records.DistinctBy(r => r.TimeStamp).ToList();
+
+        private DataTable ComputeNormalization()
+        {
+            if (Normalization == "Normalization") 
+            {
+                return new DataTable();
+            }
+            else if (Normalization == "Standardization")
+            {
+                return new DataTable();
+            }
+            return _processedData;
         }
     }
 }
