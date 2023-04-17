@@ -1,4 +1,6 @@
-﻿using System.Data;
+﻿using Google.Protobuf.WellKnownTypes;
+using System.Data;
+using System.Net.Http.Headers;
 
 namespace RNN_Model_Creation
 {
@@ -7,7 +9,11 @@ namespace RNN_Model_Creation
     /// </summary>
     internal class DataPreprocessor
     {
-        private readonly DataTable _data;
+        private static readonly double SecondsInDay = 24 * 60 * 60;
+        private static readonly double SecondsInYear = 365.2425 * SecondsInDay;
+
+        private readonly DataTable _rawData;
+        private readonly DataTable _processedData;
 
         public int TrainingSetPercentage { get; private set; }
         public int ValidationSetPercentage { get; private set; }
@@ -23,33 +29,98 @@ namespace RNN_Model_Creation
             // remove duplicate elements according to the primary key (date)
             var uniqueRecords = RemoveDuplicateRecords(records);
             // store data in table format
-            _data = new DataTable();
-            _data.Columns.Add("Date Time", typeof(DateTime));
-            records.First().Features.Keys.ToList().ForEach(key => _data.Columns.Add(key, typeof(double)));
-            _data.PrimaryKey = new DataColumn[] { _data.Columns["Date Time"]! };
+            _rawData = new DataTable();
+            _rawData.Columns.Add("Date Time", typeof(DateTime));
+            records.First().Features.Keys.ToList().ForEach(key => _rawData.Columns.Add(key, typeof(double)));
+            _rawData.PrimaryKey = new DataColumn[] { _rawData.Columns["Date Time"]! };
             foreach (var record in uniqueRecords)
             {
-                var row = _data.NewRow();
+                var row = _rawData.NewRow();
                 row["Date Time"] = record.TimeStamp;
-                foreach ((string feat, double val) in record.Features)
+                foreach ((string feature, double val) in record.Features)
                 {
-                    row[feat] = val;
+                    row[feature] = val;
                 }
-                _data.Rows.Add(row);
+                _rawData.Rows.Add(row);
             }
-            ProcessData();
+            _processedData = ProcessData();
         }
 
-        public DataTable GetProcessedTrainingSet() => _data.AsEnumerable().Take(TrainingSetPercentage).CopyToDataTable();
+        public DataTable GetProcessedNormalizedTrainingSet()
+        {
+            // implement standardization
+            return _rawData.AsEnumerable().Take(TrainingSetPercentage).CopyToDataTable();
+        }
 
-        public DataTable GetProcessedValidationSet() => _data.AsEnumerable().Take(ValidationSetPercentage).CopyToDataTable();
-
-        public DataTable GetProcessedTestSet() => _data.AsEnumerable().Take(TestSetPercentage).CopyToDataTable();
+        public DataTable GetProcessedNormalizedValidationSet()
+        {
+            // implement standardization
+            return _rawData.AsEnumerable().Take(ValidationSetPercentage).CopyToDataTable();
+        }
+        public DataTable GetProcessedNormalizedTestSet()
+        {
+            // implement standardization
+            return _rawData.AsEnumerable().Take(TestSetPercentage).CopyToDataTable();
+        }
 
         private static IList<Record> RemoveDuplicateRecords(IList<Record> records) => records.DistinctBy(r => r.TimeStamp).ToList();
 
-        private void ProcessData()
+        private DataTable ProcessData()
         {
+            // RAW DATA CLEANUP
+            var processedData = _rawData.Clone();
+            foreach (DataRow row in _rawData.Rows)
+            {
+                var date = (DateTime)row["Date Time"];
+                // let's deal with hourly values only
+                if (date.Minute == 0)
+                {
+                    // replace all values of a row that are outside the allowed values boundaries...
+                    foreach (DataColumn col in _rawData.Columns)
+                    {
+                        string colName = col.ColumnName;
+                        string? unit = Record.GetUnitOfMeasureFromFeatureName(colName);
+                        if (unit != null)
+                        {
+                            if (Record.MinMaxPossibleValues[unit].Item1 > ((double)row[colName]))
+                            {
+                                row[colName] = Record.MinMaxPossibleValues[unit].Item1;
+                            }
+                            if (Record.MinMaxPossibleValues[unit].Item2 < ((double)row[colName]))
+                            {
+                                row[colName] = Record.MinMaxPossibleValues[unit].Item2;
+                            }
+                        }
+                    }
+                    // .. then add the row to the new processed data table
+                    processedData.ImportRow(_rawData.Rows.Find(date));
+                }
+            }
+            // FEATURE ENGINEERING
+            processedData.Columns.Add("wx (m/s)", typeof(double));
+            processedData.Columns.Add("wy (m/s)", typeof(double));
+            processedData.Columns.Add("max. wx (m/s)", typeof(double));
+            processedData.Columns.Add("max. wy (m/s)", typeof(double));
+            processedData.Columns.Add("day sin", typeof(double));
+            processedData.Columns.Add("day cos", typeof(double));
+            processedData.Columns.Add("year sin", typeof(double));
+            processedData.Columns.Add("year cos", typeof(double));
+            foreach (DataRow row in processedData.Rows) 
+            {
+                double windVelocity = (double)row["wv (m/s)"];
+                double maximumWindVelocity = (double)row["max. wv (m/s)"];
+                double degreeInRadiants = (double) row["wd (deg)"] * Math.PI / 180;
+                row["wx (m/s)"] = windVelocity * Math.Cos(degreeInRadiants);
+                row["wy (m/s)"] = windVelocity * Math.Sin(degreeInRadiants);
+                row["max. wx (m/s)"] = maximumWindVelocity * Math.Cos(degreeInRadiants);
+                row["max. wy (m/s)"] = maximumWindVelocity * Math.Sin(degreeInRadiants);
+                double secondsSinceEpoch = ((DateTime)row["Date Time"]).ToUniversalTime().ToTimestamp().Seconds;
+                row["day sin"] = Math.Sin(secondsSinceEpoch * (2 * Math.PI / SecondsInDay));
+                row["day cos"] = Math.Cos(secondsSinceEpoch * (2 * Math.PI / SecondsInDay));
+                row["year sin"] = Math.Sin(secondsSinceEpoch * (2 * Math.PI / SecondsInYear));
+                row["year cos"] = Math.Cos(secondsSinceEpoch * (2 * Math.PI / SecondsInYear));
+            }
+            return processedData;
         }
     }
 }

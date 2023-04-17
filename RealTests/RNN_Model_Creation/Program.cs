@@ -2,7 +2,7 @@
 {
     internal class Program
     {
-        private const string DatasetDir = "C:\\Users\\sirri\\Desktop\\Coding\\Tirocinio\\TorchSharp\\dataset\\";
+        private const string DatasetDir = "C:\\Users\\sirri\\Desktop\\Coding\\Tirocinio\\TorchSharp\\datasets\\";
         private const string ValuesFile = "timeseries-2009-2016-no-datetime.parquet";
         private const string DatesFile  = "timeseries-2009-2016-datetime.parquet";
 
