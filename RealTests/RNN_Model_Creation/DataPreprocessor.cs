@@ -178,17 +178,23 @@ namespace RNN_Model_Creation
                     foreach (DataColumn col in normalizedData.Columns)
                     {
                         var name = col.ColumnName;
-                        var min = Convert.ToDouble(normalizationTable.Compute($"Min([{col.ColumnName}])", ""));
-                        var max = Convert.ToDouble(normalizationTable.Compute($"Max([{col.ColumnName}])", ""));
-                        values.Add(name, new Tuple<double, double>(min, max));
+                        if (name != "Date Time")
+                        {
+                            var min = Convert.ToDouble(normalizationTable.Compute($"Min([{col.ColumnName}])", ""));
+                            var max = Convert.ToDouble(normalizationTable.Compute($"Max([{col.ColumnName}])", ""));
+                            values.Add(name, new Tuple<double, double>(min, max));
+                        }
                     }
                     foreach (DataRow row in normalizedData.Rows)
                     {
                         foreach (DataColumn col in normalizedData.Columns)
                         {
-                            var min = values[col.ColumnName].Item1;
-                            var max = values[col.ColumnName].Item2;
-                            row[col] = ((double)row[col] - min) / (max - min);
+                            if (col.ColumnName != "Date Time")
+                            {
+                                var min = values[col.ColumnName].Item1;
+                                var max = values[col.ColumnName].Item2;
+                                row[col] = ((double)row[col] - min) / (max - min);
+                            }
                         }
                     }
                     return normalizedData;
@@ -206,7 +212,6 @@ namespace RNN_Model_Creation
                             values.Add(name, new Tuple<double, double>(avg, std));
                         }
                     }
-                    //Console.WriteLine(string.Join(", ", values.Values));
                     foreach (DataRow row in standardizedData.Rows)
                     {
                         foreach (DataColumn col in standardizedData.Columns)

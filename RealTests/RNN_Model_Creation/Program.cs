@@ -11,11 +11,10 @@ namespace RNN_Model_Creation
         static void Main(string[] args)
         {
             var records = new ParquetDataLoader(DatasetDir + ValuesFile, DatasetDir + DatesFile).GetRecords();
-            var dpp = new DataPreprocessor(records, Tuple.Create(70,20,10), "Standardization");
+            var dpp = new DataPreprocessor(records, Tuple.Create(70,20,10), "Normalization");
             DataTable trainingSet = dpp.GetTrainingSet();
             DataTable validationSet = dpp.GetValidationSet();
             DataTable testSet = dpp.GetTestSet();
-            Console.WriteLine(trainingSet.Compute($"AVG([{validationSet.Columns[10].ColumnName}])", ""));
         }
     }
 }
