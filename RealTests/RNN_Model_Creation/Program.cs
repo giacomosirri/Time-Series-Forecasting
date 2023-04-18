@@ -1,4 +1,6 @@
-﻿namespace RNN_Model_Creation
+﻿using System.Data;
+
+namespace RNN_Model_Creation
 {
     internal class Program
     {
@@ -9,7 +11,11 @@
         static void Main(string[] args)
         {
             var records = new ParquetDataLoader(DatasetDir + ValuesFile, DatasetDir + DatesFile).GetRecords();
-            new DataPreprocessor(records);
+            var dpp = new DataPreprocessor(records, Tuple.Create(70,20,10), "Standardization");
+            DataTable trainingSet = dpp.GetTrainingSet();
+            DataTable validationSet = dpp.GetValidationSet();
+            DataTable testSet = dpp.GetTestSet();
+            Console.WriteLine(trainingSet.Compute($"AVG([{validationSet.Columns[10].ColumnName}])", ""));
         }
     }
 }

@@ -11,13 +11,38 @@ namespace RNN_Model_Creation
         private static readonly double SecondsInDay = 24 * 60 * 60;
         private static readonly double SecondsInYear = 365.2425 * SecondsInDay;
 
+        /* 
+         * Performing transformations on large datasets is really resource expensive,
+         * so transformed data is cached in private fields instead of being re-calculated
+         * every time it is needed.
+         */
         private readonly DataTable _rawData;
         private readonly DataTable _processedData;
+        private DataTable _normalizedData = new();
+        private string _normalization = "None";
 
         public int TrainingSetPercentage { get; private set; }
         public int ValidationSetPercentage { get; private set; }
         public int TestSetPercentage { get; private set; }
-        public string Normalization { get; set; }
+        public string Normalization
+        {
+            get => _normalization;
+            set
+            {
+                if (value == "Normalization" || value == "Standardization" || value == "None")
+                {
+                    _normalization = value;
+                    _normalizedData = ComputeNormalization();
+                }
+                else
+                {
+                    _normalization = "None";
+                    _normalizedData = _processedData;
+                    throw new ArgumentException("The normalization method provided is not supported. " +
+                        "Dataset is back to being not-normalized.");
+                }
+            }
+        }
         
         public DataPreprocessor(IList<Record> records) : this(records, new Tuple<int, int, int>(70,20,10), "None") { }
 
@@ -26,7 +51,6 @@ namespace RNN_Model_Creation
             TrainingSetPercentage = splitter.Item1;
             ValidationSetPercentage = splitter.Item2;
             TestSetPercentage = splitter.Item3;
-            Normalization = normalization;
             // remove duplicate elements according to the primary key (date)
             var uniqueRecords = RemoveDuplicateRecords(records);
             // store data in table format
@@ -45,21 +69,24 @@ namespace RNN_Model_Creation
                 _rawData.Rows.Add(row);
             }
             _processedData = ProcessData();
+            Normalization = normalization;
         }
 
-        public DataTable GetTrainingSet()
-        {
-            return ComputeNormalization().AsEnumerable().Take(TrainingSetPercentage).CopyToDataTable();
-        }
+        public DataTable GetTrainingSet() => GetSet(TrainingSetPercentage);
 
-        public DataTable GetValidationSet()
-        {
-            return ComputeNormalization().AsEnumerable().Take(ValidationSetPercentage).CopyToDataTable();
-        }
+        public DataTable GetValidationSet() => GetSet(ValidationSetPercentage);
 
-        public DataTable GetTestSet()
+        public DataTable GetTestSet() => GetSet(TestSetPercentage);
+
+        private DataTable GetSet(int percentage)
         {
-            return ComputeNormalization().AsEnumerable().Take(TestSetPercentage).CopyToDataTable();
+            var newSet = _normalizedData.Clone();
+            int rows = (int)Math.Round(_normalizedData.Rows.Count * percentage / 100.0);
+            for (int i = 0; i < rows; i++)
+            {
+                newSet.ImportRow(_normalizedData.Rows[i]);
+            }
+            return newSet;
         }
 
         private DataTable ProcessData()
@@ -122,17 +149,79 @@ namespace RNN_Model_Creation
 
         private static IList<Record> RemoveDuplicateRecords(IList<Record> records) => records.DistinctBy(r => r.TimeStamp).ToList();
 
+        /*
+         * This method returns a table containing ALL the rows of the main table, 
+         * normalized according to the Normalization property.
+         * The behavior is to normalize using only the training set observations,
+         * i.e. the first 70% of the rows, since it prevents information leakage
+         * from the validation and test set to the training set.
+         */
         private DataTable ComputeNormalization()
         {
-            if (Normalization == "Normalization") 
+            if (Normalization == "None")
             {
-                return new DataTable();
+                return _processedData;
             }
-            else if (Normalization == "Standardization")
+            else
             {
-                return new DataTable();
+                // create training set from the full set of data to calculate the normalization table
+                var normalizationTable = _processedData.Clone();
+                int rows = (int)Math.Round(_processedData.Rows.Count * TrainingSetPercentage / 100.0);
+                for (int i = 0; i < rows; i++)
+                {
+                    normalizationTable.ImportRow(_processedData.Rows[i]);
+                }
+                IDictionary<string, Tuple<double, double>> values = new Dictionary<string, Tuple<double, double>>();
+                if (Normalization == "Normalization")
+                {
+                    var normalizedData = _processedData.Copy();
+                    foreach (DataColumn col in normalizedData.Columns)
+                    {
+                        var name = col.ColumnName;
+                        var min = Convert.ToDouble(normalizationTable.Compute($"Min([{col.ColumnName}])", ""));
+                        var max = Convert.ToDouble(normalizationTable.Compute($"Max([{col.ColumnName}])", ""));
+                        values.Add(name, new Tuple<double, double>(min, max));
+                    }
+                    foreach (DataRow row in normalizedData.Rows)
+                    {
+                        foreach (DataColumn col in normalizedData.Columns)
+                        {
+                            var min = values[col.ColumnName].Item1;
+                            var max = values[col.ColumnName].Item2;
+                            row[col] = ((double)row[col] - min) / (max - min);
+                        }
+                    }
+                    return normalizedData;
+                }
+                else
+                {
+                    var standardizedData = _processedData.Copy();
+                    foreach (DataColumn col in standardizedData.Columns)
+                    {
+                        var name = col.ColumnName;
+                        if (name != "Date Time")
+                        {
+                            var avg = Convert.ToDouble(normalizationTable.Compute($"Avg([{col.ColumnName}])", ""));
+                            var std = Math.Sqrt(-Convert.ToDouble(normalizationTable.Compute($"Var([{col.ColumnName}])", "")));
+                            values.Add(name, new Tuple<double, double>(avg, std));
+                        }
+                    }
+                    //Console.WriteLine(string.Join(", ", values.Values));
+                    foreach (DataRow row in standardizedData.Rows)
+                    {
+                        foreach (DataColumn col in standardizedData.Columns)
+                        {
+                            if (col.ColumnName != "Date Time")
+                            {
+                                var avg = values[col.ColumnName].Item1;
+                                var std = values[col.ColumnName].Item2;
+                                row[col] = ((double)row[col] - avg) / std;
+                            }
+                        }
+                    }
+                    return standardizedData;
+                }
             }
-            return _processedData;
         }
     }
 }
