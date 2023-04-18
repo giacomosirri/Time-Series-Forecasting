@@ -10,7 +10,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Elementi di soluzione", "El
 		.gitignore = .gitignore
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RNN_Model_Creation", "RNN_Model_Creation\RNN_Model_Creation.csproj", "{E4CB5774-3E52-4A37-942C-46D0DE789D55}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TimeSeriesForecasting", "RNN_Model_Creation\TimeSeriesForecasting.csproj", "{E4CB5774-3E52-4A37-942C-46D0DE789D55}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

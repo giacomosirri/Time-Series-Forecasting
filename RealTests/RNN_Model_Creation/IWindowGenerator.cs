@@ -1,7 +1,7 @@
 ﻿using System.Data;
 using static TorchSharp.torch;
 
-namespace RNN_Model_Creation
+namespace TimeSeriesForecasting.DataProcessing
 {
     internal interface IWindowGenerator
     {

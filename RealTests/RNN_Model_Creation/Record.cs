@@ -1,4 +1,4 @@
-﻿namespace RNN_Model_Creation
+﻿namespace TimeSeriesForecasting.IO
 {
     internal class Record
     {

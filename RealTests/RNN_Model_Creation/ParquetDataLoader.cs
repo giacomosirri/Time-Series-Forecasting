@@ -3,7 +3,7 @@ using Parquet.Schema;
 using System.Collections;
 using DataColumn = Parquet.Data.DataColumn;
 
-namespace RNN_Model_Creation
+namespace TimeSeriesForecasting.IO.Parquet
 {
     internal class ParquetDataLoader
     {

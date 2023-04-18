@@ -1,7 +1,8 @@
 ﻿using Google.Protobuf.WellKnownTypes;
 using System.Data;
+using TimeSeriesForecasting.IO;
 
-namespace RNN_Model_Creation
+namespace TimeSeriesForecasting.DataProcessing
 {
     /// <summary>
     /// This class contains the logic that produces usable data from raw records.

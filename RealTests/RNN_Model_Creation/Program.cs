@@ -1,6 +1,8 @@
 ﻿using System.Data;
+using TimeSeriesForecasting.DataProcessing;
+using TimeSeriesForecasting.IO.Parquet;
 
-namespace RNN_Model_Creation
+namespace TimeSeriesForecasting
 {
     internal class Program
     {
@@ -15,6 +17,8 @@ namespace RNN_Model_Creation
             DataTable trainingSet = dpp.GetTrainingSet();
             DataTable validationSet = dpp.GetValidationSet();
             DataTable testSet = dpp.GetTestSet();
+            var winGen = new WindowGenerator(48, 1, 6, new string[] { "T (degC)" });
+            var tensors = winGen.GenerateWindows<double>(trainingSet);
         }
     }
 }
