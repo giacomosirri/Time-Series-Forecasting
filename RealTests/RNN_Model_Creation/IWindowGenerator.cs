@@ -10,11 +10,5 @@ namespace RNN_Model_Creation
         /// </summary>
         /// <returns></returns>
         public Tuple<Tensor, Tensor> GenerateWindows<T>(DataTable table);
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <returns></returns>
-        public CustomDataset MakeDataset();
     }
 }
