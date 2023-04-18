@@ -2,7 +2,7 @@
 using System.Data;
 using TimeSeriesForecasting.IO;
 
-namespace TimeSeriesForecasting.DataProcessing
+namespace TimeSeriesForecasting
 {
     /// <summary>
     /// This class contains the logic that produces usable data from raw records.
@@ -44,8 +44,8 @@ namespace TimeSeriesForecasting.DataProcessing
                 }
             }
         }
-        
-        public DataPreprocessor(IList<Record> records) : this(records, new Tuple<int, int, int>(70,20,10), "None") { }
+
+        public DataPreprocessor(IList<Record> records) : this(records, new Tuple<int, int, int>(70, 20, 10), "None") { }
 
         public DataPreprocessor(IList<Record> records, Tuple<int, int, int> splitter, string normalization)
         {
@@ -107,13 +107,13 @@ namespace TimeSeriesForecasting.DataProcessing
                         string? unit = Record.GetUnitOfMeasureFromFeatureName(colName);
                         if (unit != null)
                         {
-                            if (Record.MinMaxPossibleValues[unit].Item1 > ((double)row[colName]))
+                            if (Record.ValueRanges[unit].Item1 > (double)row[colName])
                             {
-                                row[colName] = Record.MinMaxPossibleValues[unit].Item1;
+                                row[colName] = Record.ValueRanges[unit].Item1;
                             }
-                            if (Record.MinMaxPossibleValues[unit].Item2 < ((double)row[colName]))
+                            if (Record.ValueRanges[unit].Item2 < (double)row[colName])
                             {
-                                row[colName] = Record.MinMaxPossibleValues[unit].Item2;
+                                row[colName] = Record.ValueRanges[unit].Item2;
                             }
                         }
                     }
@@ -130,11 +130,11 @@ namespace TimeSeriesForecasting.DataProcessing
             processedData.Columns.Add("day cos", typeof(double));
             processedData.Columns.Add("year sin", typeof(double));
             processedData.Columns.Add("year cos", typeof(double));
-            foreach (DataRow row in processedData.Rows) 
+            foreach (DataRow row in processedData.Rows)
             {
                 double windVelocity = (double)row["wv (m/s)"];
                 double maximumWindVelocity = (double)row["max. wv (m/s)"];
-                double degreeInRadiants = (double) row["wd (deg)"] * Math.PI / 180;
+                double degreeInRadiants = (double)row["wd (deg)"] * Math.PI / 180;
                 row["wx (m/s)"] = windVelocity * Math.Cos(degreeInRadiants);
                 row["wy (m/s)"] = windVelocity * Math.Sin(degreeInRadiants);
                 row["max. wx (m/s)"] = maximumWindVelocity * Math.Cos(degreeInRadiants);

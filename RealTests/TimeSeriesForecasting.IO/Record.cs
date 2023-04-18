@@ -1,6 +1,6 @@
 ﻿namespace TimeSeriesForecasting.IO
 {
-    internal class Record
+    public class Record
     {
         private readonly string[] _column_names = new string[]
         {
@@ -8,7 +8,8 @@
             "VPdef (mbar)", "sh (g/kg)", "H2OC (mmol/mol)", "rho (g/m**3)", "wv (m/s)", "max. wv (m/s)", "wd (deg)"
         };
 
-        public static IDictionary<string, Tuple<double, double>> MinMaxPossibleValues = new Dictionary<string, Tuple<double, double>>
+        public static IDictionary<string, Tuple<double, double>> ValueRanges { get; } = 
+            new Dictionary<string, Tuple<double, double>> 
         {
             { "mbar", Tuple.Create(0.0, 1150.0) },
             { "degC", Tuple.Create(-50.0, 50.0) },

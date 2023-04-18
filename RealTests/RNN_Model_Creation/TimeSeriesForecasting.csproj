@@ -9,9 +9,11 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="libtorch-cpu-win-x64" Version="1.13.0.1" />
-    <PackageReference Include="Parquet.Net" Version="4.6.2" />
     <PackageReference Include="TorchSharp" Version="0.99.4" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\TimeSeriesForecasting.IO\TimeSeriesForecasting.IO.csproj" />
   </ItemGroup>
 
 </Project>

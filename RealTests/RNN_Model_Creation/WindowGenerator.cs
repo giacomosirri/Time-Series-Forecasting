@@ -1,7 +1,7 @@
 ﻿using System.Data;
 using static TorchSharp.torch;
 
-namespace TimeSeriesForecasting.DataProcessing
+namespace TimeSeriesForecasting
 {
     /// <summary>
     /// This class provides functionalities to get a ready-to-use <see cref="Tuple"/>
@@ -50,9 +50,9 @@ namespace TimeSeriesForecasting.DataProcessing
         /// <param name="labelColumns"><see cref="LabelColumns"/> value.</param>
         /// <exception cref="ArgumentException">If either input width, label width 
         /// or offset are non-positive numbers.</exception>
-        public WindowGenerator(int inputWidth, int labelWidth, int offset, string[] labelColumns) 
+        public WindowGenerator(int inputWidth, int labelWidth, int offset, string[] labelColumns)
         {
-            if (inputWidth > 0 &&  labelWidth > 0 && offset > 0) 
+            if (inputWidth > 0 && labelWidth > 0 && offset > 0)
             {
                 InputWidth = inputWidth;
                 LabelWidth = labelWidth;
@@ -60,7 +60,7 @@ namespace TimeSeriesForecasting.DataProcessing
                 LabelColumns = labelColumns;
             }
             else throw new ArgumentException("Input width, label width and offset must all be greater than 0.");
-            
+
         }
 
         /// <summary>

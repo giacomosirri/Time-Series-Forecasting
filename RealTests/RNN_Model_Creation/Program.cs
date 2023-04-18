@@ -1,6 +1,5 @@
 ﻿using System.Data;
-using TimeSeriesForecasting.DataProcessing;
-using TimeSeriesForecasting.IO.Parquet;
+using TimeSeriesForecasting.IO;
 
 namespace TimeSeriesForecasting
 {
@@ -17,6 +16,7 @@ namespace TimeSeriesForecasting
             DataTable trainingSet = dpp.GetTrainingSet();
             DataTable validationSet = dpp.GetValidationSet();
             DataTable testSet = dpp.GetTestSet();
+            Console.WriteLine(trainingSet.Rows.Count);
             var winGen = new WindowGenerator(48, 1, 6, new string[] { "T (degC)" });
             var tensors = winGen.GenerateWindows<double>(trainingSet);
         }

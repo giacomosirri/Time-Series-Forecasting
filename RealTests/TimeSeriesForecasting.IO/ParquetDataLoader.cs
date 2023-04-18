@@ -3,14 +3,14 @@ using Parquet.Schema;
 using System.Collections;
 using DataColumn = Parquet.Data.DataColumn;
 
-namespace TimeSeriesForecasting.IO.Parquet
+namespace TimeSeriesForecasting.IO
 {
-    internal class ParquetDataLoader
+    public class ParquetDataLoader
     {
         private readonly string _valuesFile;
         private readonly string _datesFile;
 
-        public ParquetDataLoader(string valuesFilePath, string datesFilePath) 
+        public ParquetDataLoader(string valuesFilePath, string datesFilePath)
         {
             _valuesFile = valuesFilePath;
             _datesFile = datesFilePath;
@@ -35,9 +35,9 @@ namespace TimeSeriesForecasting.IO.Parquet
                 try
                 {
                     records.Add(new Record(numericalRecords[i], dates[i]));
-                } 
+                }
                 catch (ArgumentException)
-                { 
+                {
                 }
             }
             return records;
@@ -70,7 +70,7 @@ namespace TimeSeriesForecasting.IO.Parquet
                 {
                     DataColumn dc = await rowGroupReader.ReadColumnAsync(field);
                     data.Add(dc.Field.Name, ((double?[])dc.Data).ToList());
-                }  
+                }
             }
             for (int j = 0; j < data["p (mbar)"].Count; j++)
             {
