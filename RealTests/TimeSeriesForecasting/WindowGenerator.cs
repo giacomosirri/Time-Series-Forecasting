@@ -62,7 +62,6 @@ namespace TimeSeriesForecasting
                 LabelColumns = labelColumns;
             }
             else throw new ArgumentException("Input width, label width and offset must all be greater than 0.");
-
         }
 
         /// <summary>
@@ -81,6 +80,7 @@ namespace TimeSeriesForecasting
             // Inefficient concatenation method, only works with arrays of size <10000.
             string[] nonValueColumns = LabelColumns.Concat(s_indexColumns).ToArray();
             int featureColumns = table.Columns.Count - nonValueColumns.Length;
+            // This for loop needs major refactoring as it is extremely inefficient now (>1 minutes)
             for (int startIndex = 0; startIndex + WindowSize < table.Rows.Count; startIndex++)
             {
                 T[][] feature = table
