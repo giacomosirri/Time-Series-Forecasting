@@ -1,5 +1,4 @@
-﻿using System.Net.Http.Headers;
-using TorchSharp;
+﻿using TorchSharp;
 using TorchSharp.Modules;
 using static TorchSharp.torch;
 using static TorchSharp.torch.nn;
@@ -46,13 +45,13 @@ namespace TimeSeriesForecasting.NeuralNetwork
             for (int i = 0; i < epochs; i++)
             {
                 // Compute the loss.
-                Tensor output = _loss.forward(_model.forward(x), y);
+                Tensor output = _loss.forward(_model.forward(x), y.flatten(start_dim: 1));
                 // Clear the gradients before doing the back-propagation.
                 _model.zero_grad();
                 // Do back-progatation, which computes all the gradients.
                 output.backward();
                 _optimizer.step();
-                _currentLoss = output.item<double>();
+                _currentLoss = output.item<float>();
             }
             IsTrained = true;
         }

@@ -119,8 +119,12 @@ namespace TimeSeriesForecasting
             Debug.Assert(labelsSize == LabelColumns.Length);
             T[] flattenedFeatures = featuresArr.SelectMany(x => x.SelectMany(y => y)).ToArray();
             T[] flattenedLabels = labels.SelectMany(x => x.SelectMany(y => y)).ToArray();
-            Tensor featuresTensor = from_array(flattenedFeatures).reshape(featuresBatchSize, inputObservations, featuresSize);
-            Tensor labelsTensor = from_array(flattenedLabels).reshape(labelsBatchSize, outputObservations, labelsSize);
+            Tensor featuresTensor = from_array(flattenedFeatures)
+                                    .reshape(featuresBatchSize, inputObservations, featuresSize)
+                                    .to_type(float32);
+            Tensor labelsTensor = from_array(flattenedLabels)
+                                    .reshape(labelsBatchSize, outputObservations, labelsSize)
+                                    .to_type(float32);
             return Tuple.Create(featuresTensor, labelsTensor);
         }
 

@@ -18,7 +18,7 @@ namespace TimeSeriesForecasting
         static void Main(string[] args)
         {
             DateTime startTime = DateTime.Now;
-            Console.WriteLine($"Program is running...    {startTime}\n\n");
+            Console.WriteLine($"Program is running...    {startTime}\n");
 
             Console.Write("Loading data from .parquet file...");
             var records = new ParquetDataLoader(DatasetDir + ValuesFile, DatasetDir + DatesFile).GetRecords();
@@ -30,17 +30,18 @@ namespace TimeSeriesForecasting
 
             Console.Write("Getting the processed training, validation and test sets...");
             DataTable trainingSet = dpp.GetTrainingSet();
-            DataTable validationSet = dpp.GetValidationSet();
-            DataTable testSet = dpp.GetTestSet();
+            //DataTable validationSet = dpp.GetValidationSet();
+            //DataTable testSet = dpp.GetTestSet();
             Console.WriteLine(Completion);
 
-            var winGen = new WindowGenerator(48, 1, 6, new string[] { "T (degC)" }); 
+            var winGen = new WindowGenerator(6, 1, 1, new string[] { "T (degC)" }); 
             Console.Write("Generating windows (batches) of data from the training set...");
             Tuple<Tensor, Tensor> tensors = winGen.GenerateWindows<double>(trainingSet);
             var inputTensor = tensors.Item1;
             var outputTensor = tensors.Item2;
             Console.WriteLine(Completion);
 
+            /*
             var featureLogger = new TensorLogger(LogDir + FeatureFile);
             Console.Write("Logging training set features on file...");
             featureLogger.Log(inputTensor, "Training set features");
@@ -50,17 +51,21 @@ namespace TimeSeriesForecasting
             Console.Write("Logging training set labels on file...");
             labelLogger.Log(outputTensor, "Training set values to predict: Temperature (°C)");
             Console.WriteLine(Completion);
+            */
+
+            var simpleModel = new Baseline(inputTensor.shape[1], inputTensor.shape[2], 
+                outputTensor.shape[1], outputTensor.shape[2]);
+            IModelTrainer trainer = new ModelTrainer(simpleModel);
+            Console.Write("Training the baseline model...");
+            trainer.Fit(inputTensor, outputTensor, epochs: 100);
+            Console.WriteLine(Completion);
+            Console.WriteLine($"MSE: {trainer.CurrentLoss:F2}\n");
 
             DateTime endTime = DateTime.Now;
             Console.WriteLine($"Program is completed...    {endTime}\n");
 
             TimeSpan elapsedTime = endTime - startTime;
             Console.WriteLine($"Elapsed time: {elapsedTime}");
-
-            var simpleModel = new Baseline(inputTensor.shape[1], inputTensor.shape[2], 
-                outputTensor.shape[1], outputTensor.shape[2]);
-            IModelTrainer trainer = new ModelTrainer(simpleModel);
-            trainer.Fit(inputTensor, outputTensor, epochs: 10);
         }
     }
 }
