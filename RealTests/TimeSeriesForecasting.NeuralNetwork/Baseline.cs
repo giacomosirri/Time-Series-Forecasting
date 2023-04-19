@@ -7,7 +7,7 @@ namespace TimeSeriesForecasting.NeuralNetwork
     {
         private readonly Module<Tensor, Tensor> layer;
 
-        public Baseline(int inputObservations, int inputFeatures, int outputObservations, int outputFeatures) 
+        public Baseline(long inputObservations, long inputFeatures, long outputObservations, long outputFeatures) 
             : base(nameof(Baseline))
         {
             RegisterComponents();

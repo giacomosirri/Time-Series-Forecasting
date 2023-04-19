@@ -1,5 +1,6 @@
 ﻿using System.Data;
 using TimeSeriesForecasting.IO;
+using TimeSeriesForecasting.NeuralNetwork;
 using static TorchSharp.torch;
 
 namespace TimeSeriesForecasting
@@ -55,6 +56,11 @@ namespace TimeSeriesForecasting
 
             TimeSpan elapsedTime = endTime - startTime;
             Console.WriteLine($"Elapsed time: {elapsedTime}");
+
+            var simpleModel = new Baseline(inputTensor.shape[1], inputTensor.shape[2], 
+                outputTensor.shape[1], outputTensor.shape[2]);
+            IModelTrainer trainer = new ModelTrainer(simpleModel);
+            trainer.Fit(inputTensor, outputTensor, epochs: 10);
         }
     }
 }
