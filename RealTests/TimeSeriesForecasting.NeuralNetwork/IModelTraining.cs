@@ -1,13 +1,14 @@
-﻿using static TorchSharp.torch.nn;
+﻿using TorchSharp;
+using static TorchSharp.torch;
+using static TorchSharp.torch.optim;
 
 namespace TimeSeriesForecasting.NeuralNetwork
 {
     internal interface IModelTraining
     {
-        Module Loss { get; set; }
-        Module Optimizer { get; set; }
-        double LearningRate { get; set; }
+        Loss<Tensor, Tensor, Tensor> Loss { get; set; }
+        Optimizer Optimizer { get; set; }
 
-        public void Fit();
+        public void Fit(Tensor x, Tensor y, int epochs);
     }
 }
