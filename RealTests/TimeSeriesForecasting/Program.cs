@@ -1,5 +1,6 @@
 ﻿using System.Data;
 using TimeSeriesForecasting.IO;
+using static TorchSharp.torch;
 
 namespace TimeSeriesForecasting
 {
@@ -8,6 +9,9 @@ namespace TimeSeriesForecasting
         private const string DatasetDir = "C:\\Users\\sirri\\Desktop\\Coding\\Tirocinio\\TorchSharp\\datasets\\";
         private const string ValuesFile = "timeseries-2009-2016-no-datetime.parquet";
         private const string DatesFile  = "timeseries-2009-2016-datetime.parquet";
+        private const string LogDir = "C:\\Users\\sirri\\Desktop\\Coding\\Tirocinio\\TorchSharp\\RealTests\\Logs\\";
+        private const string LabelFile = "labels-tensor.txt";
+        private const string FeatureFile = "features-tensor.txt";
 
         static void Main(string[] args)
         {
@@ -16,9 +20,12 @@ namespace TimeSeriesForecasting
             DataTable trainingSet = dpp.GetTrainingSet();
             DataTable validationSet = dpp.GetValidationSet();
             DataTable testSet = dpp.GetTestSet();
-            Console.WriteLine(trainingSet.Rows.Count);
             var winGen = new WindowGenerator(48, 1, 6, new string[] { "T (degC)" });
-            var tensors = winGen.GenerateWindows<double>(trainingSet);
+            Tuple<Tensor, Tensor> tensors = winGen.GenerateWindows<double>(trainingSet);
+            var inputTensor = tensors.Item1;
+            var outputTensor = tensors.Item2;
+            var logger = new TensorLogger(LogDir + LabelFile);
+            logger.Log(outputTensor[10], "Values to predict - Temperature (°C)");
         }
     }
 }
