@@ -1,4 +1,5 @@
 ﻿using System.Data;
+using System.Diagnostics;
 using static TorchSharp.torch;
 
 namespace TimeSeriesForecasting
@@ -10,7 +11,8 @@ namespace TimeSeriesForecasting
     /// </summary>
     internal class WindowGenerator : IWindowGenerator
     {
-        private static readonly string errorMessage = "Missing value in a table cell. Please provide a complete table.";
+        private static readonly string s_errorMessage = "Missing value in a table cell. Please provide a complete table.";
+        private static readonly string[] s_indexColumns = { "Date Time" };
 
         /// <summary>
         /// The number of observations in each window.
@@ -66,7 +68,8 @@ namespace TimeSeriesForecasting
         /// <summary>
         /// Generates a new window.
         /// </summary>
-        /// <typeparam name="T"></typeparam>
+        /// <typeparam name="T">The type of data stored in the table. Both the labels and the features
+        /// must be of the same type.</typeparam>
         /// <param name="table">The <see cref="DataTable"/> that must be split into windows.</param>
         /// <returns>A <see cref="Tuple"/> of <see cref="Tensor"/>s. The first item in the tuple is the features
         /// tensor, while the second is the labels tensor.</returns>
@@ -75,6 +78,9 @@ namespace TimeSeriesForecasting
         {
             var features = new List<T[][]>();
             var labels = new List<T[][]>();
+            // Inefficient concatenation method, only works with arrays of size <10000.
+            string[] nonValueColumns = LabelColumns.Concat(s_indexColumns).ToArray();
+            int featureColumns = table.Columns.Count - nonValueColumns.Length;
             for (int startIndex = 0; startIndex + WindowSize < table.Rows.Count; startIndex++)
             {
                 T[][] feature = table
@@ -82,8 +88,8 @@ namespace TimeSeriesForecasting
                                 .Skip(startIndex)
                                 .Take(InputWidth)
                                 .Select(dr => dr.ItemArray
-                                    .Where((_, i) => !LabelColumns.Contains(table.Columns[i].ColumnName))
-                                    .Select(item => item != null ? (T)item : throw new ArgumentException(errorMessage))
+                                    .Where((_, i) => !nonValueColumns.Contains(table.Columns[i].ColumnName))
+                                    .Select(item => item != null ? (T)item : throw new ArgumentException(s_errorMessage))
                                     .ToArray())
                                 .ToArray();
                 T[][] label = table
@@ -92,13 +98,30 @@ namespace TimeSeriesForecasting
                                 .Take(LabelWidth)
                                 .Select(dr => dr.ItemArray
                                     .Where((_, i) => LabelColumns.Contains(table.Columns[i].ColumnName))
-                                    .Select(item => item != null ? (T)item : throw new ArgumentException(errorMessage))
+                                    .Select(item => item != null ? (T)item : throw new ArgumentException(s_errorMessage))
                                     .ToArray())
                                 .ToArray();
                 features.Add(feature);
                 labels.Add(label);
             }
-            return Tuple.Create(from_array(features.ToArray()), from_array(labels.ToArray()));
+            T[][][] featuresArr = features.ToArray();
+            int featuresBatchSize = featuresArr.GetLength(0);
+            int inputObservations = featuresArr[0].GetLength(0);
+            int featuresSize = featuresArr[0][0].GetLength(0);
+            Debug.Assert(inputObservations == InputWidth);
+            Debug.Assert(featuresSize == featureColumns);
+            T[][][] labelsArr = labels.ToArray();
+            int labelsBatchSize = labelsArr.GetLength(0);
+            int outputObservations = labelsArr[0].GetLength(0);
+            int labelsSize = labelsArr[0][0].GetLength(0);
+            Debug.Assert(featuresBatchSize == labelsBatchSize);
+            Debug.Assert(outputObservations == LabelWidth);
+            Debug.Assert(labelsSize == LabelColumns.Length);
+            T[] flattenedFeatures = featuresArr.SelectMany(x => x.SelectMany(y => y)).ToArray();
+            T[] flattenedLabels = labels.SelectMany(x => x.SelectMany(y => y)).ToArray();
+            Tensor featuresTensor = from_array(flattenedFeatures).reshape(featuresBatchSize, inputObservations, featuresSize);
+            Tensor labelsTensor = from_array(flattenedLabels).reshape(labelsBatchSize, outputObservations, labelsSize);
+            return Tuple.Create(featuresTensor, labelsTensor);
         }
 
         /// <summary>
