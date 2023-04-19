@@ -1,4 +1,5 @@
-﻿using TorchSharp;
+﻿using System.Net.Http.Headers;
+using TorchSharp;
 using TorchSharp.Modules;
 using static TorchSharp.torch;
 using static TorchSharp.torch.nn;
@@ -13,7 +14,25 @@ namespace TimeSeriesForecasting.NeuralNetwork
         private readonly Module<Tensor, Tensor> _model;
         private readonly Optimizer _optimizer;
         private readonly double _learningRate;
+        // Type of x (features), type of y (labels) --> type of the result.
         private readonly Loss<Tensor, Tensor, Tensor> _loss;
+        private double _currentLoss = double.MaxValue;
+
+        public bool IsTrained { get; private set; } = false;
+        public double CurrentLoss 
+        { 
+            get
+            {
+                if (IsTrained)
+                {
+                    return _currentLoss;
+                }
+                else
+                {
+                    throw new InvalidOperationException("Current loss is unavailable because the model has never been trained.");
+                }
+            } 
+        }
 
         public ModelTrainer(Module<Tensor, Tensor> model) 
         { 
@@ -26,13 +45,16 @@ namespace TimeSeriesForecasting.NeuralNetwork
         {
             for (int i = 0; i < epochs; i++)
             {
-                var output = _loss.forward(_model.forward(x), y);
+                // Compute the loss.
+                Tensor output = _loss.forward(_model.forward(x), y);
                 // Clear the gradients before doing the back-propagation.
                 _model.zero_grad();
                 // Do back-progatation, which computes all the gradients.
                 output.backward();
                 _optimizer.step();
+                _currentLoss = output.item<double>();
             }
+            IsTrained = true;
         }
     }
 }
