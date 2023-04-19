@@ -5,7 +5,7 @@ using static TorchSharp.torch.optim;
 
 namespace TimeSeriesForecasting.NeuralNetwork
 {
-    internal class ModelTraining : IModelTraining
+    public class ModelTrainer : IModelTrainer
     {
         private const int BatchSize = 32;
 
@@ -14,7 +14,7 @@ namespace TimeSeriesForecasting.NeuralNetwork
         public Optimizer Optimizer { get; set; }
         public Loss<Tensor, Tensor, Tensor> Loss { get; set; }
 
-        public ModelTraining(Module<Tensor, Tensor> model, Optimizer optim, Loss<Tensor, Tensor, Tensor> loss) 
+        public ModelTrainer(Module<Tensor, Tensor> model, Optimizer optim, Loss<Tensor, Tensor, Tensor> loss) 
         { 
             _model = model;
             Optimizer = optim;

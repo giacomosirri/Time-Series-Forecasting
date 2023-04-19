@@ -14,6 +14,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\TimeSeriesForecasting.IO\TimeSeriesForecasting.IO.csproj" />
+    <ProjectReference Include="..\TimeSeriesForecasting.NeuralNetwork\TimeSeriesForecasting.NeuralNetwork.csproj" />
   </ItemGroup>
 
 </Project>

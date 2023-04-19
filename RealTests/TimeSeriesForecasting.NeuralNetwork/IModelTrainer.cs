@@ -4,7 +4,7 @@ using static TorchSharp.torch.optim;
 
 namespace TimeSeriesForecasting.NeuralNetwork
 {
-    internal interface IModelTraining
+    public interface IModelTrainer
     {
         Loss<Tensor, Tensor, Tensor> Loss { get; set; }
         Optimizer Optimizer { get; set; }
