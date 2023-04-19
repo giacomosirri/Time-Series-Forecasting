@@ -24,8 +24,8 @@ namespace TimeSeriesForecasting
             Tuple<Tensor, Tensor> tensors = winGen.GenerateWindows<double>(trainingSet);
             var inputTensor = tensors.Item1;
             var outputTensor = tensors.Item2;
-            var logger = new TensorLogger(LogDir + LabelFile);
-            logger.Log(outputTensor[10], "Values to predict - Temperature (°C)");
+            var logger = new TensorLogger(LogDir + FeatureFile);
+            logger.Log(inputTensor, "Features");
         }
     }
 }
