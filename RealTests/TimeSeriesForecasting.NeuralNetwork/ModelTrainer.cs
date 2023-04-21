@@ -8,7 +8,7 @@ namespace TimeSeriesForecasting.NeuralNetwork
 {
     public class ModelTrainer : IModelTrainer
     {
-        //private const int BatchSize = 32;
+        private const int BatchSize = 32;
 
         private readonly Module<Tensor, Tensor> _model;
         private readonly Optimizer _optimizer;
@@ -18,7 +18,7 @@ namespace TimeSeriesForecasting.NeuralNetwork
         private double _currentLoss = double.MaxValue;
 
         public bool IsTrained { get; private set; } = false;
-        public double CurrentLoss 
+        public double CurrentLoss
         { 
             get
             {
@@ -42,17 +42,22 @@ namespace TimeSeriesForecasting.NeuralNetwork
 
         public void Fit(Tensor x, Tensor y, int epochs)
         {
+            Tensor output = zeros(1);
+            Tensor[] batched_x = x.split(BatchSize);
             for (int i = 0; i < epochs; i++)
             {
-                // Compute the loss.
-                Tensor output = _loss.forward(_model.forward(x), y.flatten(start_dim: 1));
-                // Clear the gradients before doing the back-propagation.
-                _model.zero_grad();
-                // Do back-progatation, which computes all the gradients.
-                output.backward();
-                _optimizer.step();
-                _currentLoss = output.item<float>();
+                for (int j = 0; j < batched_x.Length; j++)
+                {
+                    // Compute the loss.
+                    output = _loss.forward(_model.forward(batched_x[j]), y.flatten(start_dim: 1));
+                    // Clear the gradients before doing the back-propagation.
+                    _model.zero_grad();
+                    // Do back-progatation, which computes all the gradients.
+                    output.backward();
+                    _optimizer.step();
+                }
             }
+            _currentLoss = output.item<float>();
             IsTrained = true;
         }
     }

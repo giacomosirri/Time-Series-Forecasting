@@ -59,7 +59,7 @@ namespace TimeSeriesForecasting
             Console.Write("Training the baseline model...");
             trainer.Fit(inputTensor, outputTensor, epochs: 100);
             Console.WriteLine(Completion);
-            Console.WriteLine($"MSE: {trainer.CurrentLoss:F2}\n");
+            Console.WriteLine($"MSE: {trainer.CurrentLoss:F4}\n");
 
             DateTime endTime = DateTime.Now;
             Console.WriteLine($"Program is completed...    {endTime}\n");
