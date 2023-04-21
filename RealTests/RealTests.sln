@@ -12,7 +12,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TimeSeriesForecasting", "Ti
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TimeSeriesForecasting.IO", "TimeSeriesForecasting.IO\TimeSeriesForecasting.IO.csproj", "{77B37F98-F978-4453-B976-B2EAFC22B6AA}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TimeSeriesForecasting.NeuralNetwork", "TimeSeriesForecasting.NeuralNetwork\TimeSeriesForecasting.NeuralNetwork.csproj", "{70F71822-582B-4F85-AA5A-9CBFCEA6F067}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TimeSeriesForecasting.NeuralNetwork", "TimeSeriesForecasting.NeuralNetwork\TimeSeriesForecasting.NeuralNetwork.csproj", "{70F71822-582B-4F85-AA5A-9CBFCEA6F067}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestTimeSeriesForecasting", "TestTimeSeriesForecasting\TestTimeSeriesForecasting.csproj", "{6B8515AB-E771-4064-97D6-FEC057859EE5}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -32,6 +34,10 @@ Global
 		{70F71822-582B-4F85-AA5A-9CBFCEA6F067}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{70F71822-582B-4F85-AA5A-9CBFCEA6F067}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{70F71822-582B-4F85-AA5A-9CBFCEA6F067}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6B8515AB-E771-4064-97D6-FEC057859EE5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6B8515AB-E771-4064-97D6-FEC057859EE5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6B8515AB-E771-4064-97D6-FEC057859EE5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6B8515AB-E771-4064-97D6-FEC057859EE5}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

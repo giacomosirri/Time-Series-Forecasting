@@ -34,7 +34,6 @@ namespace TimeSeriesForecasting
             DataTable trainingSet = dpp.GetTrainingSet();
             //DataTable validationSet = dpp.GetValidationSet();
             //DataTable testSet = dpp.GetTestSet();
-            Console.WriteLine(trainingSet.Rows[0]["Date Time"]);
             Console.WriteLine(Completion);
 
             var winGen = new WindowGenerator(6, 1, 1, new string[] { "T (degC)" }); 
