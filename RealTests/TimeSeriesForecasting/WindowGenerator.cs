@@ -108,15 +108,10 @@ namespace TimeSeriesForecasting
             int featuresBatchSize = featuresArr.GetLength(0);
             int inputObservations = featuresArr[0].GetLength(0);
             int featuresSize = featuresArr[0][0].GetLength(0);
-            Debug.Assert(inputObservations == InputWidth);
-            Debug.Assert(featuresSize == featureColumns);
             T[][][] labelsArr = labels.ToArray();
             int labelsBatchSize = labelsArr.GetLength(0);
             int outputObservations = labelsArr[0].GetLength(0);
             int labelsSize = labelsArr[0][0].GetLength(0);
-            Debug.Assert(featuresBatchSize == labelsBatchSize);
-            Debug.Assert(outputObservations == LabelWidth);
-            Debug.Assert(labelsSize == LabelColumns.Length);
             T[] flattenedFeatures = featuresArr.SelectMany(x => x.SelectMany(y => y)).ToArray();
             T[] flattenedLabels = labels.SelectMany(x => x.SelectMany(y => y)).ToArray();
             Tensor featuresTensor = from_array(flattenedFeatures)

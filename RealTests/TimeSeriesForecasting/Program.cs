@@ -25,13 +25,16 @@ namespace TimeSeriesForecasting
             Console.WriteLine(Completion);
 
             Console.Write("Initializing the preprocessor...");
-            var dpp = new DataPreprocessor(records, Tuple.Create(70,20,10), "Normalization");
+            // Date range: from 01/01/2012 to 31/12/2014
+            var dpp = new DataPreprocessor(records, Tuple.Create(70,20,10), "Normalization", 
+                                            Tuple.Create<DateTime?, DateTime?>(new DateTime(2012, 1, 1), new DateTime(2014, 12, 31)));
             Console.WriteLine(Completion);
 
             Console.Write("Getting the processed training, validation and test sets...");
             DataTable trainingSet = dpp.GetTrainingSet();
             //DataTable validationSet = dpp.GetValidationSet();
             //DataTable testSet = dpp.GetTestSet();
+            Console.WriteLine(trainingSet.Rows[0]["Date Time"]);
             Console.WriteLine(Completion);
 
             var winGen = new WindowGenerator(6, 1, 1, new string[] { "T (degC)" }); 

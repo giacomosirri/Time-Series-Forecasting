@@ -114,13 +114,17 @@ namespace TimeSeriesForecasting
         private DataTable GetSet(int percentage)
         {
             DataTable result = _dateLimitedData.Clone();
-            int rows = (int)Math.Round(result.Rows.Count * percentage / 100.0);
+            int rows = (int)Math.Round(_dateLimitedData.Rows.Count * percentage / 100.0);
             for (int i = 0; i < rows; i++)
             {
-                result.ImportRow(_normalizedData.Rows[i]);
+                result.ImportRow(_dateLimitedData.Rows[i]);
             }
             return result;
         }
+
+        public DateTime? GetFirstValideDate() => _firstDate;
+
+        public DateTime? GetLastValidDate() => _lastDate;
 
         private DataTable ProcessData()
         {
@@ -262,19 +266,22 @@ namespace TimeSeriesForecasting
 
         private DataTable LimitDateRange()
         {
-            DataTable newSet = _normalizedData.Clone();
+            DataTable newSet = _normalizedData.Copy();
+            Console.WriteLine(newSet.Rows.Count);
             if (_firstDate.HasValue)
             {
                 newSet = newSet.AsEnumerable()
-                               .SkipWhile(dr => dr.Field<DateTime>(newSet.Columns["Date Time"]!) > _firstDate.Value)
-                               .CopyToDataTable(); 
+                               .Where(dr => dr.Field<DateTime>(newSet.Columns["Date Time"]!) >= _firstDate.Value)
+                               .CopyToDataTable();
             }
+            Console.WriteLine(newSet.Rows.Count);
             if (_lastDate.HasValue)
             {
                 newSet = newSet.AsEnumerable()
-                               .SkipWhile(dr => dr.Field<DateTime>(newSet.Columns["Date Time"]!) > _lastDate.Value)
+                               .Where(dr => dr.Field<DateTime>(newSet.Columns["Date Time"]!) <= _lastDate.Value)
                                .CopyToDataTable();
             }
+            Console.WriteLine(newSet.Rows.Count);
             return newSet;
         }
     }
