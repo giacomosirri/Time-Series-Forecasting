@@ -20,7 +20,10 @@ namespace TimeSeriesForecasting
         private readonly DataTable _rawData;
         private readonly DataTable _processedData;
         private DataTable _normalizedData = new();
+        private DataTable _dateLimitedData = new();
         private string _normalization = "None";
+        private DateTime? _firstDate;
+        private DateTime? _lastDate;
 
         public int TrainingSetPercentage { get; private set; }
         public int ValidationSetPercentage { get; private set; }
@@ -35,26 +38,48 @@ namespace TimeSeriesForecasting
                     _normalization = value;
                     _normalizedData = ComputeNormalization();
                 }
-                else
-                {
-                    _normalization = "None";
-                    _normalizedData = _processedData;
-                    throw new ArgumentException("The normalization method provided is not supported. " +
-                        "Dataset is back to being not-normalized.");
-                }
+                else throw new ArgumentException("The normalization method provided is not supported.");
+            }
+        }
+        public Tuple<DateTime?, DateTime?> DateRange
+        {
+            set
+            {
+                _firstDate = value.Item1;
+                _lastDate = value.Item2;
+                _dateLimitedData = LimitDateRange();
             }
         }
 
-        public DataPreprocessor(IList<Record> records) : this(records, new Tuple<int, int, int>(70, 20, 10), "None") { }
+        /// <summary>
+        /// Creates a new instance of DataPreprocessor to operate on the given <see cref="IList{Record}"/>.
+        /// All processing parameters, such as the normalization method and the proportion of data to be
+        /// included in the training, validation and test sets are assigned to the default values.
+        /// </summary>
+        /// <param name="records">A list of <see cref="Record"/>s that represent phenomenon observations.</param>
+        public DataPreprocessor(IList<Record> records) : this(records, new Tuple<int, int, int>(70, 20, 10), 
+                                                                "None", Tuple.Create<DateTime?, DateTime?>(null, null)) {}
 
-        public DataPreprocessor(IList<Record> records, Tuple<int, int, int> splitter, string normalization)
+        /// <summary>
+        /// Creates a new instance of DataPreprocessor, with custom parameters to suit the needs of the client.
+        /// </summary>
+        /// <param name="records">A list of <see cref="Record"/>s that represent phenomenon observations.</param>
+        /// <param name="splitter">A <see cref="Tuple"/> with the percentages of values to be included in the 
+        /// training, validation and test set respectively.</param>
+        /// <param name="normalization">The normalization method. There are three allowed values: "Normalization" for
+        /// Min-Max Normalization, "Standardization" for Z-Score and "None" for no normalization.</param>
+        /// <param name="range">A <see cref="Tuple"/> that contains the first and last date to be included in the
+        /// processed data. Can be useful to speed up processing if the dataset contains dozens of thousands of 
+        /// observations or even more.</param>
+        public DataPreprocessor(IList<Record> records, Tuple<int, int, int> splitter, 
+                                string normalization, Tuple<DateTime?, DateTime?> range)
         {
             TrainingSetPercentage = splitter.Item1;
             ValidationSetPercentage = splitter.Item2;
             TestSetPercentage = splitter.Item3;
-            // remove duplicate elements according to the primary key (date)
-            var uniqueRecords = RemoveDuplicateRecords(records);
-            // store data in table format
+            // Remove duplicate elements according to the primary key (timestamp).
+            var uniqueRecords = records.DistinctBy(r => r.TimeStamp).ToList();
+            // Store data in table format.
             _rawData = new DataTable();
             _rawData.Columns.Add("Date Time", typeof(DateTime));
             records.First().Features.Keys.ToList().ForEach(key => _rawData.Columns.Add(key, typeof(double)));
@@ -69,8 +94,15 @@ namespace TimeSeriesForecasting
                 }
                 _rawData.Rows.Add(row);
             }
+            /* 
+             * This is the preprocessing PIPELINE: first data is processed, i.e. clear measurement errors are cleaned up and
+             * new features are engineered, then data is normalized using the given normalization method and finally records
+             * are removed if their timestamp is not inside the given range. After these three lines of code are executed,
+             * data is ready to be acquired by the client through the following Get___Set() methods.
+             */
             _processedData = ProcessData();
             Normalization = normalization;
+            DateRange = range;
         }
 
         public DataTable GetTrainingSet() => GetSet(TrainingSetPercentage);
@@ -81,13 +113,13 @@ namespace TimeSeriesForecasting
 
         private DataTable GetSet(int percentage)
         {
-            var newSet = _normalizedData.Clone();
-            int rows = (int)Math.Round(_normalizedData.Rows.Count * percentage / 100.0);
+            DataTable result = _dateLimitedData.Clone();
+            int rows = (int)Math.Round(result.Rows.Count * percentage / 100.0);
             for (int i = 0; i < rows; i++)
             {
-                newSet.ImportRow(_normalizedData.Rows[i]);
+                result.ImportRow(_normalizedData.Rows[i]);
             }
-            return newSet;
+            return result;
         }
 
         private DataTable ProcessData()
@@ -97,10 +129,10 @@ namespace TimeSeriesForecasting
             foreach (DataRow row in _rawData.Rows)
             {
                 var date = (DateTime)row["Date Time"];
-                // let's deal with hourly values only
+                // Let's deal with hourly values only.
                 if (date.Minute == 0)
                 {
-                    // replace all values of a row that are outside the allowed values boundaries...
+                    // Replace all values of a row that are outside the allowed values boundaries...
                     foreach (DataColumn col in _rawData.Columns)
                     {
                         string colName = col.ColumnName;
@@ -117,7 +149,7 @@ namespace TimeSeriesForecasting
                             }
                         }
                     }
-                    // .. then add the row to the new processed data table
+                    // ... Then add the row to the new processed data table.
                     processedData.ImportRow(_rawData.Rows.Find(date));
                 }
             }
@@ -148,8 +180,6 @@ namespace TimeSeriesForecasting
             return processedData;
         }
 
-        private static IList<Record> RemoveDuplicateRecords(IList<Record> records) => records.DistinctBy(r => r.TimeStamp).ToList();
-
         /*
          * This method returns a table containing ALL the rows of the main table, 
          * normalized according to the Normalization property.
@@ -165,7 +195,7 @@ namespace TimeSeriesForecasting
             }
             else
             {
-                // create training set from the full set of data to calculate the normalization table
+                // Create training set from the full set of data to calculate the normalization table.
                 var normalizationTable = _processedData.Clone();
                 int rows = (int)Math.Round(_processedData.Rows.Count * TrainingSetPercentage / 100.0);
                 for (int i = 0; i < rows; i++)
@@ -228,6 +258,24 @@ namespace TimeSeriesForecasting
                     return standardizedData;
                 }
             }
+        }
+
+        private DataTable LimitDateRange()
+        {
+            DataTable newSet = _normalizedData.Clone();
+            if (_firstDate.HasValue)
+            {
+                newSet = newSet.AsEnumerable()
+                               .SkipWhile(dr => dr.Field<DateTime>(newSet.Columns["Date Time"]!) > _firstDate.Value)
+                               .CopyToDataTable(); 
+            }
+            if (_lastDate.HasValue)
+            {
+                newSet = newSet.AsEnumerable()
+                               .SkipWhile(dr => dr.Field<DateTime>(newSet.Columns["Date Time"]!) > _lastDate.Value)
+                               .CopyToDataTable();
+            }
+            return newSet;
         }
     }
 }
