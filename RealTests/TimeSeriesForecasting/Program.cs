@@ -54,10 +54,10 @@ namespace TimeSeriesForecasting
             */
 
             var simpleModel = new Baseline(inputTensor.shape[1], inputTensor.shape[2], 
-                outputTensor.shape[1], outputTensor.shape[2]);
+                                            outputTensor.shape[1], outputTensor.shape[2]);
             IModelTrainer trainer = new ModelTrainer(simpleModel);
             Console.Write("Training the baseline model...");
-            trainer.Fit(inputTensor, outputTensor, epochs: 100);
+            trainer.Fit(inputTensor, outputTensor, epochs: 50);
             Console.WriteLine(Completion);
             Console.WriteLine($"MSE: {trainer.CurrentLoss:F4}\n");
 
