@@ -9,8 +9,9 @@ namespace TimeSeriesForecasting
     /// </summary>
     public class DataPreprocessor
     {
-        private static readonly double SecondsInDay = 24 * 60 * 60;
-        private static readonly double SecondsInYear = 365.2425 * SecondsInDay;
+        private const double SecondsInDay = 24 * 60 * 60;
+        private const double SecondsInYear = 365.2425 * SecondsInDay;
+        private const bool FeatureEngineering = true;
 
         /* 
          * Performing transformations on large datasets is really resource expensive,
@@ -25,7 +26,6 @@ namespace TimeSeriesForecasting
         private DateTime? _firstDate;
         private DateTime? _lastDate;
         // This field is a workaround to allow tests on simpler datasets that don't have the expected features.
-        private bool _featureEngineering = false;
 
         public int TrainingSetPercentage { get; private set; }
         public int ValidationSetPercentage { get; private set; }
@@ -130,38 +130,27 @@ namespace TimeSeriesForecasting
 
         private DataTable ProcessData()
         {
-            // RAW DATA CLEANUP
-            var processedData = _rawData.Clone();
-            foreach (DataRow row in _rawData.Rows)
+            // Raw data cleanup, i.e. removal of clear measurement errors.
+            _rawData.Rows.Cast<DataRow>().ToList().ForEach(row =>
             {
-                var date = (DateTime)row["Date Time"];
-                // Let's deal with hourly values only.
-                if (date.Minute == 0)
+                _rawData.Columns.Cast<DataColumn>()
+                                .Where(col => Record.GetUnitOfMeasureFromFeatureName(col.ColumnName) != null)
+                                .ToList()
+                                .ForEach(col =>
                 {
-                    // Replace all values of a row that are outside the allowed values boundaries...
-                    foreach (DataColumn col in _rawData.Columns)
-                    {
-                        string colName = col.ColumnName;
-                        string? unit = Record.GetUnitOfMeasureFromFeatureName(colName);
-                        if (unit != null)
-                        {
-                            if (Record.ValueRanges[unit].Item1 > (double)row[colName])
-                            {
-                                row[colName] = Record.ValueRanges[unit].Item1;
-                            }
-                            if (Record.ValueRanges[unit].Item2 < (double)row[colName])
-                            {
-                                row[colName] = Record.ValueRanges[unit].Item2;
-                            }
-                        }
-                    }
-                    // ... Then add the row to the new processed data table.
-                    processedData.ImportRow(_rawData.Rows.Find(date));
-                }
-            }
-            if (_featureEngineering)
+                    string colName = col.ColumnName;
+                    string unit = Record.GetUnitOfMeasureFromFeatureName(colName)!;
+                    double value = (double)row[colName];
+                    (double minValue, double maxValue) = Record.ValueRanges[unit];
+                    // Replace all values of a row that are outside the allowed values boundaries.
+                    row[colName] = Math.Max(minValue, Math.Min(maxValue, value));
+                });
+            });
+            // Processed data uses only hourly values.
+            DataTable processedData = _rawData.AsEnumerable().Where(r => ((DateTime?)r.ItemArray[0])?.Minute == 0).CopyToDataTable();
+            // Feature engineering, performed only if not testing.
+            if (FeatureEngineering)
             {
-                // FEATURE ENGINEERING
                 processedData.Columns.Add("wx (m/s)", typeof(double));
                 processedData.Columns.Add("wy (m/s)", typeof(double));
                 processedData.Columns.Add("max. wx (m/s)", typeof(double));
@@ -185,8 +174,12 @@ namespace TimeSeriesForecasting
                     row["year sin"] = Math.Sin(secondsSinceEpoch * (2 * Math.PI / SecondsInYear));
                     row["year cos"] = Math.Cos(secondsSinceEpoch * (2 * Math.PI / SecondsInYear));
                 }
+                return processedData;
             }
-            return processedData;
+            else
+            {
+                return _rawData;
+            }
         }
 
         /*
