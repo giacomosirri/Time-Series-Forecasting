@@ -7,7 +7,7 @@ namespace TimeSeriesForecasting
     /// <summary>
     /// This class contains the logic that produces usable data from raw records.
     /// </summary>
-    internal class DataPreprocessor
+    public class DataPreprocessor
     {
         private static readonly double SecondsInDay = 24 * 60 * 60;
         private static readonly double SecondsInYear = 365.2425 * SecondsInDay;
