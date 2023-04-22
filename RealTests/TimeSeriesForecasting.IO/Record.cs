@@ -15,6 +15,11 @@
             { "deg", Tuple.Create(0.0, 360.0) }
         };
 
+        /// <summary>
+        /// Returns a list of columns that act as indices for a record, similar to an index in a Pandas' Series or DataFrame.
+        /// </summary>
+        public static IList<string> Indices { get; } = new List<string>() { "Date Time" };
+
         public IDictionary<string, double> Features { get; private set; }
         
         public DateTime TimeStamp { get; set; }
