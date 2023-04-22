@@ -24,6 +24,8 @@ namespace TimeSeriesForecasting
         private string _normalization = "None";
         private DateTime? _firstDate;
         private DateTime? _lastDate;
+        // This field is a workaround to allow tests on simpler datasets that don't have the expected features.
+        private bool _featureEngineering = false;
 
         public int TrainingSetPercentage { get; private set; }
         public int ValidationSetPercentage { get; private set; }
@@ -157,29 +159,32 @@ namespace TimeSeriesForecasting
                     processedData.ImportRow(_rawData.Rows.Find(date));
                 }
             }
-            // FEATURE ENGINEERING
-            processedData.Columns.Add("wx (m/s)", typeof(double));
-            processedData.Columns.Add("wy (m/s)", typeof(double));
-            processedData.Columns.Add("max. wx (m/s)", typeof(double));
-            processedData.Columns.Add("max. wy (m/s)", typeof(double));
-            processedData.Columns.Add("day sin", typeof(double));
-            processedData.Columns.Add("day cos", typeof(double));
-            processedData.Columns.Add("year sin", typeof(double));
-            processedData.Columns.Add("year cos", typeof(double));
-            foreach (DataRow row in processedData.Rows)
+            if (_featureEngineering)
             {
-                double windVelocity = (double)row["wv (m/s)"];
-                double maximumWindVelocity = (double)row["max. wv (m/s)"];
-                double degreeInRadiants = (double)row["wd (deg)"] * Math.PI / 180;
-                row["wx (m/s)"] = windVelocity * Math.Cos(degreeInRadiants);
-                row["wy (m/s)"] = windVelocity * Math.Sin(degreeInRadiants);
-                row["max. wx (m/s)"] = maximumWindVelocity * Math.Cos(degreeInRadiants);
-                row["max. wy (m/s)"] = maximumWindVelocity * Math.Sin(degreeInRadiants);
-                double secondsSinceEpoch = ((DateTime)row["Date Time"]).ToUniversalTime().ToTimestamp().Seconds;
-                row["day sin"] = Math.Sin(secondsSinceEpoch * (2 * Math.PI / SecondsInDay));
-                row["day cos"] = Math.Cos(secondsSinceEpoch * (2 * Math.PI / SecondsInDay));
-                row["year sin"] = Math.Sin(secondsSinceEpoch * (2 * Math.PI / SecondsInYear));
-                row["year cos"] = Math.Cos(secondsSinceEpoch * (2 * Math.PI / SecondsInYear));
+                // FEATURE ENGINEERING
+                processedData.Columns.Add("wx (m/s)", typeof(double));
+                processedData.Columns.Add("wy (m/s)", typeof(double));
+                processedData.Columns.Add("max. wx (m/s)", typeof(double));
+                processedData.Columns.Add("max. wy (m/s)", typeof(double));
+                processedData.Columns.Add("day sin", typeof(double));
+                processedData.Columns.Add("day cos", typeof(double));
+                processedData.Columns.Add("year sin", typeof(double));
+                processedData.Columns.Add("year cos", typeof(double));
+                foreach (DataRow row in processedData.Rows)
+                {
+                    double windVelocity = (double)row["wv (m/s)"];
+                    double maximumWindVelocity = (double)row["max. wv (m/s)"];
+                    double degreeInRadiants = (double)row["wd (deg)"] * Math.PI / 180;
+                    row["wx (m/s)"] = windVelocity * Math.Cos(degreeInRadiants);
+                    row["wy (m/s)"] = windVelocity * Math.Sin(degreeInRadiants);
+                    row["max. wx (m/s)"] = maximumWindVelocity * Math.Cos(degreeInRadiants);
+                    row["max. wy (m/s)"] = maximumWindVelocity * Math.Sin(degreeInRadiants);
+                    double secondsSinceEpoch = ((DateTime)row["Date Time"]).ToUniversalTime().ToTimestamp().Seconds;
+                    row["day sin"] = Math.Sin(secondsSinceEpoch * (2 * Math.PI / SecondsInDay));
+                    row["day cos"] = Math.Cos(secondsSinceEpoch * (2 * Math.PI / SecondsInDay));
+                    row["year sin"] = Math.Sin(secondsSinceEpoch * (2 * Math.PI / SecondsInYear));
+                    row["year cos"] = Math.Cos(secondsSinceEpoch * (2 * Math.PI / SecondsInYear));
+                }
             }
             return processedData;
         }
