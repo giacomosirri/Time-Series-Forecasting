@@ -40,17 +40,20 @@ namespace TestTimeSeriesForecasting
         {
             // Normalize the data using Min-Max normalization.
             _preprocessor.Normalization = NormalizationMethod.MIN_MAX_NORMALIZATION;
-            DataTable trainingSet = _preprocessor.GetTrainingSet();
-            for (int i = 0; i<trainingSet.Columns.Count; i++) 
+            DataTable table = _preprocessor.GetTrainingSet();
+            for (int i = 0; i < table.Columns.Count; i++) 
             {
-                DataColumn col = trainingSet.Columns[i];
-                if (col.ColumnName != Record.Index)
+                string colName = table.Columns[i].ColumnName;
+                if (colName != Record.Index)
                 {
-                    IDictionary<string, double> stats = GetStats(trainingSet, col.ColumnName, new List<string>() { "Min", "Max" });
-                    // The minimum of a column must be 0.
-                    Assert.True(Math.Abs(stats["Min"]) < Tolerance);
-                    // The maximum of a column must be 1.
-                    Assert.True(Math.Abs(stats["Max"] - 1) < Tolerance);
+                    // Calculate the minimum value of the "Value" column.
+                    double minValue = table.AsEnumerable().Min(row => row.Field<double>(colName));
+                    // Calculate the maximum value of the "Value" column.
+                    double maxValue = table.AsEnumerable().Max(row => row.Field<double>(colName));
+                    // The minimum of any column must be 0.
+                    Assert.True(Math.Abs(minValue) < Tolerance);
+                    // The maximum of any column must be 1.
+                    Assert.True(Math.Abs(maxValue - 1) < Tolerance);
                 }
             }
         }
@@ -60,26 +63,22 @@ namespace TestTimeSeriesForecasting
         {
             // Normalize the data using standardization.
             _preprocessor.Normalization = NormalizationMethod.STANDARDIZATION;
-            DataTable trainingSet2 = _preprocessor.GetTrainingSet();
-            for (int i = 0; i < trainingSet2.Columns.Count; i++)
+            DataTable table = _preprocessor.GetTrainingSet();
+            for (int i = 0; i < table.Columns.Count; i++)
             {
-                DataColumn col = trainingSet2.Columns[i];
-                if (col.ColumnName != Record.Index)
+                string colName = table.Columns[i].ColumnName;
+                if (colName != Record.Index)
                 {
-                    IDictionary<string, double> stats = GetStats(trainingSet2, col.ColumnName, new List<string>() { "Avg", "StDev" });
+                    // Calculate the average of the "colName" column.
+                    double average = table.AsEnumerable().Average(row => row.Field<double>(colName));
+                    // Calculate the standard deviation of the "colName" column.
+                    double stdev = Math.Sqrt(table.AsEnumerable().Average(row => Math.Pow(row.Field<double>(colName) - average, 2)));
                     // The mean of any column after standardization must be 0.
-                    Assert.True(Math.Abs(stats["Avg"]) < Tolerance);
-                    // The standard deviation of any column after standardization must be 0.
-                    Assert.True(Math.Abs(stats["StDev"] - 1) < Tolerance);
+                    Assert.True(average < Tolerance);
+                    // The standard deviation of any column after standardization must be 1.
+                    Assert.True(Math.Abs(stdev - 1) < Tolerance);
                 }
             }
-        }
-
-        private static IDictionary<string, double> GetStats(DataTable dt, string col, IList<string> operations)
-        {
-            IDictionary<string, double> stats = new Dictionary<string, double>();
-            operations.AsEnumerable().ToList().ForEach(op => stats.Add(op, Convert.ToDouble(dt.Compute($"{op}([{col}])", ""))));
-            return stats;
         }
     }
 }
