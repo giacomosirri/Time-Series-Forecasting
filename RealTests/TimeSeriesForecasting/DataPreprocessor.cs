@@ -83,13 +83,13 @@ namespace TimeSeriesForecasting
             var uniqueRecords = records.DistinctBy(r => r.TimeStamp).ToList();
             // Store data in table format.
             _rawData = new DataTable();
-            _rawData.Columns.Add("Date Time", typeof(DateTime));
+            _rawData.Columns.Add(Record.Index, typeof(DateTime));
             records.First().Features.Keys.ToList().ForEach(key => _rawData.Columns.Add(key, typeof(double)));
-            _rawData.PrimaryKey = new DataColumn[] { _rawData.Columns["Date Time"]! };
+            _rawData.PrimaryKey = new DataColumn[] { _rawData.Columns[Record.Index]! };
             foreach (var record in uniqueRecords)
             {
                 var row = _rawData.NewRow();
-                row["Date Time"] = record.TimeStamp;
+                row[Record.Index] = record.TimeStamp;
                 foreach ((string feature, double val) in record.Features)
                 {
                     row[feature] = val;
@@ -174,12 +174,8 @@ namespace TimeSeriesForecasting
                     row["year sin"] = Math.Sin(secondsSinceEpoch * (2 * Math.PI / SecondsInYear));
                     row["year cos"] = Math.Cos(secondsSinceEpoch * (2 * Math.PI / SecondsInYear));
                 }
-                return processedData;
             }
-            else
-            {
-                return _rawData;
-            }
+            return processedData;
         }
 
         /*
@@ -211,7 +207,7 @@ namespace TimeSeriesForecasting
                     foreach (DataColumn col in normalizedData.Columns)
                     {
                         var name = col.ColumnName;
-                        if (name != "Date Time")
+                        if (name != Record.Index)
                         {
                             var min = Convert.ToDouble(normalizationTable.Compute($"Min([{col.ColumnName}])", ""));
                             var max = Convert.ToDouble(normalizationTable.Compute($"Max([{col.ColumnName}])", ""));
@@ -222,7 +218,7 @@ namespace TimeSeriesForecasting
                     {
                         foreach (DataColumn col in normalizedData.Columns)
                         {
-                            if (col.ColumnName != "Date Time")
+                            if (col.ColumnName != Record.Index)
                             {
                                 var min = values[col.ColumnName].Item1;
                                 var max = values[col.ColumnName].Item2;
@@ -238,7 +234,7 @@ namespace TimeSeriesForecasting
                     foreach (DataColumn col in standardizedData.Columns)
                     {
                         var name = col.ColumnName;
-                        if (name != "Date Time")
+                        if (name != Record.Index)
                         {
                             var avg = Convert.ToDouble(normalizationTable.Compute($"Avg([{col.ColumnName}])", ""));
                             var std = Math.Sqrt(-Convert.ToDouble(normalizationTable.Compute($"Var([{col.ColumnName}])", "")));
@@ -249,7 +245,7 @@ namespace TimeSeriesForecasting
                     {
                         foreach (DataColumn col in standardizedData.Columns)
                         {
-                            if (col.ColumnName != "Date Time")
+                            if (col.ColumnName != Record.Index)
                             {
                                 var avg = values[col.ColumnName].Item1;
                                 var std = values[col.ColumnName].Item2;
@@ -268,13 +264,13 @@ namespace TimeSeriesForecasting
             if (_firstDate.HasValue)
             {
                 newSet = newSet.AsEnumerable()
-                               .Where(dr => dr.Field<DateTime>(newSet.Columns["Date Time"]!) >= _firstDate.Value)
+                               .Where(dr => dr.Field<DateTime>(newSet.Columns[Record.Index]!) >= _firstDate.Value)
                                .CopyToDataTable();
             }
             if (_lastDate.HasValue)
             {
                 newSet = newSet.AsEnumerable()
-                               .Where(dr => dr.Field<DateTime>(newSet.Columns["Date Time"]!) <= _lastDate.Value)
+                               .Where(dr => dr.Field<DateTime>(newSet.Columns[Record.Index]!) <= _lastDate.Value)
                                .CopyToDataTable();
             }
             return newSet;
