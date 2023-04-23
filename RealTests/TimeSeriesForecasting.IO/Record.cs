@@ -22,7 +22,7 @@
 
         public IDictionary<string, double> Features { get; private set; }
         
-        public DateTime TimeStamp { get; set; }
+        public DateTime TimeStamp { get; }
 
         public Record(IDictionary<string, double?> values, DateTime? datetime)
         {

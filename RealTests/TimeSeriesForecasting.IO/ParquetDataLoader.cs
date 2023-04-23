@@ -72,7 +72,7 @@ namespace TimeSeriesForecasting.IO
                     data.Add(dc.Field.Name, ((double?[])dc.Data).ToList());
                 }
             }
-            for (int j = 0; j < data["p (mbar)"].Count; j++)
+            for (int j = 0; j < data.ElementAt(0).Value.Count; j++)
             {
                 IDictionary<string, double?> record = new Dictionary<string, double?>();
                 foreach (KeyValuePair<string, IList<double?>> kvp in data)

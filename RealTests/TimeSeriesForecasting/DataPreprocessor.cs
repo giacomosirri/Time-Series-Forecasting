@@ -11,9 +11,10 @@ namespace TimeSeriesForecasting
     {
         private const double SecondsInDay = 24 * 60 * 60;
         private const double SecondsInYear = 365.2425 * SecondsInDay;
-        private const bool FeatureEngineering = true;
+        // This field is a workaround to allow tests on simpler datasets that don't have the expected features.
+        private const bool FeatureEngineering = false;
 
-        /* 
+        /*
          * Performing transformations on large datasets is really resource expensive,
          * so transformed data is cached in private fields instead of being re-calculated
          * every time it is needed.
@@ -25,7 +26,6 @@ namespace TimeSeriesForecasting
         private string _normalization = "None";
         private DateTime? _firstDate;
         private DateTime? _lastDate;
-        // This field is a workaround to allow tests on simpler datasets that don't have the expected features.
 
         public int TrainingSetPercentage { get; private set; }
         public int ValidationSetPercentage { get; private set; }
@@ -265,21 +265,18 @@ namespace TimeSeriesForecasting
         private DataTable LimitDateRange()
         {
             DataTable newSet = _normalizedData.Copy();
-            Console.WriteLine(newSet.Rows.Count);
             if (_firstDate.HasValue)
             {
                 newSet = newSet.AsEnumerable()
                                .Where(dr => dr.Field<DateTime>(newSet.Columns["Date Time"]!) >= _firstDate.Value)
                                .CopyToDataTable();
             }
-            Console.WriteLine(newSet.Rows.Count);
             if (_lastDate.HasValue)
             {
                 newSet = newSet.AsEnumerable()
                                .Where(dr => dr.Field<DateTime>(newSet.Columns["Date Time"]!) <= _lastDate.Value)
                                .CopyToDataTable();
             }
-            Console.WriteLine(newSet.Rows.Count);
             return newSet;
         }
     }
