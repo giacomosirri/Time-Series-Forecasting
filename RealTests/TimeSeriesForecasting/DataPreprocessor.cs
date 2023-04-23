@@ -45,6 +45,8 @@ namespace TimeSeriesForecasting
             {
                 _normalization = value;
                 _normalizedData = ComputeNormalization();
+                // DateRange must be updated so that the order of the operations in the pipeline is preserved.
+                DateRange = Tuple.Create(_firstDate, _lastDate);
             }
         }
         public Tuple<DateTime?, DateTime?> DateRange
@@ -114,12 +116,12 @@ namespace TimeSeriesForecasting
              * data is ready to be acquired by the client through the following Get___Set() methods.
              */
             _processedData = ProcessData();
+            Normalization = normalization;
+            DateRange = range;
             // Only one sixth of all the values are in the new table, as observations taken at fractions of hours have been removed.
             Trace.Assert(Math.Abs((double)_processedData.Rows.Count / _rawData.Rows.Count - 0.166666) < 10e-2);
-            Normalization = normalization;
             // Normalization should neither add nor remove records from the table.
             Trace.Assert(_normalizedData.Rows.Count == _processedData.Rows.Count);
-            DateRange = range;
             int newDaysBetweenFirstAndLastDate = ((DateTime)_dateLimitedData.Rows[^1][Record.Index])
                                                             .Subtract((DateTime)_dateLimitedData.Rows[0][Record.Index]).Days;
             // Number of rows of new table : Number of rows of normalized table =
