@@ -36,7 +36,7 @@ namespace TestTimeSeriesForecasting
         }
 
         [Fact]
-        public void TestNormalization()
+        public void TestMinMaxNormalization()
         {
             // Normalize the data using Min-Max normalization.
             _preprocessor.Normalization = NormalizationMethod.MIN_MAX_NORMALIZATION;
@@ -44,7 +44,7 @@ namespace TestTimeSeriesForecasting
             for (int i = 0; i<trainingSet.Columns.Count; i++) 
             {
                 DataColumn col = trainingSet.Columns[i];
-                if (col.ColumnName != "Date Time")
+                if (col.ColumnName != Record.Index)
                 {
                     IDictionary<string, double> stats = GetStats(trainingSet, col.ColumnName, new List<string>() { "Min", "Max" });
                     // The minimum of a column must be 0.
@@ -53,13 +53,18 @@ namespace TestTimeSeriesForecasting
                     Assert.True(Math.Abs(stats["Max"] - 1) < Tolerance);
                 }
             }
-            // Repeat the process for standardization.
+        }
+
+        [Fact]
+        public void TestStandardization() 
+        {
+            // Normalize the data using standardization.
             _preprocessor.Normalization = NormalizationMethod.STANDARDIZATION;
             DataTable trainingSet2 = _preprocessor.GetTrainingSet();
             for (int i = 0; i < trainingSet2.Columns.Count; i++)
             {
                 DataColumn col = trainingSet2.Columns[i];
-                if (col.ColumnName != "Date Time")
+                if (col.ColumnName != Record.Index)
                 {
                     IDictionary<string, double> stats = GetStats(trainingSet2, col.ColumnName, new List<string>() { "Avg", "StDev" });
                     // The mean of any column after standardization must be 0.
