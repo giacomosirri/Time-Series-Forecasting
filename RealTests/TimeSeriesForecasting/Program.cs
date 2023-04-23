@@ -1,4 +1,5 @@
 ﻿using System.Data;
+using static TimeSeriesForecasting.DataPreprocessor;
 using TimeSeriesForecasting.IO;
 using TimeSeriesForecasting.NeuralNetwork;
 using static TorchSharp.torch;
@@ -26,7 +27,7 @@ namespace TimeSeriesForecasting
 
             Console.Write("Initializing the preprocessor...");
             // Date range: from 01/01/2012 to 31/12/2013
-            var dpp = new DataPreprocessor(records, Tuple.Create(70,20,10), "Standardization", 
+            var dpp = new DataPreprocessor(records, Tuple.Create(70,20,10), NormalizationMethod.STANDARDIZATION, 
                                             Tuple.Create<DateTime?, DateTime?>(new DateTime(2012, 1, 1), new DateTime(2013, 12, 31)));
             Console.WriteLine(Completion);
 

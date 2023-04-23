@@ -1,5 +1,6 @@
 ﻿using Google.Protobuf.WellKnownTypes;
 using System.Data;
+using System.Diagnostics;
 using TimeSeriesForecasting.IO;
 
 namespace TimeSeriesForecasting
@@ -9,6 +10,13 @@ namespace TimeSeriesForecasting
     /// </summary>
     public class DataPreprocessor
     {
+        public enum NormalizationMethod
+        {
+            NONE,
+            MIN_MAX_NORMALIZATION,
+            STANDARDIZATION
+        }
+
         private const double SecondsInDay = 24 * 60 * 60;
         private const double SecondsInYear = 365.2425 * SecondsInDay;
         // This field is a workaround to allow tests on simpler datasets that don't have the expected features.
@@ -23,24 +31,20 @@ namespace TimeSeriesForecasting
         private readonly DataTable _processedData;
         private DataTable _normalizedData = new();
         private DataTable _dateLimitedData = new();
-        private string _normalization = "None";
+        private NormalizationMethod _normalization = NormalizationMethod.NONE;
         private DateTime? _firstDate;
         private DateTime? _lastDate;
 
         public int TrainingSetPercentage { get; private set; }
         public int ValidationSetPercentage { get; private set; }
         public int TestSetPercentage { get; private set; }
-        public string Normalization
+        public NormalizationMethod Normalization
         {
             get => _normalization;
             set
             {
-                if (value == "Normalization" || value == "Standardization" || value == "None")
-                {
-                    _normalization = value;
-                    _normalizedData = ComputeNormalization();
-                }
-                else throw new ArgumentException("The normalization method provided is not supported.");
+                _normalization = value;
+                _normalizedData = ComputeNormalization();
             }
         }
         public Tuple<DateTime?, DateTime?> DateRange
@@ -59,8 +63,10 @@ namespace TimeSeriesForecasting
         /// included in the training, validation and test sets are assigned to the default values.
         /// </summary>
         /// <param name="records">A list of <see cref="Record"/>s that represent phenomenon observations.</param>
-        public DataPreprocessor(IList<Record> records) : this(records, new Tuple<int, int, int>(70, 20, 10), 
-                                                                "None", Tuple.Create<DateTime?, DateTime?>(null, null)) {}
+        public DataPreprocessor(IList<Record> records) : 
+            this(records, new Tuple<int, int, int>(70, 20, 10), NormalizationMethod.NONE, Tuple.Create<DateTime?, DateTime?>(null, null)) 
+        {
+        }
 
         /// <summary>
         /// Creates a new instance of DataPreprocessor, with custom parameters to suit the needs of the client.
@@ -73,8 +79,8 @@ namespace TimeSeriesForecasting
         /// <param name="range">A <see cref="Tuple"/> that contains the first and last date to be included in the
         /// processed data. Can be useful to speed up processing if the dataset contains dozens of thousands of 
         /// observations or even more.</param>
-        public DataPreprocessor(IList<Record> records, Tuple<int, int, int> splitter, 
-                                string normalization, Tuple<DateTime?, DateTime?> range)
+        public DataPreprocessor(IList<Record> records, Tuple<int, int, int> splitter,
+                                NormalizationMethod normalization, Tuple<DateTime?, DateTime?> range)
         {
             TrainingSetPercentage = splitter.Item1;
             ValidationSetPercentage = splitter.Item2;
@@ -96,6 +102,11 @@ namespace TimeSeriesForecasting
                 }
                 _rawData.Rows.Add(row);
             }
+            // Sort data for timestamp, it is needed in debugging below
+            _rawData.DefaultView.Sort = $"{Record.Index} ASC";
+            _rawData = _rawData.DefaultView.ToTable();
+            int daysBetweenFirstAndLastDate = ((DateTime)_rawData.Rows[^1][Record.Index])
+                                                .Subtract((DateTime)_rawData.Rows[0][Record.Index]).Days;
             /* 
              * This is the preprocessing PIPELINE: first data is processed, i.e. clear measurement errors are cleaned up and
              * new features are engineered, then data is normalized using the given normalization method and finally records
@@ -103,8 +114,18 @@ namespace TimeSeriesForecasting
              * data is ready to be acquired by the client through the following Get___Set() methods.
              */
             _processedData = ProcessData();
+            // Only one sixth of all the values are in the new table, as observations taken at fractions of hours have been removed.
+            Trace.Assert(Math.Abs((double)_processedData.Rows.Count / _rawData.Rows.Count - 0.166666) < 10e-2);
             Normalization = normalization;
+            // Normalization should neither add nor remove records from the table.
+            Trace.Assert(_normalizedData.Rows.Count == _processedData.Rows.Count);
             DateRange = range;
+            int newDaysBetweenFirstAndLastDate = ((DateTime)_dateLimitedData.Rows[^1][Record.Index])
+                                                            .Subtract((DateTime)_dateLimitedData.Rows[0][Record.Index]).Days;
+            // Number of rows of new table : Number of rows of normalized table =
+            // Distance between client range dates : distance between dataset extreme dates
+            Trace.Assert(Math.Abs((double)_normalizedData.Rows.Count / _dateLimitedData.Rows.Count -
+                                    (double)daysBetweenFirstAndLastDate / newDaysBetweenFirstAndLastDate) < 10e-2);
         }
 
         public DataTable GetTrainingSet() => GetSet(TrainingSetPercentage);
@@ -128,6 +149,7 @@ namespace TimeSeriesForecasting
 
         public DateTime? GetLastValidDate() => _lastDate;
 
+        // This method is only called ONCE, from inside the constructor, to skim data that might then be modified further.
         private DataTable ProcessData()
         {
             // Raw data cleanup, i.e. removal of clear measurement errors.
@@ -187,7 +209,7 @@ namespace TimeSeriesForecasting
          */
         private DataTable ComputeNormalization()
         {
-            if (Normalization == "None")
+            if (Normalization == NormalizationMethod.NONE)
             {
                 return _processedData;
             }
@@ -201,7 +223,7 @@ namespace TimeSeriesForecasting
                     normalizationTable.ImportRow(_processedData.Rows[i]);
                 }
                 IDictionary<string, Tuple<double, double>> values = new Dictionary<string, Tuple<double, double>>();
-                if (Normalization == "Normalization")
+                if (Normalization == NormalizationMethod.MIN_MAX_NORMALIZATION)
                 {
                     var normalizedData = _processedData.Copy();
                     foreach (DataColumn col in normalizedData.Columns)
