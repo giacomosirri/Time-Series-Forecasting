@@ -1,31 +1,36 @@
 using System.Data;
 using TimeSeriesForecasting;
 using Record = TimeSeriesForecasting.IO.Record;
+using static TimeSeriesForecasting.DataPreprocessor;
 
 namespace TestTimeSeriesForecasting
 {
     public class UnitTestPreprocessor
     {
-        private static readonly double Tolerance = 10e-5;
+        private const double Tolerance = 10e-5;
+        private const int LowerBound = -10;
+        private const int UpperBound = 51;
+
         private readonly DataPreprocessor _preprocessor;
 
         public UnitTestPreprocessor() 
         {
             IList<Record> records = new List<Record>();
-            DateTime? startDate = new DateTime(2010, 10, 10);
+            // 10/10/2010 20:00:00
+            DateTime? currentDate = new DateTime(2010, 10, 10, 20, 0, 0);
             var rnd = new Random(6789);
-            for (int i = 0; i < 100; i++)
+            for (int i = 0; i < 10000; i++)
             {
                 IDictionary<string, double?> values = new Dictionary<string, double?>
                 {
-                    { "A", rnd.NextDouble() * rnd.Next() },
-                    { "B", rnd.NextDouble() * rnd.Next() },
-                    { "C", rnd.NextDouble() * rnd.Next() },
-                    { "D", rnd.NextDouble() * rnd.Next() },
-                    { "E", rnd.NextDouble() * rnd.Next() }
+                    { "A", rnd.NextDouble() * rnd.Next(LowerBound, UpperBound) },
+                    { "B", rnd.NextDouble() * rnd.Next(LowerBound, UpperBound) },
+                    { "C", rnd.NextDouble() * rnd.Next(LowerBound, UpperBound) },
+                    { "D", rnd.NextDouble() * rnd.Next(LowerBound, UpperBound) },
+                    { "E", rnd.NextDouble() * rnd.Next(LowerBound, UpperBound) }
                 };
-                DateTime? date = startDate?.AddDays(i);
-                records.Add(new Record(values, date));
+                records.Add(new Record(values, currentDate));
+                currentDate = currentDate.Value.AddMinutes(10);
             }
             _preprocessor = new DataPreprocessor(records);
         }
@@ -33,9 +38,8 @@ namespace TestTimeSeriesForecasting
         [Fact]
         public void TestNormalization()
         {
-            Assert.Throws<ArgumentException>(() => _preprocessor.Normalization = "What?");
             // Normalize the data using Min-Max normalization.
-            _preprocessor.Normalization = "Normalization";
+            _preprocessor.Normalization = NormalizationMethod.MIN_MAX_NORMALIZATION;
             DataTable trainingSet = _preprocessor.GetTrainingSet();
             for (int i = 0; i<trainingSet.Columns.Count; i++) 
             {
@@ -50,7 +54,7 @@ namespace TestTimeSeriesForecasting
                 }
             }
             // Repeat the process for standardization.
-            _preprocessor.Normalization = "Standardization";
+            _preprocessor.Normalization = NormalizationMethod.STANDARDIZATION;
             DataTable trainingSet2 = _preprocessor.GetTrainingSet();
             for (int i = 0; i < trainingSet2.Columns.Count; i++)
             {
