@@ -78,8 +78,8 @@ namespace TimeSeriesForecasting
             var features = new List<T[][]>();
             var labels = new List<T[][]>();
             // Inefficient concatenation method, only works with arrays of size <10000.
-            string[] nonValueColumns = LabelColumns.Concat(s_indexColumns).ToArray();
-            int featureColumns = table.Columns.Count - nonValueColumns.Length;
+            string[] nonFeatureColumns = LabelColumns.Concat(s_indexColumns).ToArray();
+            int featureColumns = table.Columns.Count - nonFeatureColumns.Length;
             // This for loop needs major refactoring as it is extremely inefficient now (>1 minutes)
             for (int startIndex = 0; startIndex + WindowSize < table.Rows.Count; startIndex++)
             {
@@ -88,7 +88,7 @@ namespace TimeSeriesForecasting
                                 .Skip(startIndex)
                                 .Take(InputWidth)
                                 .Select(dr => dr.ItemArray
-                                    .Where((_, i) => !nonValueColumns.Contains(table.Columns[i].ColumnName))
+                                    .Where((_, i) => !nonFeatureColumns.Contains(table.Columns[i].ColumnName))
                                     .Select(item => item != null ? (T)item : throw new ArgumentException(s_errorMessage))
                                     .ToArray())
                                 .ToArray();

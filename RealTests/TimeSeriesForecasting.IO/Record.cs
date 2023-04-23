@@ -16,9 +16,10 @@
         };
 
         /// <summary>
-        /// Returns a list of columns that act as indices for a record, similar to an index in a Pandas' Series or DataFrame.
+        /// Returns the name of the column that acts as index for a record, similar to an index in a Pandas' Series or DataFrame.
+        /// Such column must be of type <see cref="DateTime"/>, as these record represent observations in a time series.
         /// </summary>
-        public static IList<string> Indices { get; } = new List<string>() { "Date Time" };
+        public static string Index { get; } = "Date Time";
 
         public IDictionary<string, double> Features { get; private set; }
         
