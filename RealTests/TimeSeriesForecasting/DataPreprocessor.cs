@@ -2,7 +2,6 @@
 using System.Data;
 using System.Diagnostics;
 using TimeSeriesForecasting.IO;
-using static Tensorboard.Summary.Types;
 
 namespace TimeSeriesForecasting
 {
@@ -33,8 +32,8 @@ namespace TimeSeriesForecasting
         private DataTable _normalizedData = new();
         private DataTable _dateLimitedData = new();
         private NormalizationMethod _normalization = NormalizationMethod.NONE;
-        private DateTime _firstDate;
-        private DateTime _lastDate;
+        private DateTime _firstDate = DateTime.MinValue;
+        private DateTime _lastDate = DateTime.MaxValue;
 
         public int TrainingSetPercentage { get; private set; }
         public int ValidationSetPercentage { get; private set; }
@@ -54,8 +53,20 @@ namespace TimeSeriesForecasting
         {
             set
             {
-                _firstDate = value.Item1 ?? (DateTime)_normalizedData.Rows[0][Record.Index];
-                _lastDate = value.Item2 ?? (DateTime)_normalizedData.Rows[^1][Record.Index];
+                if (value.Item1.HasValue && value.Item2.HasValue && value.Item1.Value >= value.Item2.Value)
+                {
+                    throw new ArgumentException("The first item must be earlier than the second item.");
+                }
+                DateTime datasetMinDate = (DateTime)_normalizedData.Rows[0][Record.Index];
+                DateTime datasetMaxDate = (DateTime)_normalizedData.Rows[^1][Record.Index];
+                /*
+                 * If the first item in the given tuple is earlier than the first date in the dataset, then the first date
+                 * is set to the first date in the dataset, so it is basically a reset. The same is true for the last date.
+                 */
+                _firstDate = value.Item1.HasValue ?
+                                new DateTime(Math.Max(value.Item1.Value.Ticks, datasetMinDate.Ticks)) : datasetMinDate;
+                _lastDate = value.Item2.HasValue ?
+                                new DateTime(Math.Min(value.Item2.Value.Ticks, datasetMaxDate.Ticks)) : datasetMaxDate;
                 _dateLimitedData = LimitDateRange();
             }
         }
@@ -119,14 +130,8 @@ namespace TimeSeriesForecasting
              * data is ready to be acquired by the client through the following Get___Set() methods.
              */
             _processedData = ProcessData();
-            /*
-             * In the constructor, it is necessary to set the first and last dates before setting the Normalization property,
-             * otherwise the call to DateRange inside Normalization would cause an error.
-             * This means that there is no need to set DateRange afterwards, it would just be a repetition.
-             */
-            _firstDate = range.Item1 ?? (DateTime)_processedData.Rows[0][Record.Index];
-            _lastDate = range.Item2 ?? (DateTime)_processedData.Rows[^1][Record.Index];
             Normalization = normalization;
+            DateRange = range;
             /*
              * Debugging of the pipeline
              */

@@ -2,6 +2,7 @@ using System.Data;
 using TimeSeriesForecasting;
 using Record = TimeSeriesForecasting.IO.Record;
 using static TimeSeriesForecasting.DataPreprocessor;
+using System.Net.Http.Headers;
 
 namespace TestTimeSeriesForecasting
 {
@@ -10,17 +11,21 @@ namespace TestTimeSeriesForecasting
         private const double Tolerance = 10e-5;
         private const int LowerBound = -10;
         private const int UpperBound = 51;
+        // Do not change this field: 14400 = 100 days * 24 hours * 6 observations/hour
+        private const int Observations = 14400;
 
+        // 10/10/2010 20:00:00
+        private readonly DateTime? _firstDatasetDate = new DateTime(2010, 10, 10, 20, 0, 0);
+        // 18/01/2011 19:00:00
+        private readonly DateTime? _lastDatasetDate = new DateTime(2011, 01, 18, 19, 0, 0);
         private readonly DataPreprocessor _preprocessor;
 
         public UnitTestPreprocessor() 
         {
             IList<Record> records = new List<Record>();
-            // 10/10/2010 20:00:00
-            DateTime? currentDate = new DateTime(2010, 10, 10, 20, 0, 0);
+            DateTime? currentDate = _firstDatasetDate;
             var rnd = new Random(6789);
-            // 14400 = 100 days * 24 hours * 6 observations/hour
-            for (int i = 0; i < 14400; i++)
+            for (int i = 0; i < Observations; i++)
             {
                 IDictionary<string, double?> values = new Dictionary<string, double?>
                 {
@@ -85,8 +90,24 @@ namespace TestTimeSeriesForecasting
         [Fact]
         public void TestDateRange()
         {
-            Assert.Equal(new DateTime(2010, 10, 10, 20, 0, 0), _preprocessor.FirstDate);
-            Assert.Equal(new DateTime(2011, 01, 18, 19, 0, 0), _preprocessor.LastDate);
+            Assert.Equal(_firstDatasetDate, _preprocessor.FirstDate);
+            Assert.Equal(_lastDatasetDate, _preprocessor.LastDate);
+
+            DateTime? firstDate = new DateTime(2010, 11, 25, 10, 0, 0);
+            DateTime? lastDate = new DateTime(2010, 12, 31, 23, 0, 0);
+            _preprocessor.DateRange = new Tuple<DateTime?, DateTime?>(firstDate, lastDate);
+            Assert.Equal(firstDate, _preprocessor.FirstDate);
+            Assert.Equal(lastDate, _preprocessor.LastDate);
+
+            _preprocessor.DateRange = new Tuple<DateTime?, DateTime?>(lastDate, null);
+            Assert.Equal(lastDate, _preprocessor.FirstDate);
+            Assert.Equal(_lastDatasetDate, _preprocessor.LastDate);
+
+            DateTime? outOfBoundsFirstDate = new DateTime(2005, 1, 1, 0, 0, 0);
+            DateTime? outOfBoundsLastDate = new DateTime(2020, 10, 5, 0, 0, 0);
+            _preprocessor.DateRange = new Tuple<DateTime?, DateTime?>(outOfBoundsFirstDate, outOfBoundsLastDate);
+            Assert.Equal(_firstDatasetDate, _preprocessor.FirstDate);
+            Assert.Equal(_lastDatasetDate, _preprocessor.LastDate);
         }
     }
 }
