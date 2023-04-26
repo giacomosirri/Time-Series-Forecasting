@@ -19,7 +19,8 @@ namespace TestTimeSeriesForecasting
             // 10/10/2010 20:00:00
             DateTime? currentDate = new DateTime(2010, 10, 10, 20, 0, 0);
             var rnd = new Random(6789);
-            for (int i = 0; i < 10000; i++)
+            // 14400 = 100 days * 24 hours * 6 observations/hour
+            for (int i = 0; i < 14400; i++)
             {
                 IDictionary<string, double?> values = new Dictionary<string, double?>
                 {
@@ -79,6 +80,13 @@ namespace TestTimeSeriesForecasting
                     Assert.True(Math.Abs(stdev - 1) < Tolerance);
                 }
             }
+        }
+
+        [Fact]
+        public void TestDateRange()
+        {
+            Assert.Equal(new DateTime(2010, 10, 10, 20, 0, 0), _preprocessor.GetFirstDate());
+            Assert.Equal(new DateTime(2011, 01, 18, 19, 50, 0), _preprocessor.GetLastDate());
         }
     }
 }
