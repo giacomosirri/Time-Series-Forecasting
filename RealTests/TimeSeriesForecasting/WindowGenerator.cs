@@ -8,7 +8,7 @@ namespace TimeSeriesForecasting
     /// of <see cref="Tensor"/>s that can be fed as the input of the training phase of
     /// a TorchSharp neural network.
     /// </summary>
-    internal class WindowGenerator : IWindowGenerator
+    public class WindowGenerator : IWindowGenerator
     {
         private static readonly string s_errorMessage = "Missing value in a table cell. Please provide a complete table.";
         private static readonly string[] s_indexColumns = { "Date Time" };
@@ -16,7 +16,7 @@ namespace TimeSeriesForecasting
         /// <summary>
         /// The number of observations in each window.
         /// </summary>
-        public int WindowSize { get => LabelWidth + InputWidth + Offset; }
+        public int WindowSize { get => InputWidth + Offset + LabelWidth; }
 
         /// <summary>
         /// The number of observations in each label, i.e. a value that the deep learning model has to predict.
@@ -79,7 +79,6 @@ namespace TimeSeriesForecasting
             // Inefficient concatenation method, only works with arrays of size <10000.
             string[] nonFeatureColumns = LabelColumns.Concat(s_indexColumns).ToArray();
             int featureColumns = table.Columns.Count - nonFeatureColumns.Length;
-            // This for loop needs major refactoring as it is extremely inefficient now (>1 minutes)
             for (int startIndex = 0; startIndex + WindowSize < table.Rows.Count; startIndex++)
             {
                 T[][] feature = table
@@ -93,7 +92,7 @@ namespace TimeSeriesForecasting
                                 .ToArray();
                 T[][] label = table
                                 .AsEnumerable()
-                                .Skip(startIndex + Offset)
+                                .Skip(startIndex + InputWidth + Offset)
                                 .Take(LabelWidth)
                                 .Select(dr => dr.ItemArray
                                     .Where((_, i) => LabelColumns.Contains(table.Columns[i].ColumnName))

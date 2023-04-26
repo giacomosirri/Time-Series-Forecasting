@@ -3,7 +3,7 @@ using static TorchSharp.torch;
 
 namespace TimeSeriesForecasting
 {
-    internal interface IWindowGenerator
+    public interface IWindowGenerator
     {
         /// <summary>
         /// Splits the data into features and labels.

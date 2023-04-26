@@ -29,7 +29,7 @@
         {
             if ((datetime == null) || values.Values.Where(val => !val.HasValue).Any()) 
             {
-                throw new ArgumentNullException("Instantiation of a new record with missing data is not allowed");
+                throw new ArgumentNullException("Instantiation of a new record with missing data is not allowed.");
             }
             TimeStamp = datetime.Value;
             Features = values.Keys.Zip(values.Values.Select(elem => elem!.Value).ToList(), 
