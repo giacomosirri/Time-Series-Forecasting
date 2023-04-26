@@ -1,52 +1,23 @@
-using System.Data;
-using TimeSeriesForecasting;
-using Record = TimeSeriesForecasting.IO.Record;
+﻿using System.Data;
 using static TimeSeriesForecasting.DataPreprocessor;
+using Record = TimeSeriesForecasting.IO.Record;
 
 namespace TestTimeSeriesForecasting
 {
-    public class TestPreprocessor : IDisposable
+    [Collection("Preprocessor collection")]
+    public class TestPreprocessor
     {
-        private const double Tolerance = 10e-5;
-        private const int LowerBound = -10;
-        private const int UpperBound = 51;
-        // Do not change this field: 14400 = 100 days * 24 hours * 6 observations/hour
-        private const int Observations = 14400;
+        private readonly PreprocessorFixture _fixture;
 
-        // 10/10/2010 20:00:00
-        private readonly DateTime? _firstDatasetDate = new DateTime(2010, 10, 10, 20, 0, 0);
-        // 18/01/2011 19:00:00
-        private readonly DateTime? _lastDatasetDate = new DateTime(2011, 01, 18, 19, 0, 0);
-        private readonly DataPreprocessor _preprocessor;
-
-        public TestPreprocessor() 
-        {
-            IList<Record> records = new List<Record>();
-            DateTime? currentDate = _firstDatasetDate;
-            var rnd = new Random(6789);
-            for (int i = 0; i < Observations; i++)
-            {
-                IDictionary<string, double?> values = new Dictionary<string, double?>
-                {
-                    { "A", rnd.NextDouble() * rnd.Next(LowerBound, UpperBound) },
-                    { "B", rnd.NextDouble() * rnd.Next(LowerBound, UpperBound) },
-                    { "C", rnd.NextDouble() * rnd.Next(LowerBound, UpperBound) },
-                    { "D", rnd.NextDouble() * rnd.Next(LowerBound, UpperBound) },
-                    { "E", rnd.NextDouble() * rnd.Next(LowerBound, UpperBound) }
-                };
-                records.Add(new Record(values, currentDate));
-                currentDate = currentDate.Value.AddMinutes(10);
-            }
-            _preprocessor = new DataPreprocessor(records);
-        }
+        public TestPreprocessor(PreprocessorFixture fixture) => _fixture = fixture;
 
         [Fact]
         public void TestMinMaxNormalization()
         {
             // Normalize the data using Min-Max normalization.
-            _preprocessor.Normalization = NormalizationMethod.MIN_MAX_NORMALIZATION;
-            DataTable table = _preprocessor.GetTrainingSet();
-            for (int i = 0; i < table.Columns.Count; i++) 
+            _fixture.Preprocessor.Normalization = NormalizationMethod.MIN_MAX_NORMALIZATION;
+            DataTable table = _fixture.Preprocessor.GetTrainingSet();
+            for (int i = 0; i < table.Columns.Count; i++)
             {
                 string colName = table.Columns[i].ColumnName;
                 if (colName != Record.Index)
@@ -56,19 +27,19 @@ namespace TestTimeSeriesForecasting
                     // Calculate the maximum value of the "Value" column.
                     double maxValue = table.AsEnumerable().Max(row => row.Field<double>(colName));
                     // The minimum of any column must be 0.
-                    Assert.True(Math.Abs(minValue) < Tolerance);
+                    Assert.True(Math.Abs(minValue) < _fixture.Tolerance);
                     // The maximum of any column must be 1.
-                    Assert.True(Math.Abs(maxValue - 1) < Tolerance);
+                    Assert.True(Math.Abs(maxValue - 1) < _fixture.Tolerance);
                 }
             }
         }
 
         [Fact]
-        public void TestStandardization() 
+        public void TestStandardization()
         {
             // Normalize the data using standardization.
-            _preprocessor.Normalization = NormalizationMethod.STANDARDIZATION;
-            DataTable table = _preprocessor.GetTrainingSet();
+            _fixture.Preprocessor.Normalization = NormalizationMethod.STANDARDIZATION;
+            DataTable table = _fixture.Preprocessor.GetTrainingSet();
             for (int i = 0; i < table.Columns.Count; i++)
             {
                 string colName = table.Columns[i].ColumnName;
@@ -79,9 +50,9 @@ namespace TestTimeSeriesForecasting
                     // Calculate the standard deviation of the "colName" column.
                     double stdev = Math.Sqrt(table.AsEnumerable().Average(row => Math.Pow(row.Field<double>(colName) - average, 2)));
                     // The mean of any column after standardization must be 0.
-                    Assert.True(average < Tolerance);
+                    Assert.True(average < _fixture.Tolerance);
                     // The standard deviation of any column after standardization must be 1.
-                    Assert.True(Math.Abs(stdev - 1) < Tolerance);
+                    Assert.True(Math.Abs(stdev - 1) < _fixture.Tolerance);
                 }
             }
         }
@@ -89,29 +60,25 @@ namespace TestTimeSeriesForecasting
         [Fact]
         public void TestDateRange()
         {
-            Assert.Equal(_firstDatasetDate, _preprocessor.FirstDate);
-            Assert.Equal(_lastDatasetDate, _preprocessor.LastDate);
+            Assert.Equal(_fixture.FirstDatasetDate, _fixture.Preprocessor.FirstDate);
+            Assert.Equal(_fixture.LastDatasetDate, _fixture.Preprocessor.LastDate);
 
             DateTime? firstDate = new DateTime(2010, 11, 25, 10, 0, 0);
             DateTime? lastDate = new DateTime(2010, 12, 31, 23, 0, 0);
-            _preprocessor.DateRange = new Tuple<DateTime?, DateTime?>(firstDate, lastDate);
-            Assert.Equal(firstDate, _preprocessor.FirstDate);
-            Assert.Equal(lastDate, _preprocessor.LastDate);
+            var preprocessor = _fixture.Preprocessor;
+            preprocessor.DateRange = new Tuple<DateTime?, DateTime?>(firstDate, lastDate);
+            Assert.Equal(firstDate, preprocessor.FirstDate);
+            Assert.Equal(lastDate, preprocessor.LastDate);
 
-            _preprocessor.DateRange = new Tuple<DateTime?, DateTime?>(lastDate, null);
-            Assert.Equal(lastDate, _preprocessor.FirstDate);
-            Assert.Equal(_lastDatasetDate, _preprocessor.LastDate);
+            preprocessor.DateRange = new Tuple<DateTime?, DateTime?>(lastDate, null);
+            Assert.Equal(lastDate, preprocessor.FirstDate);
+            Assert.Equal(_fixture.LastDatasetDate, preprocessor.LastDate);
 
             DateTime? outOfBoundsFirstDate = new DateTime(2005, 1, 1, 0, 0, 0);
             DateTime? outOfBoundsLastDate = new DateTime(2020, 10, 5, 0, 0, 0);
-            _preprocessor.DateRange = new Tuple<DateTime?, DateTime?>(outOfBoundsFirstDate, outOfBoundsLastDate);
-            Assert.Equal(_firstDatasetDate, _preprocessor.FirstDate);
-            Assert.Equal(_lastDatasetDate, _preprocessor.LastDate);
-        }
-
-        public void Dispose()
-        {
-            _preprocessor.Dispose();
+            preprocessor.DateRange = new Tuple<DateTime?, DateTime?>(outOfBoundsFirstDate, outOfBoundsLastDate);
+            Assert.Equal(_fixture.FirstDatasetDate, preprocessor.FirstDate);
+            Assert.Equal(_fixture.LastDatasetDate, preprocessor.LastDate);
         }
     }
 }
