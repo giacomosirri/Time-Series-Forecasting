@@ -5,7 +5,7 @@ using static TimeSeriesForecasting.DataPreprocessor;
 
 namespace TestTimeSeriesForecasting
 {
-    public class UnitTestPreprocessor
+    public class TestPreprocessor
     {
         private const double Tolerance = 10e-5;
         private const int LowerBound = -10;
@@ -19,7 +19,7 @@ namespace TestTimeSeriesForecasting
         private readonly DateTime? _lastDatasetDate = new DateTime(2011, 01, 18, 19, 0, 0);
         private readonly DataPreprocessor _preprocessor;
 
-        public UnitTestPreprocessor() 
+        public TestPreprocessor() 
         {
             IList<Record> records = new List<Record>();
             DateTime? currentDate = _firstDatasetDate;
