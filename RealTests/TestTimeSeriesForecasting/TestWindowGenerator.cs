@@ -12,19 +12,38 @@ namespace TestTimeSeriesForecasting
         private const int Offset = 5;
         private readonly string[] LabelColumns = new string[] { "D" };
 
-        private readonly PreprocessorFixture _fixture;
+        private DataTable _set;
+        private Tuple<Tensor, Tensor> _tensors;
 
-        public TestWindowGenerator(PreprocessorFixture fixture) => _fixture = fixture;
+        public TestWindowGenerator(PreprocessorFixture fixture)
+        {
+            _set = fixture.Preprocessor.GetTrainingSet();
+            IWindowGenerator winGen = new WindowGenerator(InputWidth, LabelWidth, Offset, LabelColumns);
+            _tensors = winGen.GenerateWindows<double>(_set);
+        }
 
         [Fact]
-        public void TestWindowGeneration()
+        public void TestWindowSize()
         {
-            DataTable trainSet = _fixture.Preprocessor.GetTrainingSet();
-            IWindowGenerator winGen = new WindowGenerator(InputWidth, LabelWidth, Offset, LabelColumns);
-            Tuple<Tensor, Tensor> tensors = winGen.GenerateWindows<double>(trainSet);
-            Assert.Equal(trainSet.Rows.Count - LabelWidth - Offset - InputWidth, tensors.Item1.shape[0]);
-            Assert.Equal(InputWidth, tensors.Item1.shape[1]);
-            Assert.Equal(trainSet.Rows[0].ItemArray.Length - LabelColumns.Length - 1, tensors.Item1.shape[2]);
+            Tensor input = _tensors.Item1;
+            // Number of batches = Rows - LabelWidth - Offset - InputWidth
+            Assert.Equal(_set.Rows.Count - LabelWidth - Offset - InputWidth, input.shape[0]);
+            // Number of observations in input = InputWidth
+            Assert.Equal(InputWidth, input.shape[1]);
+            // Number of features per observation = Number of total features - Number of label columns - 1 (timestamp column)
+            Assert.Equal(_set.Rows[0].ItemArray.Length - LabelColumns.Length - 1, input.shape[2]);
+            Tensor output = _tensors.Item2;
+            // Number of batches in input and output tensors must be equal
+            Assert.Equal(input.shape[0], output.shape[0]);
+            // Number of observations in output = LabelWidth
+            Assert.Equal(LabelWidth, output.shape[1]);
+            // Number of labels per observation = Number of LabelColumns
+            Assert.Equal(LabelColumns.Length, output.shape[2]);
+        }
+
+        [Fact]
+        public void TestElements()
+        {
         }
     }
 }
