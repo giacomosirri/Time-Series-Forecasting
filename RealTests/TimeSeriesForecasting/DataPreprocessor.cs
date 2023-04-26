@@ -32,8 +32,8 @@ namespace TimeSeriesForecasting
         private DataTable _normalizedData = new();
         private DataTable _dateLimitedData = new();
         private NormalizationMethod _normalization = NormalizationMethod.NONE;
-        private DateTime? _firstDate;
-        private DateTime? _lastDate;
+        private DateTime _firstDate;
+        private DateTime _lastDate;
 
         public int TrainingSetPercentage { get; private set; }
         public int ValidationSetPercentage { get; private set; }
@@ -46,15 +46,15 @@ namespace TimeSeriesForecasting
                 _normalization = value;
                 _normalizedData = ComputeNormalization();
                 // DateRange must be updated so that the order of the operations in the pipeline is preserved.
-                DateRange = Tuple.Create(_firstDate, _lastDate);
+                DateRange = Tuple.Create(new DateTime?(_firstDate), new DateTime?(_lastDate));
             }
         }
         public Tuple<DateTime?, DateTime?> DateRange
         {
             set
             {
-                _firstDate = value.Item1;
-                _lastDate = value.Item2;
+                _firstDate = value.Item1 ?? (DateTime)_normalizedData.Rows[0][Record.Index];
+                _lastDate = value.Item2 ?? (DateTime)_normalizedData.Rows[^1][Record.Index];
                 _dateLimitedData = LimitDateRange();
             }
         }
@@ -122,10 +122,10 @@ namespace TimeSeriesForecasting
             Trace.Assert(Math.Abs((double)_processedData.Rows.Count / _rawData.Rows.Count - 0.166666) < 10e-2);
             // Normalization should neither add nor remove records from the table.
             Trace.Assert(_normalizedData.Rows.Count == _processedData.Rows.Count);
-            int newDaysBetweenFirstAndLastDate = ((DateTime)_dateLimitedData.Rows[^1][Record.Index])
-                                                            .Subtract((DateTime)_dateLimitedData.Rows[0][Record.Index]).Days;
             // Number of rows of new table : Number of rows of normalized table =
             // Distance between client range dates : distance between dataset extreme dates
+            int newDaysBetweenFirstAndLastDate = ((DateTime)_dateLimitedData.Rows[^1][Record.Index])
+                                                            .Subtract((DateTime)_dateLimitedData.Rows[0][Record.Index]).Days;
             Trace.Assert(Math.Abs((double)_normalizedData.Rows.Count / _dateLimitedData.Rows.Count -
                                     (double)daysBetweenFirstAndLastDate / newDaysBetweenFirstAndLastDate) < 10e-2);
         }
@@ -147,9 +147,9 @@ namespace TimeSeriesForecasting
             return result;
         }
 
-        public DateTime? GetFirstValideDate() => _firstDate;
+        public DateTime GetFirstDate() => _firstDate;
 
-        public DateTime? GetLastValidDate() => _lastDate;
+        public DateTime GetLastDate() => _lastDate;
 
         // This method is only called ONCE, from inside the constructor, to skim data that might then be modified further.
         private DataTable ProcessData()
@@ -284,20 +284,10 @@ namespace TimeSeriesForecasting
 
         private DataTable LimitDateRange()
         {
-            DataTable newSet = _normalizedData.Copy();
-            if (_firstDate.HasValue)
-            {
-                newSet = newSet.AsEnumerable()
-                               .Where(dr => dr.Field<DateTime>(newSet.Columns[Record.Index]!) >= _firstDate.Value)
-                               .CopyToDataTable();
-            }
-            if (_lastDate.HasValue)
-            {
-                newSet = newSet.AsEnumerable()
-                               .Where(dr => dr.Field<DateTime>(newSet.Columns[Record.Index]!) <= _lastDate.Value)
-                               .CopyToDataTable();
-            }
-            return newSet;
+            return _normalizedData.Copy()
+                .AsEnumerable()
+                .Where(dr => dr.Field<DateTime>(Record.Index) >= _firstDate && dr.Field<DateTime>(Record.Index) <= _lastDate)
+                .CopyToDataTable();
         }
     }
 }
