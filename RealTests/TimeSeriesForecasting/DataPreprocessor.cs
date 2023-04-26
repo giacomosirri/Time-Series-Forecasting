@@ -1,4 +1,5 @@
 ﻿using Google.Protobuf.WellKnownTypes;
+using MoreLinq;
 using System.Data;
 using System.Diagnostics;
 using TimeSeriesForecasting.IO;
@@ -102,7 +103,7 @@ namespace TimeSeriesForecasting
             ValidationSetPercentage = splitter.Item2;
             TestSetPercentage = splitter.Item3;
             // Remove duplicate elements according to the primary key (timestamp).
-            var uniqueRecords = records.DistinctBy(r => r.TimeStamp).ToList();
+            var uniqueRecords = MoreEnumerable.DistinctBy(records, r => r.TimeStamp).ToList();
             // Store data in table format.
             _rawData = new DataTable();
             _rawData.Columns.Add(Record.Index, typeof(DateTime));
@@ -230,6 +231,11 @@ namespace TimeSeriesForecasting
             }
             else
             {
+                /*
+                 * This dictionary associates the name of a column to its minimum and maximum value or to its average and standard deviation
+                 * depending on the normalization method used.
+                 */
+                IDictionary<string, Tuple<double, double>> parameters = new Dictionary<string, Tuple<double, double>>();
                 // Create training set from the full set of data to calculate the normalization table.
                 var normalizationTable = _processedData.Clone();
                 int rows = (int)Math.Round(_processedData.Rows.Count * TrainingSetPercentage / 100.0);
@@ -237,62 +243,63 @@ namespace TimeSeriesForecasting
                 {
                     normalizationTable.ImportRow(_processedData.Rows[i]);
                 }
-                IDictionary<string, Tuple<double, double>> values = new Dictionary<string, Tuple<double, double>>();
                 if (Normalization == NormalizationMethod.MIN_MAX_NORMALIZATION)
                 {
-                    var normalizedData = _processedData.Copy();
-                    foreach (DataColumn col in normalizedData.Columns)
-                    {
-                        var name = col.ColumnName;
-                        if (name != Record.Index)
-                        {
-                            var min = Convert.ToDouble(normalizationTable.Compute($"Min([{col.ColumnName}])", ""));
-                            var max = Convert.ToDouble(normalizationTable.Compute($"Max([{col.ColumnName}])", ""));
-                            values.Add(name, new Tuple<double, double>(min, max));
-                        }
-                    }
-                    foreach (DataRow row in normalizedData.Rows)
-                    {
-                        foreach (DataColumn col in normalizedData.Columns)
-                        {
-                            if (col.ColumnName != Record.Index)
-                            {
-                                var min = values[col.ColumnName].Item1;
-                                var max = values[col.ColumnName].Item2;
-                                row[col] = ((double)row[col] - min) / (max - min);
-                            }
-                        }
-                    }
+                    normalizationTable.Columns
+                        .Cast<DataColumn>()
+                        .Where(col => col.ColumnName != Record.Index)
+                        .ForEach(col => parameters.Add(col.ColumnName, 
+                            new Tuple<double, double>(normalizationTable.AsEnumerable().Min(r => r.Field<double>(col.ColumnName)), 
+                                                        normalizationTable.AsEnumerable().Max(r => r.Field<double>(col.ColumnName)))));
+                    DataTable normalizedData = _processedData.Copy();
+                    normalizedData.AsEnumerable()
+                        .ForEach(row => normalizedData.Columns
+                                                        .Cast<DataColumn>()
+                                                        .Select(col => col.ColumnName)
+                                                        .Where(colName => colName != Record.Index)
+                                                        .ForEach(colName => row[colName] = ((double)row[colName] - parameters[colName].Item1) /
+                                                            (parameters[colName].Item2 - parameters[colName].Item1)));
                     return normalizedData;
                 }
                 else
                 {
-                    var standardizedData = _processedData.Copy();
-                    foreach (DataColumn col in standardizedData.Columns)
-                    {
-                        var name = col.ColumnName;
-                        if (name != Record.Index)
-                        {
-                            var avg = Convert.ToDouble(normalizationTable.Compute($"Avg([{col.ColumnName}])", ""));
-                            var std = Math.Sqrt(-Convert.ToDouble(normalizationTable.Compute($"Var([{col.ColumnName}])", "")));
-                            values.Add(name, new Tuple<double, double>(avg, std));
-                        }
-                    }
-                    foreach (DataRow row in standardizedData.Rows)
-                    {
-                        foreach (DataColumn col in standardizedData.Columns)
-                        {
-                            if (col.ColumnName != Record.Index)
-                            {
-                                var avg = values[col.ColumnName].Item1;
-                                var std = values[col.ColumnName].Item2;
-                                row[col] = ((double)row[col] - avg) / std;
-                            }
-                        }
-                    }
-                    return standardizedData;
+                    IList<Tuple<string, double>> averages = normalizationTable.Columns
+                        .Cast<DataColumn>()
+                        .Select(col => col.ColumnName)
+                        .Where(colName => colName != Record.Index)
+                        .Select(colName => Tuple.Create(colName, normalizationTable.AsEnumerable().Average(r => r.Field<double>(colName))))
+                        .ToList();
+                    IList<Tuple<string, double>> standardDeviations = normalizationTable.Columns
+                        .Cast<DataColumn>()
+                        .Select(col => col.ColumnName)
+                        .Where(colName => colName != Record.Index)
+                        .Select(colName => Tuple.Create(colName, CalculateStDev(normalizationTable.AsEnumerable().Select(row => row.Field<double>(colName)))))
+                        .ToList();
+                    parameters = averages
+                        .Zip(standardDeviations, (avg, stdev) => new { Key = avg.Item1, Value = Tuple.Create(avg.Item2, stdev.Item2) })
+                        .ToDictionary(x => x.Key, x => x.Value);
+                    DataTable normalizedData = _processedData.Copy();
+                    normalizedData.AsEnumerable()
+                        .ForEach(row => normalizedData.Columns
+                                                        .Cast<DataColumn>()
+                                                        .Select(col => col.ColumnName)
+                                                        .Where(colName => colName != Record.Index)
+                                                        .ForEach(colName => row[colName] = ((double)row[colName] - parameters[colName].Item1) / parameters[colName].Item2));
+                    return normalizedData;
                 }
             }
+        }
+
+        private static double CalculateStDev(IEnumerable<double> values)
+        {
+            double ret = 0;
+            if (values.Any())
+            {
+                double avg = values.Average();
+                double sum = values.Sum(d => Math.Pow(d - avg, 2));
+                ret = Math.Sqrt(sum / values.Count());
+            }
+            return ret;
         }
 
         private DataTable LimitDateRange()

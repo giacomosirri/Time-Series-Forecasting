@@ -9,6 +9,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="morelinq" Version="3.4.2" />
     <PackageReference Include="TorchSharp" Version="0.99.4" />
   </ItemGroup>
 

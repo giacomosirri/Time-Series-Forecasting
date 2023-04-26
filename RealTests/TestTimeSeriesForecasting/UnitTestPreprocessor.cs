@@ -2,7 +2,6 @@ using System.Data;
 using TimeSeriesForecasting;
 using Record = TimeSeriesForecasting.IO.Record;
 using static TimeSeriesForecasting.DataPreprocessor;
-using System.Net.Http.Headers;
 
 namespace TestTimeSeriesForecasting
 {
