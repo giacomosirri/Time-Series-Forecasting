@@ -169,12 +169,10 @@ namespace TimeSeriesForecasting
         private DataTable ProcessData()
         {
             // Raw data cleanup, i.e. removal of clear measurement errors.
-            _rawData.Rows.Cast<DataRow>().ToList().ForEach(row =>
-            {
-                _rawData.Columns.Cast<DataColumn>()
-                                .Where(col => Record.GetUnitOfMeasureFromFeatureName(col.ColumnName) != null)
-                                .ToList()
-                                .ForEach(col =>
+            _rawData.Rows.Cast<DataRow>().ToList().ForEach(row => _rawData.Columns.Cast<DataColumn>()
+                .Where(col => Record.GetUnitOfMeasureFromFeatureName(col.ColumnName) != null)
+                .ToList()
+                .ForEach(col =>
                 {
                     string colName = col.ColumnName;
                     string unit = Record.GetUnitOfMeasureFromFeatureName(colName)!;
@@ -182,8 +180,8 @@ namespace TimeSeriesForecasting
                     (double minValue, double maxValue) = Record.ValueRanges[unit];
                     // Replace all values of a row that are outside the allowed values boundaries.
                     row[colName] = Math.Max(minValue, Math.Min(maxValue, value));
-                });
-            });
+                })
+            );
             // Processed data uses only hourly values.
             DataTable processedData = _rawData.AsEnumerable().Where(r => ((DateTime?)r.ItemArray[0])?.Minute == 0).CopyToDataTable();
             // Feature engineering, performed only if not testing.
@@ -232,8 +230,8 @@ namespace TimeSeriesForecasting
             else
             {
                 /*
-                 * This dictionary associates the name of a column to its minimum and maximum value or to its average and standard deviation
-                 * depending on the normalization method used.
+                 * This dictionary associates the name of a column to its minimum and maximum value 
+                 * or to its average and standard deviation depending on the normalization method used.
                  */
                 IDictionary<string, Tuple<double, double>> parameters = new Dictionary<string, Tuple<double, double>>();
                 // Create training set from the full set of data to calculate the normalization table.
@@ -247,18 +245,18 @@ namespace TimeSeriesForecasting
                 {
                     normalizationTable.Columns
                         .Cast<DataColumn>()
-                        .Where(col => col.ColumnName != Record.Index)
-                        .ForEach(col => parameters.Add(col.ColumnName, 
-                            new Tuple<double, double>(normalizationTable.AsEnumerable().Min(r => r.Field<double>(col.ColumnName)), 
-                                                        normalizationTable.AsEnumerable().Max(r => r.Field<double>(col.ColumnName)))));
+                        .Select(col => col.ColumnName)
+                        .Where(cn => cn != Record.Index)
+                        .ForEach(cn => parameters.Add(cn, 
+                            new Tuple<double, double>(normalizationTable.AsEnumerable().Min(r => r.Field<double>(cn)), 
+                                                        normalizationTable.AsEnumerable().Max(r => r.Field<double>(cn)))));
                     DataTable normalizedData = _processedData.Copy();
-                    normalizedData.AsEnumerable()
-                        .ForEach(row => normalizedData.Columns
-                                                        .Cast<DataColumn>()
-                                                        .Select(col => col.ColumnName)
-                                                        .Where(colName => colName != Record.Index)
-                                                        .ForEach(colName => row[colName] = ((double)row[colName] - parameters[colName].Item1) /
-                                                            (parameters[colName].Item2 - parameters[colName].Item1)));
+                    normalizedData.AsEnumerable().ForEach(row => normalizedData.Columns
+                                                            .Cast<DataColumn>()
+                                                            .Select(col => col.ColumnName)
+                                                            .Where(cn => cn != Record.Index)
+                                                            .ForEach(cn => row[cn] = ((double)row[cn] - parameters[cn].Item1) /
+                                                                (parameters[cn].Item2 - parameters[cn].Item1)));
                     return normalizedData;
                 }
                 else
@@ -266,25 +264,25 @@ namespace TimeSeriesForecasting
                     IList<Tuple<string, double>> averages = normalizationTable.Columns
                         .Cast<DataColumn>()
                         .Select(col => col.ColumnName)
-                        .Where(colName => colName != Record.Index)
-                        .Select(colName => Tuple.Create(colName, normalizationTable.AsEnumerable().Average(r => r.Field<double>(colName))))
+                        .Where(cn => cn != Record.Index)
+                        .Select(cn => Tuple.Create(cn, normalizationTable.AsEnumerable().Average(r => r.Field<double>(cn))))
                         .ToList();
                     IList<Tuple<string, double>> standardDeviations = normalizationTable.Columns
                         .Cast<DataColumn>()
                         .Select(col => col.ColumnName)
-                        .Where(colName => colName != Record.Index)
-                        .Select(colName => Tuple.Create(colName, CalculateStDev(normalizationTable.AsEnumerable().Select(row => row.Field<double>(colName)))))
+                        .Where(cn => cn != Record.Index)
+                        .Select(cn => Tuple.Create(cn, CalculateStDev(normalizationTable.AsEnumerable().Select(row => row.Field<double>(cn)))))
                         .ToList();
                     parameters = averages
                         .Zip(standardDeviations, (avg, stdev) => new { Key = avg.Item1, Value = Tuple.Create(avg.Item2, stdev.Item2) })
                         .ToDictionary(x => x.Key, x => x.Value);
                     DataTable normalizedData = _processedData.Copy();
-                    normalizedData.AsEnumerable()
-                        .ForEach(row => normalizedData.Columns
-                                                        .Cast<DataColumn>()
-                                                        .Select(col => col.ColumnName)
-                                                        .Where(colName => colName != Record.Index)
-                                                        .ForEach(colName => row[colName] = ((double)row[colName] - parameters[colName].Item1) / parameters[colName].Item2));
+                    normalizedData.AsEnumerable().ForEach(row => normalizedData.Columns
+                                                            .Cast<DataColumn>()
+                                                            .Select(col => col.ColumnName)
+                                                            .Where(cn => cn != Record.Index)
+                                                            .ForEach(cn => row[cn] = ((double)row[cn] - parameters[cn].Item1) / 
+                                                                parameters[cn].Item2));
                     return normalizedData;
                 }
             }
