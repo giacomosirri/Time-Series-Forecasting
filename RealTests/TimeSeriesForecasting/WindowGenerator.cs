@@ -6,7 +6,7 @@ namespace TimeSeriesForecasting
     /// <summary>
     /// This class provides functionalities to get a ready-to-use <see cref="Tuple"/>
     /// of <see cref="Tensor"/>s that can be fed as the input of the training phase of
-    /// a deep learning TorchSharp pipeline.
+    /// a TorchSharp neural network.
     /// </summary>
     internal class WindowGenerator : IWindowGenerator
     {

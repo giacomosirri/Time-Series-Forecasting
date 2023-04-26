@@ -5,7 +5,7 @@ using static TimeSeriesForecasting.DataPreprocessor;
 
 namespace TestTimeSeriesForecasting
 {
-    public class TestPreprocessor
+    public class TestPreprocessor : IDisposable
     {
         private const double Tolerance = 10e-5;
         private const int LowerBound = -10;
@@ -107,6 +107,11 @@ namespace TestTimeSeriesForecasting
             _preprocessor.DateRange = new Tuple<DateTime?, DateTime?>(outOfBoundsFirstDate, outOfBoundsLastDate);
             Assert.Equal(_firstDatasetDate, _preprocessor.FirstDate);
             Assert.Equal(_lastDatasetDate, _preprocessor.LastDate);
+        }
+
+        public void Dispose()
+        {
+            _preprocessor.Dispose();
         }
     }
 }

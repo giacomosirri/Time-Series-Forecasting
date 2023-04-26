@@ -9,7 +9,7 @@ namespace TimeSeriesForecasting
     /// <summary>
     /// This class contains the logic that produces usable data from raw records.
     /// </summary>
-    public class DataPreprocessor
+    public class DataPreprocessor : IDisposable
     {
         public enum NormalizationMethod
         {
@@ -306,6 +306,14 @@ namespace TimeSeriesForecasting
                 .AsEnumerable()
                 .Where(dr => dr.Field<DateTime>(Record.Index) >= FirstDate && dr.Field<DateTime>(Record.Index) <= LastDate)
                 .CopyToDataTable();
+        }
+
+        public void Dispose()
+        {
+            _rawData.Dispose();
+            _processedData.Dispose();
+            _normalizedData.Dispose();
+            _dateLimitedData.Dispose();
         }
     }
 }
