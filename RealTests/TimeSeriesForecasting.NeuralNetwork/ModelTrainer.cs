@@ -14,17 +14,18 @@ namespace TimeSeriesForecasting.NeuralNetwork
         private readonly Optimizer _optimizer;
         private readonly double _learningRate = 0.01;
         // Type of x (features), type of y (labels) --> type of the result.
-        private readonly Loss<Tensor, Tensor, Tensor> _loss;
-        private double _currentLoss = double.MaxValue;
+        private readonly Loss<Tensor, Tensor, Tensor> _lossFunction;
+        private readonly IList<float> _losses = new List<float>();
 
         public bool IsTrained { get; private set; } = false;
-        public double CurrentLoss
+        public float CurrentLoss
         { 
             get
             {
                 if (IsTrained)
                 {
-                    return _currentLoss;
+                    // Return the final loss of the trained model.
+                    return _losses[^1];
                 }
                 else
                 {
@@ -37,27 +38,27 @@ namespace TimeSeriesForecasting.NeuralNetwork
         { 
             _model = model;
             _optimizer = new SGD(_model.parameters(), _learningRate);
-            _loss = new MSELoss();
+            _lossFunction = new MSELoss();
         }
 
         public void Fit(Tensor x, Tensor y, int epochs)
         {
-            Tensor output = zeros(1);
             Tensor[] batched_x = x.split(BatchSize);
             Tensor[] batched_y = y.split(BatchSize);
             for (int i = 0; i < epochs; i++)
             {
+                Tensor? output = null;
                 for (int j = 0; j < batched_x.Length; j++)
                 {
                     // Compute the loss.
-                    output = _loss.forward(_model.forward(batched_x[j]), batched_y[j].flatten(start_dim: 1));
+                    output = _lossFunction.forward(_model.forward(batched_x[j]), batched_y[j].flatten(start_dim: 1));
                     // Clear the gradients before doing the back-propagation.
                     _model.zero_grad();
                     // Do back-progatation, which computes all the gradients.
                     output.backward();
                     _optimizer.step();
                 }
-                _currentLoss = output.item<float>();
+                _losses.Add(output!.item<float>());
             }
             IsTrained = true;
         }
