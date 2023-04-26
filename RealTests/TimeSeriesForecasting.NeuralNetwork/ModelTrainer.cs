@@ -12,7 +12,7 @@ namespace TimeSeriesForecasting.NeuralNetwork
 
         private readonly Module<Tensor, Tensor> _model;
         private readonly Optimizer _optimizer;
-        private readonly double _learningRate = 0.01;
+        private readonly double _learningRate = 0.1;
         // Type of x (features), type of y (labels) --> type of the result.
         private readonly Loss<Tensor, Tensor, Tensor> _lossFunction;
         private readonly IList<float> _losses = new List<float>();
@@ -61,6 +61,15 @@ namespace TimeSeriesForecasting.NeuralNetwork
                 _losses.Add(output!.item<float>());
             }
             IsTrained = true;
+            LogLosses();
+        }
+
+        private void LogLosses()
+        {
+            _losses.AsEnumerable()
+                   .Select((value, index) => (index, value))
+                   .ToList()
+                   .ForEach(tuple => Console.WriteLine($"Epoch {tuple.index}: MSE = {tuple.value}"));
         }
     }
 }
