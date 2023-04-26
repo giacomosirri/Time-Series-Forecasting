@@ -85,8 +85,8 @@ namespace TestTimeSeriesForecasting
         [Fact]
         public void TestDateRange()
         {
-            Assert.Equal(new DateTime(2010, 10, 10, 20, 0, 0), _preprocessor.GetFirstDate());
-            Assert.Equal(new DateTime(2011, 01, 18, 19, 50, 0), _preprocessor.GetLastDate());
+            Assert.Equal(new DateTime(2010, 10, 10, 20, 0, 0), _preprocessor.FirstDate);
+            Assert.Equal(new DateTime(2011, 01, 18, 19, 0, 0), _preprocessor.LastDate);
         }
     }
 }

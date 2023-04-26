@@ -2,6 +2,7 @@
 using System.Data;
 using System.Diagnostics;
 using TimeSeriesForecasting.IO;
+using static Tensorboard.Summary.Types;
 
 namespace TimeSeriesForecasting
 {
@@ -58,6 +59,8 @@ namespace TimeSeriesForecasting
                 _dateLimitedData = LimitDateRange();
             }
         }
+        public DateTime FirstDate { get => _firstDate; }
+        public DateTime LastDate { get => _lastDate; }
 
         /// <summary>
         /// Creates a new instance of DataPreprocessor to operate on the given <see cref="IList{Record}"/>.
@@ -116,8 +119,17 @@ namespace TimeSeriesForecasting
              * data is ready to be acquired by the client through the following Get___Set() methods.
              */
             _processedData = ProcessData();
+            /*
+             * In the constructor, it is necessary to set the first and last dates before setting the Normalization property,
+             * otherwise the call to DateRange inside Normalization would cause an error.
+             * This means that there is no need to set DateRange afterwards, it would just be a repetition.
+             */
+            _firstDate = range.Item1 ?? (DateTime)_processedData.Rows[0][Record.Index];
+            _lastDate = range.Item2 ?? (DateTime)_processedData.Rows[^1][Record.Index];
             Normalization = normalization;
-            DateRange = range;
+            /*
+             * Debugging of the pipeline
+             */
             // Only one sixth of all the values are in the new table, as observations taken at fractions of hours have been removed.
             Trace.Assert(Math.Abs((double)_processedData.Rows.Count / _rawData.Rows.Count - 0.166666) < 10e-2);
             // Normalization should neither add nor remove records from the table.
@@ -146,10 +158,6 @@ namespace TimeSeriesForecasting
             }
             return result;
         }
-
-        public DateTime GetFirstDate() => _firstDate;
-
-        public DateTime GetLastDate() => _lastDate;
 
         // This method is only called ONCE, from inside the constructor, to skim data that might then be modified further.
         private DataTable ProcessData()
@@ -284,9 +292,9 @@ namespace TimeSeriesForecasting
 
         private DataTable LimitDateRange()
         {
-            return _normalizedData.Copy()
+            return _normalizedData
                 .AsEnumerable()
-                .Where(dr => dr.Field<DateTime>(Record.Index) >= _firstDate && dr.Field<DateTime>(Record.Index) <= _lastDate)
+                .Where(dr => dr.Field<DateTime>(Record.Index) >= FirstDate && dr.Field<DateTime>(Record.Index) <= LastDate)
                 .CopyToDataTable();
         }
     }
