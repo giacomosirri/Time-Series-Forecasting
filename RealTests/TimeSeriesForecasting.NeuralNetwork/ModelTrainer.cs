@@ -51,7 +51,6 @@ namespace TimeSeriesForecasting.NeuralNetwork
             for (int i = 0; i < epochs; i++)
             {
                 Tensor? output = null;
-                _model.LogState($"Iteration {i}");
                 for (int j = 0; j < batched_x.Length; j++)
                 {
                     // Compute the loss.
