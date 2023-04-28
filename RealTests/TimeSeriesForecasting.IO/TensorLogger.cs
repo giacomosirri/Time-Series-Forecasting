@@ -4,11 +4,11 @@ namespace TimeSeriesForecasting.IO
 {
     public class TensorLogger
     {
-        private StreamWriter _stream;
+        private readonly StreamWriter _stream;
 
         public TensorLogger(string filePath) 
         {
-            FileStream fs = File.Exists(filePath) ? File.OpenWrite(filePath) : File.Create(filePath);
+            FileStream fs = File.Exists(filePath) ? File.Open(filePath, FileMode.Append) : File.Create(filePath);
             _stream = new StreamWriter(fs);
         }
 
