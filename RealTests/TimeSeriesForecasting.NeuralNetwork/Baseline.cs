@@ -4,7 +4,7 @@ using TimeSeriesForecasting.IO;
 
 namespace TimeSeriesForecasting.NeuralNetwork
 {
-    public class Baseline : Module<Tensor, Tensor>
+    public class Baseline : NetworkModel
     {
         private readonly Module<Tensor, Tensor> _linear;
         private readonly string _filePath = "C:\\Users\\sirri\\Desktop\\Coding\\Tirocinio\\TorchSharp\\RealTests\\Logs\\weights_biases.txt";
@@ -16,7 +16,7 @@ namespace TimeSeriesForecasting.NeuralNetwork
             LogState("Initial parameters");
         }
 
-        public void LogState(string message)
+        public override void LogState(string message)
         {
             var tl = new TensorLogger(_filePath);
             _linear.state_dict().AsEnumerable().ToList().ForEach(state => tl.Log(state.Value, message));

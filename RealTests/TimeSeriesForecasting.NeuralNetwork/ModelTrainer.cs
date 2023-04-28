@@ -1,7 +1,6 @@
 ﻿using TorchSharp;
 using TorchSharp.Modules;
 using static TorchSharp.torch;
-using static TorchSharp.torch.nn;
 using static TorchSharp.torch.optim;
 
 namespace TimeSeriesForecasting.NeuralNetwork
@@ -10,7 +9,7 @@ namespace TimeSeriesForecasting.NeuralNetwork
     {
         private const int BatchSize = 32;
 
-        private readonly Baseline _model;
+        private readonly NetworkModel _model;
         private readonly Optimizer _optimizer;
         private readonly double _learningRate = 0.0000001;
         // Type of x (features), type of y (labels) --> type of the result.
@@ -34,7 +33,7 @@ namespace TimeSeriesForecasting.NeuralNetwork
             } 
         }
 
-        public ModelTrainer(Baseline model) 
+        public ModelTrainer(NetworkModel model) 
         {
             _model = model;
             _optimizer = new SGD(_model.parameters(), _learningRate);
