@@ -6,14 +6,14 @@
 
         public Logger(string filePath)
         {
-            FileStream fs = File.Exists(filePath) ? File.Open(filePath, FileMode.Append) : File.Create(filePath);
+            FileStream fs = File.Exists(filePath) ? File.OpenWrite(filePath) : File.Create(filePath);
             _stream = new StreamWriter(fs);
         }
 
-        public void Log(T value, string message)
+        public void Log(IList<T> list, string message)
         {
             _stream.WriteLine(message);
-            _stream.Write(ValueRepresentation(value));
+            list.AsEnumerable().ToList().ForEach(value => _stream.Write(ValueRepresentation(value)));
         }
 
         protected abstract string ValueRepresentation(T value);
