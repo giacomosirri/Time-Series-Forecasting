@@ -10,6 +10,12 @@
             _stream = new StreamWriter(fs);
         }
 
+        public void Log(T value, string message) 
+        {
+            _stream.WriteLine(message);
+            _stream.Write(value);
+        }
+
         public void Log(IList<T> list, string message)
         {
             _stream.WriteLine(message);

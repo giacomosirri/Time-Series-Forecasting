@@ -44,7 +44,6 @@ namespace TimeSeriesForecasting
             var outputTensor = tensors.Item2;
             Console.WriteLine(Completion);
 
-            /*
             var featureLogger = new TensorLogger(LogDir + FeatureFile);
             Console.Write("Logging training set features on file...");
             featureLogger.Log(inputTensor, "Training set features");
@@ -54,7 +53,6 @@ namespace TimeSeriesForecasting
             Console.Write("Logging training set labels on file...");
             labelLogger.Log(outputTensor, "Training set values to predict: Temperature (°C)");
             Console.WriteLine(Completion);
-            */
 
             var simpleModel = new Baseline(inputTensor.shape[1], inputTensor.shape[2], 
                                             outputTensor.shape[1], outputTensor.shape[2]);
