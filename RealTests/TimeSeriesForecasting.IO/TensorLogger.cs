@@ -14,9 +14,10 @@ namespace TimeSeriesForecasting.IO
 
         public void Log(Tensor tensor, string message)
         {
-            using StreamWriter stream = _stream;
-            stream.WriteLine(message);
-            stream.Write(tensor.ToString(TorchSharp.TensorStringStyle.Default));
+            _stream.WriteLine(message);
+            _stream.Write(tensor.ToString(TorchSharp.TensorStringStyle.Default));
         }
+
+        public void Dispose() => _stream.Close();
     }
 }
