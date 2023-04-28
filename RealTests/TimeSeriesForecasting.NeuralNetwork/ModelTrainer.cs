@@ -10,9 +10,9 @@ namespace TimeSeriesForecasting.NeuralNetwork
     {
         private const int BatchSize = 32;
 
-        private readonly Module<Tensor, Tensor> _model;
+        private readonly Baseline _model;
         private readonly Optimizer _optimizer;
-        private readonly double _learningRate = 0.1;
+        private readonly double _learningRate = 0.0000001;
         // Type of x (features), type of y (labels) --> type of the result.
         private readonly Loss<Tensor, Tensor, Tensor> _lossFunction;
         private readonly IList<float> _losses = new List<float>();
@@ -34,8 +34,8 @@ namespace TimeSeriesForecasting.NeuralNetwork
             } 
         }
 
-        public ModelTrainer(Module<Tensor, Tensor> model) 
-        { 
+        public ModelTrainer(Baseline model) 
+        {
             _model = model;
             _optimizer = new SGD(_model.parameters(), _learningRate);
             _lossFunction = new MSELoss();
@@ -48,6 +48,7 @@ namespace TimeSeriesForecasting.NeuralNetwork
             for (int i = 0; i < epochs; i++)
             {
                 Tensor? output = null;
+                _model.LogState($"Iteration {i}");
                 for (int j = 0; j < batched_x.Length; j++)
                 {
                     // Compute the loss.

@@ -1,17 +1,26 @@
 ﻿using static TorchSharp.torch;
 using static TorchSharp.torch.nn;
+using TimeSeriesForecasting.IO;
 
 namespace TimeSeriesForecasting.NeuralNetwork
 {
     public class Baseline : Module<Tensor, Tensor>
     {
         private readonly Module<Tensor, Tensor> _linear;
+        private readonly string _filePath = "C:\\Users\\sirri\\Desktop\\Coding\\Tirocinio\\TorchSharp\\RealTests\\Logs\\weights_biases.txt";
 
-        public Baseline(long inputObservations, long inputFeatures, long outputObservations, long outputFeatures) 
-            : base(nameof(Baseline))
+        public Baseline(long inputObservations, long inputFeatures, long outputObservations, long outputFeatures) : base(nameof(Baseline))
         {
-            RegisterComponents();
             _linear = Linear(inputObservations * inputFeatures, outputObservations * outputFeatures);
+            RegisterComponents();
+            LogState("Initial parameters");
+        }
+
+        public void LogState(string message)
+        {
+            var tl = new TensorLogger(_filePath);
+            _linear.state_dict().AsEnumerable().ToList().ForEach(state => tl.Log(state.Value, message));
+            tl.Dispose();
         }
 
         public override Tensor forward(Tensor input)
