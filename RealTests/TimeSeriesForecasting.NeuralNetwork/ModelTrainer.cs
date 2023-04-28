@@ -1,4 +1,5 @@
-﻿using TimeSeriesForecasting.IO;
+﻿using Apache.Arrow;
+using TimeSeriesForecasting.IO;
 using TorchSharp;
 using TorchSharp.Modules;
 using static TorchSharp.torch;
@@ -9,11 +10,12 @@ namespace TimeSeriesForecasting.NeuralNetwork
     public class ModelTrainer : IModelTrainer
     {
         private const int BatchSize = 32;
+        private const double Arrest = 10e-5;
         private const string FilePath = "C:\\Users\\sirri\\Desktop\\Coding\\Tirocinio\\TorchSharp\\RealTests\\Logs\\loss.txt";
 
         private readonly NetworkModel _model;
         private readonly Optimizer _optimizer;
-        private readonly double _learningRate = 0.000001;
+        private readonly double _learningRate = 10e-8;
         // Type of x (features), type of y (labels) --> type of the result.
         private readonly Loss<Tensor, Tensor, Tensor> _lossFunction;
         private readonly IList<float> _losses = new List<float>();
@@ -46,11 +48,13 @@ namespace TimeSeriesForecasting.NeuralNetwork
 
         public void Fit(Tensor x, Tensor y, int epochs)
         {
+            int i = 0;
             Tensor[] batched_x = x.split(BatchSize);
             Tensor[] batched_y = y.split(BatchSize);
-            for (int i = 0; i < epochs; i++)
+            Tensor previousOutput = tensor(float.MaxValue);
+            for (; i < epochs; i++)
             {
-                Tensor? output = null;
+                Tensor output = empty(1);
                 for (int j = 0; j < batched_x.Length; j++)
                 {
                     // Compute the loss.
@@ -61,11 +65,25 @@ namespace TimeSeriesForecasting.NeuralNetwork
                     output.backward();
                     _optimizer.step();
                 }
-                _losses.Add(output!.item<float>());
+                _losses.Add(output.item<float>());
+                if (Math.Abs(previousOutput.item<float>() - output.item<float>()) < Arrest)
+                {
+                    break;
+                }
+                else
+                {
+                    previousOutput = output;
+                }
             }
             IsTrained = true;
             // Log the computed losses to file.
-            _logger.Log(_losses.AsEnumerable().Select((value, index) => (index, value)).ToList(), "MSE");
+            _logger.Log(_losses.AsEnumerable().Select((value, index) => (index, value)).ToList(), 
+                $"MSE with learning rate {_learningRate} and batch size {BatchSize}:");
+            if (i < epochs)
+            {
+                _logger.LogComment($"The training converges after {i} epochs.");
+            }
+            _logger.Dispose();
         }
     }
 }
