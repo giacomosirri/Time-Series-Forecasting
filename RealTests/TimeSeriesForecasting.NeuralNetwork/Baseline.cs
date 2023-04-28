@@ -13,13 +13,12 @@ namespace TimeSeriesForecasting.NeuralNetwork
         {
             _linear = Linear(inputObservations * inputFeatures, outputObservations * outputFeatures);
             RegisterComponents();
-            LogState("Initial parameters");
         }
 
         public override void LogState(string message)
         {
             var tl = new TensorLogger(_filePath);
-            _linear.state_dict().AsEnumerable().ToList().ForEach(state => tl.Log(state.Value, message));
+            tl.Log(_linear.state_dict().AsEnumerable().Select(pair => pair.Value).ToList(), message);
             tl.Dispose();
         }
 

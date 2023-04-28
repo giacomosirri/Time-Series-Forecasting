@@ -1,4 +1,5 @@
-﻿using TorchSharp;
+﻿using TimeSeriesForecasting.IO;
+using TorchSharp;
 using TorchSharp.Modules;
 using static TorchSharp.torch;
 using static TorchSharp.torch.optim;
@@ -8,13 +9,15 @@ namespace TimeSeriesForecasting.NeuralNetwork
     public class ModelTrainer : IModelTrainer
     {
         private const int BatchSize = 32;
+        private const string FilePath = "C:\\Users\\sirri\\Desktop\\Coding\\Tirocinio\\TorchSharp\\RealTests\\Logs\\loss.txt";
 
         private readonly NetworkModel _model;
         private readonly Optimizer _optimizer;
-        private readonly double _learningRate = 0.0000001;
+        private readonly double _learningRate = 0.000001;
         // Type of x (features), type of y (labels) --> type of the result.
         private readonly Loss<Tensor, Tensor, Tensor> _lossFunction;
         private readonly IList<float> _losses = new List<float>();
+        private readonly LossLogger _logger;
 
         public bool IsTrained { get; private set; } = false;
         public float CurrentLoss
@@ -33,11 +36,12 @@ namespace TimeSeriesForecasting.NeuralNetwork
             } 
         }
 
-        public ModelTrainer(NetworkModel model) 
+        public ModelTrainer(NetworkModel model)
         {
             _model = model;
             _optimizer = new SGD(_model.parameters(), _learningRate);
             _lossFunction = new MSELoss();
+            _logger = new LossLogger(FilePath);
         }
 
         public void Fit(Tensor x, Tensor y, int epochs)
@@ -61,15 +65,8 @@ namespace TimeSeriesForecasting.NeuralNetwork
                 _losses.Add(output!.item<float>());
             }
             IsTrained = true;
-            LogLosses();
-        }
-
-        private void LogLosses()
-        {
-            _losses.AsEnumerable()
-                   .Select((value, index) => (index, value))
-                   .ToList()
-                   .ForEach(tuple => Console.WriteLine($"Epoch {tuple.index}: MSE = {tuple.value}"));
+            // Log the computed losses to file.
+            _logger.Log(_losses.AsEnumerable().Select((value, index) => (index, value)).ToList(), "MSE");
         }
     }
 }
