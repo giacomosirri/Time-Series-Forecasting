@@ -12,18 +12,20 @@
 
         public void Log(T value, string message) 
         {
-            using StreamWriter writer = _stream;
-            writer.WriteLine(message);
-            writer.WriteLine(ValueRepresentation(value));
+            _stream.WriteLine(message);
+            _stream.WriteLine(ValueRepresentation(value));
         }
 
         public void Log(IList<T> list, string message)
         {
-            using StreamWriter writer = _stream;
-            writer.WriteLine(message);
-            list.AsEnumerable().ToList().ForEach(value => writer.WriteLine(ValueRepresentation(value)));
+            _stream.WriteLine(message);
+            list.AsEnumerable().ToList().ForEach(value => _stream.WriteLine(ValueRepresentation(value)));
         }
 
+        public void LogComment(string comment) => _stream.WriteLine(comment);
+
         protected abstract string ValueRepresentation(T value);
+
+        public void Dispose() => _stream.Close();
     }
 }

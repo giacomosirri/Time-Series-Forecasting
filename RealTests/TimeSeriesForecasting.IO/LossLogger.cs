@@ -4,6 +4,7 @@
     {
         public LossLogger(string filePath) : base(filePath) { }
 
-        protected override string ValueRepresentation((int index, float value) value) => $"Epoch {value.index,-2}\t: {value.value:F4}";
+        protected override string ValueRepresentation((int index, float value) value) => 
+            $"After {value.index,-2} epochs\t: {value.value:F4}";
     }
 }
