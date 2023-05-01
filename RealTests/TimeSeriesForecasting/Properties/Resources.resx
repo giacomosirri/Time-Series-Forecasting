@@ -118,12 +118,12 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <data name="LogDirectoryPath" xml:space="preserve">
-    <value>C:\\Users\\sirri\\Desktop\\Coding\\Tirocinio\\TorchSharp\\RealTests\\Logs\\"</value>
+    <value>C:\\Users\\sirri\\Desktop\\Coding\\Tirocinio\\TorchSharp\\RealTests\\Logs\\</value>
   </data>
   <data name="NumericDatasetParquetFilePath" xml:space="preserve">
-    <value>"C:\\Users\\sirri\\Desktop\\Coding\\Tirocinio\\TorchSharp\\datasets\\timeseries-2009-2016-no-datetime.parquet"</value>
+    <value>C:\\Users\\sirri\\Desktop\\Coding\\Tirocinio\\TorchSharp\\datasets\\timeseries-2009-2016-no-datetime.parquet</value>
   </data>
   <data name="TimestampDatasetParquetFilePath" xml:space="preserve">
-    <value>"C:\\Users\\sirri\\Desktop\\Coding\\Tirocinio\\TorchSharp\\datasets\\timeseries-2009-2016-datetime.parquet"</value>
+    <value>C:\\Users\\sirri\\Desktop\\Coding\\Tirocinio\\TorchSharp\\datasets\\timeseries-2009-2016-datetime.parquet</value>
   </data>
 </root>

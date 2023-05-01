@@ -61,7 +61,7 @@ namespace TimeSeriesForecasting.Properties {
         }
         
         /// <summary>
-        ///   Cerca una stringa localizzata simile a C:\\Users\\sirri\\Desktop\\Coding\\Tirocinio\\TorchSharp\\RealTests\\Logs\\&quot;.
+        ///   Cerca una stringa localizzata simile a C:\\Users\\sirri\\Desktop\\Coding\\Tirocinio\\TorchSharp\\RealTests\\Logs\\.
         /// </summary>
         internal static string LogDirectoryPath {
             get {
@@ -70,7 +70,7 @@ namespace TimeSeriesForecasting.Properties {
         }
         
         /// <summary>
-        ///   Cerca una stringa localizzata simile a &quot;C:\\Users\\sirri\\Desktop\\Coding\\Tirocinio\\TorchSharp\\datasets\\timeseries-2009-2016-no-datetime.parquet&quot;.
+        ///   Cerca una stringa localizzata simile a C:\\Users\\sirri\\Desktop\\Coding\\Tirocinio\\TorchSharp\\datasets\\timeseries-2009-2016-no-datetime.parquet.
         /// </summary>
         internal static string NumericDatasetParquetFilePath {
             get {
@@ -79,7 +79,7 @@ namespace TimeSeriesForecasting.Properties {
         }
         
         /// <summary>
-        ///   Cerca una stringa localizzata simile a &quot;C:\\Users\\sirri\\Desktop\\Coding\\Tirocinio\\TorchSharp\\datasets\\timeseries-2009-2016-datetime.parquet&quot;.
+        ///   Cerca una stringa localizzata simile a C:\\Users\\sirri\\Desktop\\Coding\\Tirocinio\\TorchSharp\\datasets\\timeseries-2009-2016-datetime.parquet.
         /// </summary>
         internal static string TimestampDatasetParquetFilePath {
             get {
