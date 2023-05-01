@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "TimeSeriesForecasting": {
+      "commandName": "Project",
+      "commandLineArgs": "6 1 1 \"Standardization\" \"Baseline\" \"T (degC)\""
+    }
+  }
+}
