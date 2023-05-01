@@ -5,7 +5,7 @@
   "label columns": [ "T (degC)" ],
   /* 
   * The field below is optional. If it is not present, the data is not normalized.
-  * The value can be either "Standardization" or "Min-Max-Normalization".
+  * The value can be either "Standardization" or "Min_Max_Normalization".
   */
   "normalization method": "Standardization",
   /* 

@@ -26,11 +26,11 @@ namespace TimeSeriesForecasting
             string resourceName = "TimeSeriesForecasting.Properties.configurationSettings.json";
             using var reader = new StreamReader(Assembly.GetExecutingAssembly().GetManifestResourceStream(resourceName)!);
             JObject jsonObject = JsonConvert.DeserializeObject<JObject>(reader.ReadToEnd())!;
-            LabelColumns = jsonObject["label columns"]!.Value<string[]>()!;
+            LabelColumns = jsonObject["label columns"]!.ToObject<string[]>()!;
             NormalizationMethod = jsonObject["normalization method"]?.Value<string>() ?? "None";
             FirstValidDate = jsonObject["first valid date"]?.Value<DateTime>();
             LastValidDate = jsonObject["last valid date"]?.Value<DateTime>();
-            int[] splits = jsonObject["training validation test split"]?.Value<int[]>()!;
+            int[] splits = jsonObject["training validation test split"]?.ToObject<int[]>()!;
             if ((splits != null) && (splits[0] + splits[1] + splits[2] == 100))
             {
                 DatasetSplitRatio = (splits[0], splits[1], splits[2]);
@@ -58,6 +58,7 @@ namespace TimeSeriesForecasting
 
         static void Main(string[] args)
         {
+            var config = new Configuration();
             DateTime startTime = DateTime.Now;
             Console.WriteLine($"Program is running...    {startTime}\n");
 
@@ -67,8 +68,13 @@ namespace TimeSeriesForecasting
 
             Console.Write("Initializing the preprocessor...");
             // Date range: from 01/01/2012 to 31/12/2013
-            var dpp = new DataPreprocessor(records, Tuple.Create(70,20,10), NormalizationMethod.STANDARDIZATION, 
-                                            Tuple.Create<DateTime?, DateTime?>(new DateTime(2012, 1, 1), new DateTime(2013, 12, 31)));
+            // TODO: Create a DataPreprocessor builder.
+            var dpp = new DataPreprocessor(
+                        records,
+                        config.DatasetSplitRatio, 
+                        (NormalizationMethod)Enum.Parse(typeof(NormalizationMethod), config.NormalizationMethod.ToUpper()), 
+                        Tuple.Create(config.FirstValidDate, config.LastValidDate)
+            );
             Console.WriteLine(Completion);
 
             Console.Write("Getting the processed training, validation and test sets...");
@@ -77,7 +83,7 @@ namespace TimeSeriesForecasting
             DataTable testSet = dpp.GetTestSet();
             Console.WriteLine(Completion);
 
-            var winGen = new WindowGenerator(6, 1, 1, new string[] { "T (degC)" }); 
+            var winGen = new WindowGenerator(config.InputWidth, config.OutputWidth, config.Offset, config.LabelColumns); 
             Console.Write("Generating windows (batches) of data from the training set...");
             (Tensor inputTensor, Tensor outputTensor) = winGen.GenerateWindows<double>(trainingSet);
             Console.WriteLine(Completion);
@@ -92,13 +98,16 @@ namespace TimeSeriesForecasting
             labelLogger.Log(outputTensor, "Training set values to predict: Temperature (°C)");
             Console.WriteLine(Completion);
 #endif
-            var simpleModel = new Baseline(inputTensor.shape[1], inputTensor.shape[2], 
-                                            outputTensor.shape[1], outputTensor.shape[2]);
-            IModelTrainer trainer = new ModelTrainer(simpleModel);
-            Console.Write("Training the baseline model...");
-            trainer.Fit(inputTensor, outputTensor, epochs: 50);
-            Console.WriteLine(Completion);
-            Console.WriteLine($"MSE: {trainer.CurrentLoss:F4}\n");
+            if (config.ModelName == nameof(Baseline))
+            {
+                var simpleModel = new Baseline(inputTensor.shape[1], inputTensor.shape[2],
+                                outputTensor.shape[1], outputTensor.shape[2]);
+                IModelTrainer trainer = new ModelTrainer(simpleModel);
+                Console.Write("Training the baseline model...");
+                trainer.Fit(inputTensor, outputTensor, epochs: 50);
+                Console.WriteLine(Completion);
+                Console.WriteLine($"MSE: {trainer.CurrentLoss:F4}\n");
+            }
 
             DateTime endTime = DateTime.Now;
             Console.WriteLine($"Program is completed...    {endTime}\n");

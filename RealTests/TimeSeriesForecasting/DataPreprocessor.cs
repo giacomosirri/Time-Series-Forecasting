@@ -79,9 +79,7 @@ namespace TimeSeriesForecasting
         /// </summary>
         /// <param name="records">A list of <see cref="Record"/>s that represent phenomenon observations.</param>
         public DataPreprocessor(IList<Record> records) : 
-            this(records, new Tuple<int, int, int>(70, 20, 10), NormalizationMethod.NONE, Tuple.Create<DateTime?, DateTime?>(null, null)) 
-        {
-        }
+            this(records, (70, 20, 10), NormalizationMethod.NONE, Tuple.Create<DateTime?, DateTime?>(null, null)) { }
 
         /// <summary>
         /// Creates a new instance of DataPreprocessor, with custom parameters to suit the needs of the client.
@@ -94,12 +92,12 @@ namespace TimeSeriesForecasting
         /// <param name="range">A <see cref="Tuple"/> that contains the first and last date to be included in the
         /// processed data. Can be useful to speed up processing if the dataset contains dozens of thousands of 
         /// observations or even more.</param>
-        public DataPreprocessor(IList<Record> records, Tuple<int, int, int> splitter,
+        public DataPreprocessor(IList<Record> records, (int training, int validation, int test) splits,
                                 NormalizationMethod normalization, Tuple<DateTime?, DateTime?> range)
         {
-            TrainingSetPercentage = splitter.Item1;
-            ValidationSetPercentage = splitter.Item2;
-            TestSetPercentage = splitter.Item3;
+            TrainingSetPercentage = splits.training;
+            ValidationSetPercentage = splits.validation;
+            TestSetPercentage = splits.test;
             // Remove duplicate elements according to the primary key (timestamp).
             var uniqueRecords = MoreEnumerable.DistinctBy(records, r => r.TimeStamp).ToList();
             // Store data in table format.
