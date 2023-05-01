@@ -8,10 +8,10 @@ namespace TimeSeriesForecasting
 {
     internal class Program
     {
-        private const string DatasetDir = "C:\\Users\\sirri\\Desktop\\Coding\\Tirocinio\\TorchSharp\\datasets\\";
-        private const string ValuesFile = "timeseries-2009-2016-no-datetime.parquet";
-        private const string DatesFile = "timeseries-2009-2016-datetime.parquet";
-        private const string LogDir = "C:\\Users\\sirri\\Desktop\\Coding\\Tirocinio\\TorchSharp\\RealTests\\Logs\\";
+        private static readonly string ValuesFile = Properties.Resources.NumericDatasetParquetFilePath;
+        private static readonly string DatesFile = Properties.Resources.TimestampDatasetParquetFilePath;
+        private static readonly string LogDir = Properties.Resources.LogDirectoryPath;
+
         private const string LabelFile = "labels-training-set-timeseries-2009-2016.txt";
         private const string FeatureFile = "features-training-set-timeseries-2009-2016.txt";
         private const string Completion = "  COMPLETE\n";
@@ -22,7 +22,7 @@ namespace TimeSeriesForecasting
             Console.WriteLine($"Program is running...    {startTime}\n");
 
             Console.Write("Loading data from .parquet file...");
-            var records = new ParquetDataLoader(DatasetDir + ValuesFile, DatasetDir + DatesFile).GetRecords();
+            var records = new ParquetDataLoader(ValuesFile, DatesFile).GetRecords();
             Console.WriteLine(Completion);
 
             Console.Write("Initializing the preprocessor...");
