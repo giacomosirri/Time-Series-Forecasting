@@ -1,0 +1,25 @@
+{
+  "label columns": [ "T (degC)" ],
+ /* 
+  * The field below is optional. If it is not present, the data is not normalized.
+  * The value can be either "Standardization" or "Min-Max-Normalization".
+  */
+  "normalization method": "Standardization",
+ /* 
+  * Use format yyyy-mm-dd
+  */
+  "first valid date": "2012-01-01",
+  "last valid date": "2013-12-31",
+ /*
+  * First value is training, second is validation and third is test. 
+  * If the numbers do not add up to 100, then the default 70,20,10 split is used.
+  */
+  "training validation test split": [ 70, 20, 10 ],
+  "input window width": 6,
+  "output window width": 1,
+  "offset between input and output": 1,
+ /*
+  * Only baseline currently exists.
+  */
+  "ANN model": "Baseline"
+}
