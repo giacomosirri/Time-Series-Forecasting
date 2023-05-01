@@ -1,5 +1,4 @@
-﻿using Apache.Arrow;
-using TimeSeriesForecasting.IO;
+﻿using TimeSeriesForecasting.IO;
 using TorchSharp;
 using TorchSharp.Modules;
 using static TorchSharp.torch;
@@ -9,13 +8,13 @@ namespace TimeSeriesForecasting.NeuralNetwork
 {
     public class ModelTrainer : IModelTrainer
     {
-        private const int BatchSize = 32;
+        private const int BatchSize = 128;
         private const double Arrest = 10e-5;
-        private const string FilePath = "C:\\Users\\sirri\\Desktop\\Coding\\Tirocinio\\TorchSharp\\RealTests\\Logs\\loss.txt";
+        private const string FilePath = "C:\\Users\\sirri\\Desktop\\Coding\\Tirocinio\\TorchSharp\\RealTests\\Logs\\loss1.txt";
 
         private readonly NetworkModel _model;
         private readonly Optimizer _optimizer;
-        private readonly double _learningRate = 10e-8;
+        private readonly double _learningRate = 10e-7;
         // Type of x (features), type of y (labels) --> type of the result.
         private readonly Loss<Tensor, Tensor, Tensor> _lossFunction;
         private readonly IList<float> _losses = new List<float>();

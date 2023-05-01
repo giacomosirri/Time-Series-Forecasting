@@ -16,13 +16,13 @@ namespace TimeSeriesForecasting
         /// <summary>
         /// The number of observations in each window.
         /// </summary>
-        public int WindowSize { get => InputWidth + Offset + LabelWidth; }
+        public int WindowSize { get => InputWidth + Offset + OutputWidth; }
 
         /// <summary>
         /// The number of observations in each label, i.e. a value that the deep learning model has to predict.
         /// For single-output models, this number is equal to 1. For multi-output models, this number is greater than 1.
         /// </summary>
-        public int LabelWidth { get; set; }
+        public int OutputWidth { get; set; }
 
         /// <summary>
         /// The number of observations in each input of the model.
@@ -46,17 +46,17 @@ namespace TimeSeriesForecasting
         /// Creates an instance of window generator.
         /// </summary>
         /// <param name="inputWidth"><see cref="InputWidth"/> value.</param>
-        /// <param name="labelWidth"><see cref="LabelWidth"/> value.</param>
+        /// <param name="outputWidth"><see cref="OutputWidth"/> value.</param>
         /// <param name="offset"><see cref="Offset"/> value.</param>
         /// <param name="labelColumns"><see cref="LabelColumns"/> value.</param>
         /// <exception cref="ArgumentException">If either input width, label width 
         /// or offset are non-positive numbers.</exception>
-        public WindowGenerator(int inputWidth, int labelWidth, int offset, string[] labelColumns)
+        public WindowGenerator(int inputWidth, int outputWidth, int offset, string[] labelColumns)
         {
-            if (inputWidth > 0 && labelWidth > 0 && offset > 0)
+            if (inputWidth > 0 && outputWidth > 0 && offset > 0)
             {
                 InputWidth = inputWidth;
-                LabelWidth = labelWidth;
+                OutputWidth = outputWidth;
                 Offset = offset;
                 LabelColumns = labelColumns;
             }
@@ -93,7 +93,7 @@ namespace TimeSeriesForecasting
                 T[][] label = table
                                 .AsEnumerable()
                                 .Skip(startIndex + InputWidth + Offset)
-                                .Take(LabelWidth)
+                                .Take(OutputWidth)
                                 .Select(dr => dr.ItemArray
                                     .Where((_, i) => LabelColumns.Contains(table.Columns[i].ColumnName))
                                     .Select(item => item != null ? (T)item : throw new ArgumentException(s_errorMessage))
@@ -129,7 +129,7 @@ namespace TimeSeriesForecasting
         /// <returns>A new <see cref="WindowGenerator"/> with the same parameters as the one this method is called on.</returns>
         public WindowGenerator Clone()
         {
-            return new WindowGenerator(InputWidth, LabelWidth, Offset, LabelColumns);
+            return new WindowGenerator(InputWidth, OutputWidth, Offset, LabelColumns);
         }
     }
 }

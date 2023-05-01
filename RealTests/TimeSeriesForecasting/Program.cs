@@ -37,11 +37,9 @@ namespace TimeSeriesForecasting
             DataTable testSet = dpp.GetTestSet();
             Console.WriteLine(Completion);
 
-            var winGen = new WindowGenerator(6, 1, 1, new string[] { "T (degC)" }); 
+            var winGen = new WindowGenerator(int.Parse(args[0]), int.Parse(args[1]), int.Parse(args[2]), new string[] { "T (degC)" }); 
             Console.Write("Generating windows (batches) of data from the training set...");
-            Tuple<Tensor, Tensor> tensors = winGen.GenerateWindows<double>(trainingSet);
-            var inputTensor = tensors.Item1;
-            var outputTensor = tensors.Item2;
+            (Tensor inputTensor, Tensor outputTensor) = winGen.GenerateWindows<double>(trainingSet);
             Console.WriteLine(Completion);
 #if TEST
             var featureLogger = new TensorLogger(LogDir + FeatureFile);
