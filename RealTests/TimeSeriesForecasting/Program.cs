@@ -13,8 +13,8 @@ namespace TimeSeriesForecasting
     {
         public string[] LabelColumns { get; private set; }
         public string NormalizationMethod { get; private set; }
-        public DateTime FirstValidDate { get; private set; }
-        public DateTime LastValidDate { get; private set; }
+        public DateTime? FirstValidDate { get; private set; }
+        public DateTime? LastValidDate { get; private set; }
         public (int training, int validation, int test) DatasetSplitRatio { get; private set; }
         public int InputWidth { get; private set; }
         public int OutputWidth { get; private set; }
@@ -28,10 +28,17 @@ namespace TimeSeriesForecasting
             JObject jsonObject = JsonConvert.DeserializeObject<JObject>(reader.ReadToEnd())!;
             LabelColumns = jsonObject["label columns"]!.Value<string[]>()!;
             NormalizationMethod = jsonObject["normalization method"]?.Value<string>() ?? "None";
-            FirstValidDate = jsonObject["first valid date"]!.Value<DateTime>();
-            LastValidDate = jsonObject["last valid date"]!.Value<DateTime>();
-            int[] splits = jsonObject["training validation test split"]!.Value<int[]>()!;
-            DatasetSplitRatio = (splits[0], splits[1], splits[2]);
+            FirstValidDate = jsonObject["first valid date"]?.Value<DateTime>();
+            LastValidDate = jsonObject["last valid date"]?.Value<DateTime>();
+            int[] splits = jsonObject["training validation test split"]?.Value<int[]>()!;
+            if ((splits != null) && (splits[0] + splits[1] + splits[2] == 100))
+            {
+                DatasetSplitRatio = (splits[0], splits[1], splits[2]);
+            }
+            else
+            {
+                DatasetSplitRatio = (70, 20, 10);
+            }
             InputWidth = jsonObject["input window width"]!.Value<int>();
             OutputWidth = jsonObject["output window width"]!.Value<int>();
             Offset = jsonObject["offset between input and output"]!.Value<int>();
