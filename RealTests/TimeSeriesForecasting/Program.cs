@@ -3,9 +3,42 @@ using static TimeSeriesForecasting.DataPreprocessor;
 using TimeSeriesForecasting.IO;
 using TimeSeriesForecasting.NeuralNetwork;
 using static TorchSharp.torch;
+using System.Reflection;
+using Newtonsoft.Json.Linq;
+using Newtonsoft.Json;
 
 namespace TimeSeriesForecasting
 {
+    internal class Configuration
+    {
+        public string[] LabelColumns { get; private set; }
+        public string NormalizationMethod { get; private set; }
+        public DateTime FirstValidDate { get; private set; }
+        public DateTime LastValidDate { get; private set; }
+        public (int training, int validation, int test) DatasetSplitRatio { get; private set; }
+        public int InputWidth { get; private set; }
+        public int OutputWidth { get; private set; }
+        public int Offset { get; private set; }
+        public string ModelName { get; private set; }
+
+        public Configuration() 
+        {
+            string resourceName = "TimeSeriesForecasting.Properties.configurationSettings.json";
+            using var reader = new StreamReader(Assembly.GetExecutingAssembly().GetManifestResourceStream(resourceName)!);
+            JObject jsonObject = JsonConvert.DeserializeObject<JObject>(reader.ReadToEnd())!;
+            LabelColumns = jsonObject["label columns"]!.Value<string[]>()!;
+            NormalizationMethod = jsonObject["normalization method"]?.Value<string>() ?? "None";
+            FirstValidDate = jsonObject["first valid date"]!.Value<DateTime>();
+            LastValidDate = jsonObject["last valid date"]!.Value<DateTime>();
+            int[] splits = jsonObject["training validation test split"]!.Value<int[]>()!;
+            DatasetSplitRatio = (splits[0], splits[1], splits[2]);
+            InputWidth = jsonObject["input window width"]!.Value<int>();
+            OutputWidth = jsonObject["output window width"]!.Value<int>();
+            Offset = jsonObject["offset between input and output"]!.Value<int>();
+            ModelName = jsonObject["ANN model"]!.Value<string>()!;
+        }
+    }
+
     internal class Program
     {
         private static readonly string ValuesFile = Properties.Resources.NumericDatasetParquetFilePath;

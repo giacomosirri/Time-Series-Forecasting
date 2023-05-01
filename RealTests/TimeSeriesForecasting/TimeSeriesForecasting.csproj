@@ -14,7 +14,16 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" />
 
   <ItemGroup>
+    <None Remove="Properties\configurationSettings.json" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="Properties\configurationSettings.json" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="morelinq" Version="3.4.2" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
     <PackageReference Include="TorchSharp" Version="0.99.4" />
   </ItemGroup>
 
