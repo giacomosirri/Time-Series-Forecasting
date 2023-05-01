@@ -183,7 +183,7 @@ namespace TimeSeriesForecasting
             // Processed data uses only hourly values.
             DataTable processedData = _rawData.AsEnumerable().Where(r => ((DateTime?)r.ItemArray[0])?.Minute == 0).CopyToDataTable();
             // Feature engineering, performed only if not testing.
-#if DEBUG
+#if !TEST
             processedData.Columns.Add("wx (m/s)", typeof(double));
             processedData.Columns.Add("wy (m/s)", typeof(double));
             processedData.Columns.Add("max. wx (m/s)", typeof(double));

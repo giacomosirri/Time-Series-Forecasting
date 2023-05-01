@@ -33,8 +33,8 @@ namespace TimeSeriesForecasting
 
             Console.Write("Getting the processed training, validation and test sets...");
             DataTable trainingSet = dpp.GetTrainingSet();
-            //DataTable validationSet = dpp.GetValidationSet();
-            //DataTable testSet = dpp.GetTestSet();
+            DataTable validationSet = dpp.GetValidationSet();
+            DataTable testSet = dpp.GetTestSet();
             Console.WriteLine(Completion);
 
             var winGen = new WindowGenerator(6, 1, 1, new string[] { "T (degC)" }); 
@@ -43,7 +43,7 @@ namespace TimeSeriesForecasting
             var inputTensor = tensors.Item1;
             var outputTensor = tensors.Item2;
             Console.WriteLine(Completion);
-
+#if TEST
             var featureLogger = new TensorLogger(LogDir + FeatureFile);
             Console.Write("Logging training set features on file...");
             featureLogger.Log(inputTensor, "Training set features");
@@ -53,7 +53,7 @@ namespace TimeSeriesForecasting
             Console.Write("Logging training set labels on file...");
             labelLogger.Log(outputTensor, "Training set values to predict: Temperature (°C)");
             Console.WriteLine(Completion);
-
+#endif
             var simpleModel = new Baseline(inputTensor.shape[1], inputTensor.shape[2], 
                                             outputTensor.shape[1], outputTensor.shape[2]);
             IModelTrainer trainer = new ModelTrainer(simpleModel);
