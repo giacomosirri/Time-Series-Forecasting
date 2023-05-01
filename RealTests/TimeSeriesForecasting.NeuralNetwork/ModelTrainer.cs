@@ -8,6 +8,7 @@ namespace TimeSeriesForecasting.NeuralNetwork
 {
     public class ModelTrainer : IModelTrainer
     {
+        private const int MaxEpochs = 250;
         private const int BatchSize = 128;
         private const double Arrest = 10e-5;
         private const string FilePath = "C:\\Users\\sirri\\Desktop\\Coding\\Tirocinio\\TorchSharp\\RealTests\\Logs\\loss1.txt";
@@ -45,13 +46,18 @@ namespace TimeSeriesForecasting.NeuralNetwork
             _logger = new LossLogger(FilePath);
         }
 
-        public void Fit(Tensor x, Tensor y, int epochs)
+        public void TuneHyperparameters(Tensor x, Tensor y)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void Fit(Tensor x, Tensor y)
         {
             int i = 0;
             Tensor[] batched_x = x.split(BatchSize);
             Tensor[] batched_y = y.split(BatchSize);
             Tensor previousOutput = tensor(float.MaxValue);
-            for (; i < epochs; i++)
+            for (; i < MaxEpochs; i++)
             {
                 Tensor output = empty(1);
                 for (int j = 0; j < batched_x.Length; j++)
@@ -78,11 +84,21 @@ namespace TimeSeriesForecasting.NeuralNetwork
             // Log the computed losses to file.
             _logger.Log(_losses.AsEnumerable().Select((value, index) => (index, value)).ToList(), 
                 $"MSE with learning rate {_learningRate} and batch size {BatchSize}:");
-            if (i < epochs)
+            if (i < MaxEpochs)
             {
                 _logger.LogComment($"The training converges after {i} epochs.");
             }
             _logger.Dispose();
+        }
+
+        public IList<double> TestModelPerformance(Tensor x, Tensor y, IList<string> metrics)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Tensor Predict(Tensor x)
+        {
+            throw new NotImplementedException();
         }
     }
 }

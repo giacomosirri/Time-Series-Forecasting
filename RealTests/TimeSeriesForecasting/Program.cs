@@ -84,8 +84,10 @@ namespace TimeSeriesForecasting
             Console.WriteLine(Completion);
 
             var winGen = new WindowGenerator(config.InputWidth, config.OutputWidth, config.Offset, config.LabelColumns); 
-            Console.Write("Generating windows (batches) of data from the training set...");
-            (Tensor inputTensor, Tensor outputTensor) = winGen.GenerateWindows<double>(trainingSet);
+            Console.Write("Generating windows (batches) of data from the training, validation and test sets...");
+            (Tensor trainingInputTensor, Tensor trainingOutputTensor) = winGen.GenerateWindows<double>(trainingSet);
+            (Tensor validationInputTensor, Tensor validationOutputTensor) = winGen.GenerateWindows<double>(validationSet);
+            (Tensor testInputTensor, Tensor testOutputTensor) = winGen.GenerateWindows<double>(testSet);
             Console.WriteLine(Completion);
 #if TEST
             var featureLogger = new TensorLogger(LogDir + FeatureFile);
@@ -100,11 +102,12 @@ namespace TimeSeriesForecasting
 #endif
             if (config.ModelName == nameof(Baseline))
             {
-                var simpleModel = new Baseline(inputTensor.shape[1], inputTensor.shape[2],
-                                outputTensor.shape[1], outputTensor.shape[2]);
+                var simpleModel = new Baseline(trainingInputTensor.shape[1], trainingInputTensor.shape[2],
+                                trainingOutputTensor.shape[1], trainingOutputTensor.shape[2]);
                 IModelTrainer trainer = new ModelTrainer(simpleModel);
                 Console.Write("Training the baseline model...");
-                trainer.Fit(inputTensor, outputTensor, epochs: 50);
+                trainer.TuneHyperparameters(validationInputTensor, validationOutputTensor);
+                trainer.Fit(trainingInputTensor, trainingOutputTensor);
                 Console.WriteLine(Completion);
                 Console.WriteLine($"MSE: {trainer.CurrentLoss:F4}\n");
             }
