@@ -1,8 +1,8 @@
-﻿using TimeSeriesForecasting.IO;
+﻿using System.Diagnostics;
+using TimeSeriesForecasting.IO;
 using TorchSharp;
 using TorchSharp.Modules;
 using static TorchSharp.torch;
-using static TorchSharp.torch.optim;
 
 namespace TimeSeriesForecasting.NeuralNetwork
 {
@@ -16,7 +16,7 @@ namespace TimeSeriesForecasting.NeuralNetwork
          * than that value.
          */
         private const int MaxEpochs = 250;
-        private const double Arrest = 10e-5;
+        private const double Arrest = 1e-4;
 
         private readonly NetworkModel _model;       
         // Type of x (features), type of y (labels) --> type of the result.
@@ -53,7 +53,7 @@ namespace TimeSeriesForecasting.NeuralNetwork
 
         public void TuneHyperparameters(Tensor x, Tensor y)
         {
-            _learningRate = 1e-6;
+            _learningRate = 1e-5;
             _batchSize = 64;
         }
 
@@ -93,14 +93,27 @@ namespace TimeSeriesForecasting.NeuralNetwork
                 $"MSE with learning rate {_learningRate} and batch size {_batchSize}:");
             if (i < MaxEpochs)
             {
-                _logger.LogComment($"The training converges after {i} epochs.");
+                _logger.LogComment($"The training converges after {i+1} epochs.");
             }
             _logger.Dispose();
         }
 
-        public IList<double> TestModelPerformance(Tensor x, Tensor y, IList<string> metrics)
+        public IDictionary<string, double> EvaluateAccuracy(Tensor x, Tensor y, IList<string> metrics)
         {
-            throw new NotImplementedException();
+            var dict = new Dictionary<string, double>();
+            Tensor[] batched_x = x.split(_batchSize);
+            Tensor[] batched_y = y.split(_batchSize);
+            double sum = 0;
+            for (int i = 0; i < batched_x.Length; i++)
+            {
+                // Sum of the squares of the error.
+                Tensor error = _model.forward(batched_x[i]) - batched_y[i].flatten(start_dim: 1);
+                sum += error.square().sum().item<float>();
+            }
+            // RSME (Root Mean Squared Error) - divide the sum of the squares for the number of elements.
+            double rmse = Math.Sqrt(sum / x.shape[0]);
+            dict.Add("rmse", rmse);
+            return dict;
         }
 
         public Tensor Predict(Tensor x)

@@ -8,7 +8,7 @@ namespace TimeSeriesForecasting.NeuralNetwork
         public float CurrentLoss { get; }
         public void TuneHyperparameters(Tensor x, Tensor y);
         public void Fit(Tensor x, Tensor y);
-        public IList<double> TestModelPerformance(Tensor x, Tensor y, IList<string> metrics);
+        public IDictionary<string, double> EvaluateAccuracy(Tensor x, Tensor y, IList<string> metrics);
         public Tensor Predict(Tensor x);
     }
 }
