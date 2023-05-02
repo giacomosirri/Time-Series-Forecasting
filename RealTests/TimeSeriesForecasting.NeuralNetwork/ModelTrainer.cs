@@ -1,5 +1,4 @@
-﻿using System.Diagnostics;
-using TimeSeriesForecasting.IO;
+﻿using TimeSeriesForecasting.IO;
 using TorchSharp;
 using TorchSharp.Modules;
 using static TorchSharp.torch;
@@ -98,9 +97,9 @@ namespace TimeSeriesForecasting.NeuralNetwork
             _logger.Dispose();
         }
 
-        public IDictionary<string, double> EvaluateAccuracy(Tensor x, Tensor y, IList<string> metrics)
+        public IDictionary<AccuracyMetric, double> EvaluateAccuracy(Tensor x, Tensor y, IList<AccuracyMetric> metrics)
         {
-            var dict = new Dictionary<string, double>();
+            var dict = new Dictionary<AccuracyMetric, double>();
             Tensor[] batched_x = x.split(_batchSize);
             Tensor[] batched_y = y.split(_batchSize);
             double sum = 0;
@@ -112,7 +111,7 @@ namespace TimeSeriesForecasting.NeuralNetwork
             }
             // RSME (Root Mean Squared Error) - divide the sum of the squares for the number of elements.
             double rmse = Math.Sqrt(sum / x.shape[0]);
-            dict.Add("rmse", rmse);
+            dict.Add(AccuracyMetric.RMSE, rmse);
             return dict;
         }
 

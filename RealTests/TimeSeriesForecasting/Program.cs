@@ -1,11 +1,12 @@
 ﻿using System.Data;
-using static TimeSeriesForecasting.DataPreprocessor;
 using TimeSeriesForecasting.IO;
 using TimeSeriesForecasting.NeuralNetwork;
-using static TorchSharp.torch;
 using System.Reflection;
-using Newtonsoft.Json.Linq;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
+using MoreLinq;
+using static TimeSeriesForecasting.DataPreprocessor;
+using static TorchSharp.torch;
 
 namespace TimeSeriesForecasting
 {
@@ -110,14 +111,17 @@ namespace TimeSeriesForecasting
                 trainer.TuneHyperparameters(validationInputTensor, validationOutputTensor);
                 Console.WriteLine(Completion);
 
-                Console.WriteLine("Training the model...");
+                Console.Write("Training the model...");
                 trainer.Fit(trainingInputTensor, trainingOutputTensor);
                 Console.WriteLine(Completion);
                 Console.WriteLine($"MSE: {trainer.CurrentLoss:F4}\n");
 
-                Console.WriteLine("Assessing model performance on the test set...");
-                Console.WriteLine(string.Join(",", trainer.TestModelPerformance(testInputTensor, testOutputTensor, new List<string> { "rmse" })));
+                Console.Write("Assessing model performance on the test set...");
+                IDictionary<AccuracyMetric, double> metrics = trainer.EvaluateAccuracy(testInputTensor, testOutputTensor,
+                    new List<AccuracyMetric>() { AccuracyMetric.RMSE, AccuracyMetric.MAPE, AccuracyMetric.R2 });
                 Console.WriteLine(Completion);
+                metrics.ForEach(metric => Console.WriteLine($"{metric.Key}: {metric.Value}"));
+                Console.WriteLine();
             }
 
             DateTime endTime = DateTime.Now;
