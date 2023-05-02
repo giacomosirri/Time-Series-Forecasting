@@ -101,9 +101,9 @@ namespace TimeSeriesForecasting
             labelLogger.Log(outputTensor, "Training set values to predict: Temperature (°C)");
             Console.WriteLine(Completion);
 #endif
-            if (config.ModelName == nameof(Baseline))
+            if (config.ModelName == "RNN")
             {
-                var simpleModel = new Baseline(trainingInputTensor.shape[1], trainingInputTensor.shape[2],
+                var simpleModel = new RecurrentNeuralNetwork(trainingInputTensor.shape[1], trainingInputTensor.shape[2],
                                 trainingOutputTensor.shape[1], trainingOutputTensor.shape[2]);
                 IModelTrainer trainer = new ModelTrainer(simpleModel, LogDir + LossFile);
                 Console.Write("Training the baseline model...");
