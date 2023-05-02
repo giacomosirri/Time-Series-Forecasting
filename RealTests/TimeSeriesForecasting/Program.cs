@@ -103,14 +103,21 @@ namespace TimeSeriesForecasting
 #endif
             if (config.ModelName == "RNN")
             {
-                var simpleModel = new RecurrentNeuralNetwork(trainingInputTensor.shape[1], trainingInputTensor.shape[2],
-                                trainingOutputTensor.shape[1], trainingOutputTensor.shape[2]);
+                var simpleModel = new RecurrentNeuralNetwork(trainingInputTensor.shape[2], trainingOutputTensor.shape[1], 
+                    trainingOutputTensor.shape[2], layers: 4);
                 IModelTrainer trainer = new ModelTrainer(simpleModel, LogDir + LossFile);
-                Console.Write("Training the model...");
+                Console.Write("Tuning the hyperparameters of the model on the validation set...");
                 trainer.TuneHyperparameters(validationInputTensor, validationOutputTensor);
+                Console.WriteLine(Completion);
+
+                Console.WriteLine("Training the model...");
                 trainer.Fit(trainingInputTensor, trainingOutputTensor);
                 Console.WriteLine(Completion);
                 Console.WriteLine($"MSE: {trainer.CurrentLoss:F4}\n");
+
+                Console.WriteLine("Assessing model performance on the test set...");
+                Console.WriteLine(string.Join(",", trainer.TestModelPerformance(testInputTensor, testOutputTensor, new List<string> { "rmse" })));
+                Console.WriteLine(Completion);
             }
 
             DateTime endTime = DateTime.Now;

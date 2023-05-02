@@ -9,10 +9,9 @@ namespace TimeSeriesForecasting.NeuralNetwork
         private readonly RNN _rnn;
         private readonly SimpleNeuralNetwork _linear;
 
-        public RecurrentNeuralNetwork(long inputObservations, long inputFeatures, long outputObservations, long outputFeatures) 
-            : base(nameof(RNN))
+        public RecurrentNeuralNetwork(long inputFeatures, long outputObservations, long outputFeatures, long layers) : base(nameof(RNN))
         {
-            _rnn = RNN(inputFeatures, 64, numLayers: 1, batchFirst: true);
+            _rnn = RNN(inputFeatures, 64, numLayers: layers, batchFirst: true);
             _linear = new SimpleNeuralNetwork(64, 1, outputObservations, outputFeatures);
             RegisterComponents();
         }
