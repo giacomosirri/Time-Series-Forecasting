@@ -18,15 +18,14 @@ namespace TimeSeriesForecasting.NeuralNetwork
         private const int MaxEpochs = 250;
         private const double Arrest = 10e-5;
 
-        private readonly NetworkModel _model;
-        private readonly Optimizer _optimizer;        
+        private readonly NetworkModel _model;       
         // Type of x (features), type of y (labels) --> type of the result.
         private readonly Loss<Tensor, Tensor, Tensor> _lossFunction;
         private readonly IList<float> _losses = new List<float>();
         private readonly LossLogger _logger;
         // Hyperparameters
-        private double _learningRate = 10e-7;
-        private int _batchSize = 128;
+        private double _learningRate;
+        private int _batchSize;
 
         public bool IsTrained { get; private set; } = false;
         public float CurrentLoss
@@ -48,20 +47,20 @@ namespace TimeSeriesForecasting.NeuralNetwork
         public ModelTrainer(NetworkModel model, string filePath)
         {
             _model = model;
-            _optimizer = new SGD(_model.parameters(), _learningRate);
             _lossFunction = new MSELoss();
             _logger = new LossLogger(filePath);
         }
 
         public void TuneHyperparameters(Tensor x, Tensor y)
         {
-            _learningRate = 10e-7;
-            _batchSize = 128;
+            _learningRate = 1e-6;
+            _batchSize = 64;
         }
 
         public void Fit(Tensor x, Tensor y)
         {
             int i = 0;
+            var optimizer = new Adam(_model.parameters(), _learningRate);
             Tensor[] batched_x = x.split(_batchSize);
             Tensor[] batched_y = y.split(_batchSize);
             Tensor previousOutput = tensor(float.MaxValue);
@@ -76,7 +75,7 @@ namespace TimeSeriesForecasting.NeuralNetwork
                     _model.zero_grad();
                     // Do back-progatation, which computes all the gradients.
                     output.backward();
-                    _optimizer.step();
+                    optimizer.step();
                 }
                 _losses.Add(output.item<float>());
                 if (Math.Abs(previousOutput.item<float>() - output.item<float>()) < Arrest)
