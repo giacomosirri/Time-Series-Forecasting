@@ -10,6 +10,13 @@ namespace TimeSeriesForecasting.NeuralNetwork
     /// </summary>
     public abstract class NetworkModel : Module<Tensor, Tensor>
     {
-        protected NetworkModel(string name) : base(name) {}
+        protected NetworkModel(string name) : base(name)
+        {
+            /*
+             * When the seed is set manually, the weights of the models are always initialized to the same values.
+             * This allows comparisons between different executions with different hyperparameters.
+             */
+            manual_seed(42);
+        }
     }
 }

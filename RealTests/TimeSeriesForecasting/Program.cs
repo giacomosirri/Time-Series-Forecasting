@@ -106,7 +106,7 @@ namespace TimeSeriesForecasting
                 var simpleModel = new RecurrentNeuralNetwork(trainingInputTensor.shape[1], trainingInputTensor.shape[2],
                                 trainingOutputTensor.shape[1], trainingOutputTensor.shape[2]);
                 IModelTrainer trainer = new ModelTrainer(simpleModel, LogDir + LossFile);
-                Console.Write("Training the baseline model...");
+                Console.Write("Training the model...");
                 trainer.TuneHyperparameters(validationInputTensor, validationOutputTensor);
                 trainer.Fit(trainingInputTensor, trainingOutputTensor);
                 Console.WriteLine(Completion);
