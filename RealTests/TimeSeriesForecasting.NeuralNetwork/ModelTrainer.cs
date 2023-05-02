@@ -1,4 +1,5 @@
-﻿using TimeSeriesForecasting.IO;
+﻿using System.Reflection.PortableExecutable;
+using TimeSeriesForecasting.IO;
 using TorchSharp;
 using TorchSharp.Modules;
 using static TorchSharp.torch;
@@ -103,32 +104,25 @@ namespace TimeSeriesForecasting.NeuralNetwork
         {
             _model.eval();
             var dict = new Dictionary<AccuracyMetric, double>();
-            double mae = 0, mse = 0, r2 = 0;
+            double mae = 0, mse = 0, r2 = 0, mape = 0;
+            long observations = x.shape[0];
             Tensor[] batched_x = x.split(_batchSize);
             Tensor[] batched_y = y.split(_batchSize);
-            long inputs = x.shape[0];
-            for (int i = 0; i < batched_x.Length; i++)
+            int batches = batched_x.Length;
+            for (int i = 0; i < batches; i++)
             {
-                Tensor predictedOutput = _model.forward(batched_x[i]);
-                Tensor expectedOutput = batched_y[i].flatten(start_dim: 1);
-                // Compute the Mean Absolute Error over this batch.
-                mae += functional.l1_loss(predictedOutput, expectedOutput).item<float>();
-                // Compute the Mean Squared Error over this batch.
-                mse += functional.mse_loss(predictedOutput, expectedOutput).item<float>();
-                // Compute the mean of the expected outputs.
-                var expectedOutputMean = mean(expectedOutput);
-                // Compute the total sum of squares (TSS).
-                var tss = sum(pow(expectedOutput - expectedOutputMean, 2)).item<float>();
-                // Compute the residual sum of squares (RSS).
-                var rss = sum(pow(expectedOutput - predictedOutput, 2)).item<float>();
-                // Compute the R-squared over this batch.
-                r2 += 1 - rss / tss;
+                Tensor predictedOutput = _model.forward(batched_x[i]).squeeze();
+                Tensor expectedOutput = batched_y[i].flatten(start_dim: 1).squeeze();
+                Tensor error = predictedOutput - expectedOutput;
+                mae += error.abs().sum().item<float>();
+                mape += (error.abs() / expectedOutput.abs()).sum().item<float>();
+                mse += error.square().sum().item<float>();
             }
-            dict.Add(AccuracyMetric.MSE, mse / inputs);
-            dict.Add(AccuracyMetric.RMSE, Math.Sqrt(mse / inputs));
-            dict.Add(AccuracyMetric.MAE, mae / inputs);
-            dict.Add(AccuracyMetric.MAPE, mae / inputs / y.flatten(start_dim: 1).abs().mean().item<float>());
-            dict.Add(AccuracyMetric.R2, r2 / inputs);
+            dict.Add(AccuracyMetric.MSE, mse / observations);
+            dict.Add(AccuracyMetric.RMSE, Math.Sqrt(mse / observations));
+            dict.Add(AccuracyMetric.MAE, mae / observations);
+            dict.Add(AccuracyMetric.MAPE, 100 * (mae / observations) / y.flatten(start_dim: 1).sum().item<float>());
+            dict.Add(AccuracyMetric.R2, 0);
             return dict;
         }
 
