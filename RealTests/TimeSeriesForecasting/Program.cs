@@ -117,8 +117,7 @@ namespace TimeSeriesForecasting
                 Console.WriteLine($"MSE: {trainer.CurrentLoss:F4}\n");
 
                 Console.Write("Assessing model performance on the test set...");
-                IDictionary<AccuracyMetric, double> metrics = trainer.EvaluateAccuracy(testInputTensor, testOutputTensor,
-                    new List<AccuracyMetric>() { AccuracyMetric.RMSE, AccuracyMetric.MAPE, AccuracyMetric.R2 });
+                IDictionary<AccuracyMetric, double> metrics = trainer.EvaluateAccuracy(trainingInputTensor, trainingOutputTensor);
                 Console.WriteLine(Completion);
                 metrics.ForEach(metric => Console.WriteLine($"{metric.Key}: {metric.Value}"));
                 Console.WriteLine();

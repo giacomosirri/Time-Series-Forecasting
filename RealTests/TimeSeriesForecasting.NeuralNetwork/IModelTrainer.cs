@@ -23,7 +23,7 @@ namespace TimeSeriesForecasting.NeuralNetwork
         public float CurrentLoss { get; }
         public void TuneHyperparameters(Tensor x, Tensor y);
         public void Fit(Tensor x, Tensor y);
-        public IDictionary<AccuracyMetric, double> EvaluateAccuracy(Tensor x, Tensor y, IList<AccuracyMetric> metrics);
+        public IDictionary<AccuracyMetric, double> EvaluateAccuracy(Tensor x, Tensor y);
         public Tensor Predict(Tensor x);
     }
 }

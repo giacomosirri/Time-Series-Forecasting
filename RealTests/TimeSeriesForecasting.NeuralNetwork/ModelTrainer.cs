@@ -2,6 +2,7 @@
 using TorchSharp;
 using TorchSharp.Modules;
 using static TorchSharp.torch;
+using static TorchSharp.torch.nn;
 
 namespace TimeSeriesForecasting.NeuralNetwork
 {
@@ -58,11 +59,12 @@ namespace TimeSeriesForecasting.NeuralNetwork
 
         public void Fit(Tensor x, Tensor y)
         {
-            int i = 0;
+            _model.train();
             var optimizer = new Adam(_model.parameters(), _learningRate);
             Tensor[] batched_x = x.split(_batchSize);
             Tensor[] batched_y = y.split(_batchSize);
             Tensor previousOutput = tensor(float.MaxValue);
+            int i = 0;
             for (; i < MaxEpochs; i++)
             {
                 Tensor output = empty(1);
@@ -97,21 +99,36 @@ namespace TimeSeriesForecasting.NeuralNetwork
             _logger.Dispose();
         }
 
-        public IDictionary<AccuracyMetric, double> EvaluateAccuracy(Tensor x, Tensor y, IList<AccuracyMetric> metrics)
+        public IDictionary<AccuracyMetric, double> EvaluateAccuracy(Tensor x, Tensor y)
         {
+            _model.eval();
             var dict = new Dictionary<AccuracyMetric, double>();
+            double mae = 0, mse = 0, r2 = 0;
             Tensor[] batched_x = x.split(_batchSize);
             Tensor[] batched_y = y.split(_batchSize);
-            double sum = 0;
+            long inputs = x.shape[0];
             for (int i = 0; i < batched_x.Length; i++)
             {
-                // Sum of the squares of the error.
-                Tensor error = _model.forward(batched_x[i]) - batched_y[i].flatten(start_dim: 1);
-                sum += error.square().sum().item<float>();
+                Tensor predictedOutput = _model.forward(batched_x[i]);
+                Tensor expectedOutput = batched_y[i].flatten(start_dim: 1);
+                // Compute the Mean Absolute Error over this batch.
+                mae += functional.l1_loss(predictedOutput, expectedOutput).item<float>();
+                // Compute the Mean Squared Error over this batch.
+                mse += functional.mse_loss(predictedOutput, expectedOutput).item<float>();
+                // Compute the mean of the expected outputs.
+                var expectedOutputMean = mean(expectedOutput);
+                // Compute the total sum of squares (TSS).
+                var tss = sum(pow(expectedOutput - expectedOutputMean, 2)).item<float>();
+                // Compute the residual sum of squares (RSS).
+                var rss = sum(pow(expectedOutput - predictedOutput, 2)).item<float>();
+                // Compute the R-squared over this batch.
+                r2 += 1 - rss / tss;
             }
-            // RSME (Root Mean Squared Error) - divide the sum of the squares for the number of elements.
-            double rmse = Math.Sqrt(sum / x.shape[0]);
-            dict.Add(AccuracyMetric.RMSE, rmse);
+            dict.Add(AccuracyMetric.MSE, mse / inputs);
+            dict.Add(AccuracyMetric.RMSE, Math.Sqrt(mse / inputs));
+            dict.Add(AccuracyMetric.MAE, mae / inputs);
+            dict.Add(AccuracyMetric.MAPE, mae / inputs / y.flatten(start_dim: 1).abs().mean().item<float>());
+            dict.Add(AccuracyMetric.R2, r2 / inputs);
             return dict;
         }
 
