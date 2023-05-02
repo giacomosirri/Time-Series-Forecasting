@@ -106,7 +106,7 @@ namespace TimeSeriesForecasting
                                 trainingOutputTensor.shape[1], trainingOutputTensor.shape[2]);
                 IModelTrainer trainer = new ModelTrainer(simpleModel);
                 Console.Write("Training the baseline model...");
-                trainer.TuneHyperparameters(validationInputTensor, validationOutputTensor);
+                //trainer.TuneHyperparameters(validationInputTensor, validationOutputTensor);
                 trainer.Fit(trainingInputTensor, trainingOutputTensor);
                 Console.WriteLine(Completion);
                 Console.WriteLine($"MSE: {trainer.CurrentLoss:F4}\n");

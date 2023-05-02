@@ -8,6 +8,8 @@
         {
             FileStream fs = File.Exists(filePath) ? File.OpenWrite(filePath) : File.Create(filePath);
             _stream = new StreamWriter(fs);
+            _stream.BaseStream.SetLength(0);
+            _stream.Flush();
         }
 
         public void Log(T value, string message) 
