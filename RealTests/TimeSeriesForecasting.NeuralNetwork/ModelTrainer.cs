@@ -8,18 +8,25 @@ namespace TimeSeriesForecasting.NeuralNetwork
 {
     public class ModelTrainer : IModelTrainer
     {
+        /*
+         * MaxEpochs and Arrest values can be declared as const, because they are not hyperparameters.
+         * Their values are set so as not to affect how the model behaves. In particular, MaxEpochs is 
+         * large enough for a reasonably simple model to converge, and Arrest is so close to 0 that 
+         * the model can be considered stable when the loss difference between two iterations is smaller 
+         * than that value.
+         */
         private const int MaxEpochs = 250;
-        private const int BatchSize = 128;
         private const double Arrest = 10e-5;
-        private const string FilePath = "C:\\Users\\sirri\\Desktop\\Coding\\Tirocinio\\TorchSharp\\RealTests\\Logs\\loss1.txt";
 
         private readonly NetworkModel _model;
-        private readonly Optimizer _optimizer;
-        private readonly double _learningRate = 10e-7;
+        private readonly Optimizer _optimizer;        
         // Type of x (features), type of y (labels) --> type of the result.
         private readonly Loss<Tensor, Tensor, Tensor> _lossFunction;
         private readonly IList<float> _losses = new List<float>();
         private readonly LossLogger _logger;
+        // Hyperparameters
+        private double _learningRate = 10e-7;
+        private int _batchSize = 128;
 
         public bool IsTrained { get; private set; } = false;
         public float CurrentLoss
@@ -38,24 +45,25 @@ namespace TimeSeriesForecasting.NeuralNetwork
             } 
         }
 
-        public ModelTrainer(NetworkModel model)
+        public ModelTrainer(NetworkModel model, string filePath)
         {
             _model = model;
             _optimizer = new SGD(_model.parameters(), _learningRate);
             _lossFunction = new MSELoss();
-            _logger = new LossLogger(FilePath);
+            _logger = new LossLogger(filePath);
         }
 
         public void TuneHyperparameters(Tensor x, Tensor y)
         {
-            throw new NotImplementedException();
+            _learningRate = 10e-7;
+            _batchSize = 128;
         }
 
         public void Fit(Tensor x, Tensor y)
         {
             int i = 0;
-            Tensor[] batched_x = x.split(BatchSize);
-            Tensor[] batched_y = y.split(BatchSize);
+            Tensor[] batched_x = x.split(_batchSize);
+            Tensor[] batched_y = y.split(_batchSize);
             Tensor previousOutput = tensor(float.MaxValue);
             for (; i < MaxEpochs; i++)
             {
@@ -83,7 +91,7 @@ namespace TimeSeriesForecasting.NeuralNetwork
             IsTrained = true;
             // Log the computed losses to file.
             _logger.Log(_losses.AsEnumerable().Select((value, index) => (index, value)).ToList(), 
-                $"MSE with learning rate {_learningRate} and batch size {BatchSize}:");
+                $"MSE with learning rate {_learningRate} and batch size {_batchSize}:");
             if (i < MaxEpochs)
             {
                 _logger.LogComment($"The training converges after {i} epochs.");

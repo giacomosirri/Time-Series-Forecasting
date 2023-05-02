@@ -54,6 +54,7 @@ namespace TimeSeriesForecasting
 
         private const string LabelFile = "labels-training-set-timeseries-2009-2016.txt";
         private const string FeatureFile = "features-training-set-timeseries-2009-2016.txt";
+        private const string LossFile = "loss.txt";
         private const string Completion = "  COMPLETE\n";
 
         static void Main(string[] args)
@@ -104,9 +105,9 @@ namespace TimeSeriesForecasting
             {
                 var simpleModel = new Baseline(trainingInputTensor.shape[1], trainingInputTensor.shape[2],
                                 trainingOutputTensor.shape[1], trainingOutputTensor.shape[2]);
-                IModelTrainer trainer = new ModelTrainer(simpleModel);
+                IModelTrainer trainer = new ModelTrainer(simpleModel, LogDir + LossFile);
                 Console.Write("Training the baseline model...");
-                //trainer.TuneHyperparameters(validationInputTensor, validationOutputTensor);
+                trainer.TuneHyperparameters(validationInputTensor, validationOutputTensor);
                 trainer.Fit(trainingInputTensor, trainingOutputTensor);
                 Console.WriteLine(Completion);
                 Console.WriteLine($"MSE: {trainer.CurrentLoss:F4}\n");
