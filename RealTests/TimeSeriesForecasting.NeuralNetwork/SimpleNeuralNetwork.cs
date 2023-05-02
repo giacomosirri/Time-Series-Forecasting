@@ -4,11 +4,11 @@ using static TorchSharp.torch.nn;
 
 namespace TimeSeriesForecasting.NeuralNetwork
 {
-    public class Baseline : NetworkModel
+    public class SimpleNeuralNetwork : NetworkModel
     {
         private readonly Linear _linear;
 
-        public Baseline(long inputObservations, long inputFeatures, long outputObservations, long outputFeatures) : base(nameof(Baseline))
+        public SimpleNeuralNetwork(long inputObservations, long inputFeatures, long outputObservations, long outputFeatures) : base(nameof(SimpleNeuralNetwork))
         {
             _linear = Linear(inputObservations * inputFeatures, outputObservations * outputFeatures);
             RegisterComponents();
