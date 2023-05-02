@@ -102,26 +102,34 @@ namespace TimeSeriesForecasting
             labelLogger.Log(outputTensor, "Training set values to predict: Temperature (°C)");
             Console.WriteLine(Completion);
 #endif
+            NetworkModel? model = null;
             if (config.ModelName == "RNN")
             {
-                var simpleModel = new RecurrentNeuralNetwork(trainingInputTensor.shape[2], trainingOutputTensor.shape[1], 
+                model = new RecurrentNeuralNetwork(trainingInputTensor.shape[2], trainingOutputTensor.shape[1], 
                     trainingOutputTensor.shape[2], layers: 4);
-                IModelTrainer trainer = new ModelTrainer(simpleModel, LogDir + LossFile);
-                Console.Write("Tuning the hyperparameters of the model on the validation set...");
-                trainer.TuneHyperparameters(validationInputTensor, validationOutputTensor);
-                Console.WriteLine(Completion);
-
-                Console.Write("Training the model...");
-                trainer.Fit(trainingInputTensor, trainingOutputTensor);
-                Console.WriteLine(Completion);
-                Console.WriteLine($"MSE: {trainer.CurrentLoss:F4}\n");
-
-                Console.Write("Assessing model performance on the test set...");
-                IDictionary<AccuracyMetric, double> metrics = trainer.EvaluateAccuracy(trainingInputTensor, trainingOutputTensor);
-                Console.WriteLine(Completion);
-                metrics.ForEach(metric => Console.WriteLine($"{metric.Key}: {metric.Value}"));
-                Console.WriteLine();
             }
+            else if (config.ModelName == "Linear")
+            {
+                model = new SimpleNeuralNetwork(trainingInputTensor.shape[1], trainingInputTensor.shape[2],
+                    trainingOutputTensor.shape[1], trainingOutputTensor.shape[2]);
+            }
+            IModelTrainer trainer = new ModelTrainer(model!, LogDir + LossFile);
+            Console.Write("Tuning the hyperparameters of the model on the validation set...");
+            trainer.TuneHyperparameters(validationInputTensor, validationOutputTensor);
+            Console.WriteLine(Completion);
+
+            Console.Write("Training the model...");
+            trainer.Fit(trainingInputTensor, trainingOutputTensor);
+            Console.WriteLine(Completion);
+            Console.WriteLine($"MSE: {trainer.CurrentLoss:F4}\n");
+
+            /*
+            Console.Write("Assessing model performance on the test set...");
+            IDictionary<AccuracyMetric, double> metrics = trainer.EvaluateAccuracy(trainingInputTensor, trainingOutputTensor);
+            Console.WriteLine(Completion);
+            metrics.ForEach(metric => Console.WriteLine($"{metric.Key}: {metric.Value}"));
+            Console.WriteLine();
+            */
 
             DateTime endTime = DateTime.Now;
             Console.WriteLine($"Program is completed...    {endTime}\n");
