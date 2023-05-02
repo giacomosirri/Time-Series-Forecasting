@@ -1,11 +1,12 @@
-﻿using static TorchSharp.torch;
+﻿using TorchSharp.Modules;
+using static TorchSharp.torch;
 using static TorchSharp.torch.nn;
 
 namespace TimeSeriesForecasting.NeuralNetwork
 {
     public class Baseline : NetworkModel
     {
-        private readonly Module<Tensor, Tensor> _linear;
+        private readonly Linear _linear;
 
         public Baseline(long inputObservations, long inputFeatures, long outputObservations, long outputFeatures) : base(nameof(Baseline))
         {
