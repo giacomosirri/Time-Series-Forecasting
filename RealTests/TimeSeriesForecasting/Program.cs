@@ -123,13 +123,11 @@ namespace TimeSeriesForecasting
             Console.WriteLine(Completion);
             Console.WriteLine($"MSE: {trainer.CurrentLoss:F6}\n");
 
-            /*
             Console.Write("Assessing model performance on the test set...");
             IDictionary<AccuracyMetric, double> metrics = trainer.EvaluateAccuracy(trainingInputTensor, trainingOutputTensor);
             Console.WriteLine(Completion);
             metrics.ForEach(metric => Console.WriteLine($"{metric.Key}: {metric.Value}"));
             Console.WriteLine();
-            */
 
             DateTime endTime = DateTime.Now;
             Console.WriteLine($"Program is completed...    {endTime}\n");

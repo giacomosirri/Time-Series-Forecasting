@@ -53,7 +53,7 @@ namespace TimeSeriesForecasting.NeuralNetwork
         public void TuneHyperparameters(Tensor x, Tensor y)
         {
             _learningRate = 1e-6;
-            _batchSize = 64;
+            _batchSize = 32;
         }
 
         public void Fit(Tensor x, Tensor y)
@@ -63,8 +63,7 @@ namespace TimeSeriesForecasting.NeuralNetwork
             Tensor[] batched_x = x.split(_batchSize);
             Tensor[] batched_y = y.split(_batchSize);
             Tensor previousOutput = tensor(float.MaxValue);
-            int i = 0;
-            for (; i < MaxEpochs; i++)
+            for (int i = 0; i < MaxEpochs; i++)
             {
                 Tensor output = empty(1);
                 float epochLoss = 0.0f;
@@ -83,23 +82,11 @@ namespace TimeSeriesForecasting.NeuralNetwork
                 }
                 // Add the average loss for all the batches in this epoch to the list of losses.
                 _losses.Add(epochLoss / batched_x.Length);
-                if (Math.Abs(previousOutput.item<float>() - output.item<float>()) < Arrest)
-                {
-                    break;
-                }
-                else
-                {
-                    previousOutput = output;
-                }
             }
             IsTrained = true;
             // Log the computed losses to file.
             _logger.Log(_losses.AsEnumerable().Select((value, index) => (index, value)).ToList(), 
                 $"MSE with learning rate {_learningRate} and batch size {_batchSize}:");
-            if (i < MaxEpochs)
-            {
-                _logger.LogComment($"The training converges after {i+1} epochs.");
-            }
             _logger.Dispose();
         }
 
