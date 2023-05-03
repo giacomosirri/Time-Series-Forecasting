@@ -6,22 +6,33 @@ namespace TimeSeriesForecasting.NeuralNetwork
 {
     public class RecurrentNeuralNetwork : NetworkModel
     {
-        private readonly RNN _rnn;
-        private readonly SimpleNeuralNetwork _linear;
+        /* 
+         * The number of features in the hidden state. The hidden state is the "memory" of a recurrent neural network,
+         * so having a lot of features in it allows to capture more complex patterns. However, the computational
+         * complexity of the training can become enormous really fast, so a good compromise must be taken. Using 64
+         * for time series forecasting should be a good heuristic choice.
+         */
+        private const int HiddenSize = 64;
+        private const int Layers = 1;
 
-        public RecurrentNeuralNetwork(long inputFeatures, long outputTimeSteps, long outputFeatures, long layers) : base(nameof(RNN))
+        private readonly RNN _rnn;
+        private readonly Linear _linear;
+
+        public RecurrentNeuralNetwork(long inputFeatures, long outputTimeSteps, long outputFeatures) : base(nameof(RNN))
         {
-            _rnn = RNN(inputFeatures, 64, numLayers: layers, batchFirst: true);
-            _linear = new SimpleNeuralNetwork(64, 1, outputTimeSteps, outputFeatures);
+            _rnn = RNN(inputFeatures, HiddenSize, numLayers: Layers, batchFirst: true);
+            _linear = Linear(HiddenSize, outputFeatures);
             RegisterComponents();
         }
 
         public override Tensor forward(Tensor input)
         {
-            // Item1 is the predicted output, Item2 is the final hidden state, which can be ignored.
-            Tensor output = _rnn.forward(input, null).Item1;
-            Tensor lastOutput = output.slice(1, output.shape[1]-1, output.shape[1], 1);
-            return _linear.forward(lastOutput);
+            // Initialize hidden state. Hidden state is a Tensor of shape (1, batch_size, hidden_size).
+            Tensor initialHiddenState = zeros(1, input.size(0), HiddenSize);
+            // For time series forecasting, it is better to use the final hidden state instead of the final output.
+            (Tensor _, Tensor finalHiddenState) = _rnn.forward(input, initialHiddenState);
+            // The final hidden state is passed to a fully connected linear layer to calculate the output values.
+            return _linear.forward(finalHiddenState.squeeze());
         }
     }
 }
