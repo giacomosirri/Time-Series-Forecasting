@@ -1,9 +1,7 @@
-﻿using System.Reflection.PortableExecutable;
-using TimeSeriesForecasting.IO;
+﻿using TimeSeriesForecasting.IO;
 using TorchSharp;
 using TorchSharp.Modules;
 using static TorchSharp.torch;
-using static TorchSharp.torch.nn;
 
 namespace TimeSeriesForecasting.NeuralNetwork
 {
@@ -54,7 +52,7 @@ namespace TimeSeriesForecasting.NeuralNetwork
 
         public void TuneHyperparameters(Tensor x, Tensor y)
         {
-            _learningRate = 1e-5;
+            _learningRate = 1e-6;
             _batchSize = 64;
         }
 
@@ -69,17 +67,22 @@ namespace TimeSeriesForecasting.NeuralNetwork
             for (; i < MaxEpochs; i++)
             {
                 Tensor output = empty(1);
+                float epochLoss = 0.0f;
                 for (int j = 0; j < batched_x.Length; j++)
                 {
                     // Compute the loss.
-                    output = _lossFunction.forward(_model.forward(batched_x[j]), batched_y[j].flatten(start_dim: 1));
+                    output = _lossFunction.forward(_model.forward(batched_x[j]), batched_y[j].flatten(start_dim: 1));                    
+                    // Sums the loss for this batch to the total loss for this epoch.
+                    epochLoss += output.item<float>();
                     // Clear the gradients before doing the back-propagation.
                     _model.zero_grad();
                     // Do back-progatation, which computes all the gradients.
                     output.backward();
+                    // Modifies the weights and biases to reduce the loss.
                     optimizer.step();
                 }
-                _losses.Add(output.item<float>());
+                // Add the average loss for all the batches in this epoch to the list of losses.
+                _losses.Add(epochLoss / batched_x.Length);
                 if (Math.Abs(previousOutput.item<float>() - output.item<float>()) < Arrest)
                 {
                     break;

@@ -121,7 +121,7 @@ namespace TimeSeriesForecasting
             Console.Write("Training the model...");
             trainer.Fit(trainingInputTensor, trainingOutputTensor);
             Console.WriteLine(Completion);
-            Console.WriteLine($"MSE: {trainer.CurrentLoss:F4}\n");
+            Console.WriteLine($"MSE: {trainer.CurrentLoss:F6}\n");
 
             /*
             Console.Write("Assessing model performance on the test set...");
