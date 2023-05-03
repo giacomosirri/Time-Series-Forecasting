@@ -112,7 +112,11 @@ namespace TimeSeriesForecasting
                 model = new SimpleNeuralNetwork(trainingInputTensor.size(1), trainingInputTensor.size(2),
                     trainingOutputTensor.size(1), trainingOutputTensor.size(2));
             }
-            IModelTrainer trainer = new ModelTrainer(model!, LogDir);
+            else
+            {
+                throw new InvalidDataException("The configuration parameter that contains the name of the model is wrong.");
+            }
+            IModelTrainer trainer = new ModelTrainer(model, LogDir);
 
             Console.Write("Training the model...");
             trainer.Fit(trainingInputTensor, trainingOutputTensor, validationInputTensor, validationOutputTensor);
@@ -124,6 +128,7 @@ namespace TimeSeriesForecasting
             Console.WriteLine(Completion);
             metrics.ForEach(metric => Console.WriteLine($"{metric.Key}: {metric.Value:F5}"));
             Console.WriteLine();
+            trainer.Save();
 
             DateTime endTime = DateTime.Now;
             Console.WriteLine($"Program is completed...    {endTime}\n");

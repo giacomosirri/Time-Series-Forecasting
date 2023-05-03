@@ -130,5 +130,7 @@ namespace TimeSeriesForecasting.NeuralNetwork
             }
             return y;
         }
+
+        public void Save() => _model.save(_directoryPath + $"{_model.GetName()}.model.bin");
     }
 }

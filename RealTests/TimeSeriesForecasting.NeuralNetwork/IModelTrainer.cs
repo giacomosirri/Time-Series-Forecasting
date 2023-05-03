@@ -25,5 +25,6 @@ namespace TimeSeriesForecasting.NeuralNetwork
         public void Fit(Tensor x, Tensor y);
         public IDictionary<AccuracyMetric, double> EvaluateAccuracy(Tensor x, Tensor y);
         public Tensor Predict(Tensor x);
+        public void Save();
     }
 }
