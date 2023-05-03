@@ -52,18 +52,24 @@ namespace TimeSeriesForecasting.NeuralNetwork
             _logger = new LossLogger(_directoryPath + "loss.txt");
         }
 
-        public void TuneHyperparameters(Tensor x, Tensor y)
+        public void Fit(Tensor trainX, Tensor trainY, Tensor validX, Tensor validY)
+        {
+            TuneHyperparameters(validX, validY);
+            Fit(trainX, trainY);
+        }
+
+        private void TuneHyperparameters(Tensor x, Tensor y)
         {
             // hyperparameters to be tuned: batch_size and learning_rate
             // (might use a learning rate scheduler instead).
         }
 
-        public void Fit(Tensor x, Tensor y)
+        public void Fit(Tensor trainX, Tensor trainY)
         {
             _model.train();
             var optimizer = new Adam(_model.parameters(), _learningRate);
-            Tensor[] batched_x = x.split(_batchSize);
-            Tensor[] batched_y = y.split(_batchSize);
+            Tensor[] batched_x = trainX.split(_batchSize);
+            Tensor[] batched_y = trainY.split(_batchSize);
             Tensor previousOutput = tensor(float.MaxValue);
             for (int i = 0; i < MaxEpochs; i++)
             {

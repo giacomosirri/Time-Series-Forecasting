@@ -113,12 +113,9 @@ namespace TimeSeriesForecasting
                     trainingOutputTensor.size(1), trainingOutputTensor.size(2));
             }
             IModelTrainer trainer = new ModelTrainer(model!, LogDir);
-            Console.Write("Tuning the hyperparameters of the model on the validation set...");
-            trainer.TuneHyperparameters(validationInputTensor, validationOutputTensor);
-            Console.WriteLine(Completion);
 
             Console.Write("Training the model...");
-            trainer.Fit(trainingInputTensor, trainingOutputTensor);
+            trainer.Fit(trainingInputTensor, trainingOutputTensor, validationInputTensor, validationOutputTensor);
             Console.WriteLine(Completion);
             Console.WriteLine($"MSE: {trainer.CurrentLoss:F5}\n");
 
