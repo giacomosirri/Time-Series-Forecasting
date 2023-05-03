@@ -85,11 +85,11 @@ namespace TimeSeriesForecasting
             DataTable testSet = dpp.GetTestSet();
             Console.WriteLine(Completion);
 
-            var winGen = new WindowGenerator(config.InputWidth, config.OutputWidth, config.Offset, config.LabelColumns); 
+            var singleStepWindow = new WindowGenerator(config.InputWidth, config.OutputWidth, config.Offset, config.LabelColumns); 
             Console.Write("Generating windows (batches) of data from the training, validation and test sets...");
-            (Tensor trainingInputTensor, Tensor trainingOutputTensor) = winGen.GenerateWindows<double>(trainingSet);
-            (Tensor validationInputTensor, Tensor validationOutputTensor) = winGen.GenerateWindows<double>(validationSet);
-            (Tensor testInputTensor, Tensor testOutputTensor) = winGen.GenerateWindows<double>(testSet);
+            (Tensor trainingInputTensor, Tensor trainingOutputTensor) = singleStepWindow.GenerateWindows<double>(trainingSet);
+            (Tensor validationInputTensor, Tensor validationOutputTensor) = singleStepWindow.GenerateWindows<double>(validationSet);
+            (Tensor testInputTensor, Tensor testOutputTensor) = singleStepWindow.GenerateWindows<double>(testSet);
             Console.WriteLine(Completion);
 #if TEST
             var featureLogger = new TensorLogger(LogDir + FeatureFile);
