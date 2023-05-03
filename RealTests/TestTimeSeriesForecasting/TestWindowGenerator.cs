@@ -37,12 +37,12 @@ namespace TestTimeSeriesForecasting
         [Fact]
         public void TestWindowSize()
         {
-            Assert.Equal(_batches, _input.shape[0]);
-            Assert.Equal(InputWidth, _input.shape[1]);
-            Assert.Equal(_features, _input.shape[2]);
-            Assert.Equal(_batches, _output.shape[0]);
-            Assert.Equal(LabelWidth, _output.shape[1]);
-            Assert.Equal(_labels, _output.shape[2]);
+            Assert.Equal(_batches, _input.size(0));
+            Assert.Equal(InputWidth, _input.size(1));
+            Assert.Equal(_features, _input.size(2));
+            Assert.Equal(_batches, _output.size(0));
+            Assert.Equal(LabelWidth, _output.size(1));
+            Assert.Equal(_labels, _output.size(2));
         }
 
         [Fact]

@@ -107,8 +107,8 @@ namespace TimeSeriesForecasting.NeuralNetwork
         {
             _model.eval();
             var dict = new Dictionary<AccuracyMetric, double>();
-            double mae = 0, mse = 0, r2 = 0, mape = 0;
-            long timeSteps = x.shape[0];
+            double mae = 0, mse = 0, mape = 0;
+            long timeSteps = x.size(0);
             Tensor[] batched_x = x.split(_batchSize);
             Tensor[] batched_y = y.split(_batchSize);
             int batches = batched_x.Length;

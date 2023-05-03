@@ -105,13 +105,13 @@ namespace TimeSeriesForecasting
             NetworkModel? model = null;
             if (config.ModelName == "RNN")
             {
-                model = new RecurrentNeuralNetwork(trainingInputTensor.shape[2], trainingOutputTensor.shape[1], 
-                    trainingOutputTensor.shape[2], layers: 4);
+                model = new RecurrentNeuralNetwork(trainingInputTensor.size(2), 
+                    trainingOutputTensor.size(1), trainingOutputTensor.size(2));
             }
             else if (config.ModelName == "Linear")
             {
-                model = new SimpleNeuralNetwork(trainingInputTensor.shape[1], trainingInputTensor.shape[2],
-                    trainingOutputTensor.shape[1], trainingOutputTensor.shape[2]);
+                model = new SimpleNeuralNetwork(trainingInputTensor.size(1), trainingInputTensor.size(2),
+                    trainingOutputTensor.size(1), trainingOutputTensor.size(2));
             }
             IModelTrainer trainer = new ModelTrainer(model!, LogDir + LossFile);
             Console.Write("Tuning the hyperparameters of the model on the validation set...");
