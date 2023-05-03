@@ -12,9 +12,9 @@ namespace TimeSeriesForecasting.NeuralNetwork
          * Their values are set so as not to affect how the model behaves. In particular, MaxEpochs is 
          * large enough for a reasonably simple model to converge, and Arrest is so close to 0 that 
          * the model can be considered stable when the loss difference between two iterations is smaller 
-         * than that value.
+         * than that value (currently not in use).
          */
-        private const int MaxEpochs = 250;
+        private const int MaxEpochs = 100;
         private const double Arrest = 1e-4;
 
         private readonly NetworkModel _model;       
@@ -71,7 +71,7 @@ namespace TimeSeriesForecasting.NeuralNetwork
                 {
                     // Compute the loss.
                     output = _lossFunction.forward(_model.forward(batched_x[j]), batched_y[j].flatten(start_dim: 1));                    
-                    // Sums the loss for this batch to the total loss for this epoch.
+                    // Sum the loss for this batch to the total loss for this epoch.
                     epochLoss += output.item<float>();
                     // Clear the gradients before doing the back-propagation.
                     _model.zero_grad();
@@ -94,24 +94,23 @@ namespace TimeSeriesForecasting.NeuralNetwork
         {
             _model.eval();
             var dict = new Dictionary<AccuracyMetric, double>();
-            double mae = 0, mse = 0, mape = 0;
-            long timeSteps = x.size(0);
             Tensor[] batched_x = x.split(_batchSize);
-            Tensor[] batched_y = y.split(_batchSize);
             int batches = batched_x.Length;
+            Tensor expectedOutput = y.squeeze();
+            Tensor predictedOutput = empty(x.size(0));
             for (int i = 0; i < batches; i++)
             {
-                Tensor predictedOutput = _model.forward(batched_x[i]).squeeze();
-                Tensor expectedOutput = batched_y[i].flatten(start_dim: 1).squeeze();
-                Tensor error = predictedOutput - expectedOutput;
-                mae += error.abs().sum().item<float>();
-                mape += (error.abs() / expectedOutput.abs()).sum().item<float>();
-                mse += error.square().sum().item<float>();
+                long start = _batchSize*i;
+                // Control that the stop index is not greater than the number of total batches.
+                long stop = Math.Min(x.size(0), _batchSize*(i+1));
+                // Create the predicted output tensor.
+                predictedOutput.index_copy_(0, arange(start, stop, 1), _model.forward(batched_x[i]).squeeze());
             }
-            dict.Add(AccuracyMetric.MSE, mse / timeSteps);
-            dict.Add(AccuracyMetric.RMSE, Math.Sqrt(mse / timeSteps));
-            dict.Add(AccuracyMetric.MAE, mae / timeSteps);
-            dict.Add(AccuracyMetric.MAPE, 100 * (mae / timeSteps) / y.flatten(start_dim: 1).sum().item<float>());
+            Tensor error = predictedOutput - expectedOutput;
+            dict.Add(AccuracyMetric.MSE, mean(square(error)).item<float>());
+            dict.Add(AccuracyMetric.RMSE, Math.Sqrt(mean(square(error)).item<float>()));
+            dict.Add(AccuracyMetric.MAE, mean(abs(error)).item<float>());
+            dict.Add(AccuracyMetric.MAPE, mean(abs(error / expectedOutput)).item<float>());
             dict.Add(AccuracyMetric.R2, 0);
             return dict;
         }

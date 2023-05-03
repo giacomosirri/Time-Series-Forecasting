@@ -121,12 +121,12 @@ namespace TimeSeriesForecasting
             Console.Write("Training the model...");
             trainer.Fit(trainingInputTensor, trainingOutputTensor);
             Console.WriteLine(Completion);
-            Console.WriteLine($"MSE: {trainer.CurrentLoss:F6}\n");
+            Console.WriteLine($"MSE: {trainer.CurrentLoss:F5}\n");
 
             Console.Write("Assessing model performance on the test set...");
             IDictionary<AccuracyMetric, double> metrics = trainer.EvaluateAccuracy(trainingInputTensor, trainingOutputTensor);
             Console.WriteLine(Completion);
-            metrics.ForEach(metric => Console.WriteLine($"{metric.Key}: {metric.Value}"));
+            metrics.ForEach(metric => Console.WriteLine($"{metric.Key}: {metric.Value:F5}"));
             Console.WriteLine();
 
             DateTime endTime = DateTime.Now;
