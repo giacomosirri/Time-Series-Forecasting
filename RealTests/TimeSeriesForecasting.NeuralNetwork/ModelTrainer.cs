@@ -17,6 +17,7 @@ namespace TimeSeriesForecasting.NeuralNetwork
         private const int MaxEpochs = 100;
         private const double Arrest = 1e-4;
 
+        private readonly string _directoryPath;
         private readonly NetworkModel _model;       
         // Type of x (features), type of y (labels) --> type of the result.
         private readonly Loss<Tensor, Tensor, Tensor> _lossFunction;
@@ -43,16 +44,17 @@ namespace TimeSeriesForecasting.NeuralNetwork
             } 
         }
 
-        public ModelTrainer(NetworkModel model, string filePath)
+        public ModelTrainer(NetworkModel model, string dirPath)
         {
             _model = model;
             _lossFunction = new MSELoss();
-            _logger = new LossLogger(filePath);
+            _directoryPath = dirPath;
+            _logger = new LossLogger(_directoryPath + "loss.txt");
         }
 
         public void TuneHyperparameters(Tensor x, Tensor y)
         {
-            _learningRate = 1e-6;
+            _learningRate = 1e-5;
             _batchSize = 32;
         }
 
@@ -111,7 +113,9 @@ namespace TimeSeriesForecasting.NeuralNetwork
             dict.Add(AccuracyMetric.RMSE, Math.Sqrt(mean(square(error)).item<float>()));
             dict.Add(AccuracyMetric.MAE, mean(abs(error)).item<float>());
             dict.Add(AccuracyMetric.MAPE, mean(abs(error / expectedOutput)).item<float>());
-            dict.Add(AccuracyMetric.R2, 0);
+            var r2 = 1 - sum(square(error)).item<float>() / sum(square(y - mean(y))).item<float>();
+            var adjustedR2 = 1 - (1 - r2) * (x.size(0) - 1) / (x.size(0) - x.size(2) - 1);
+            dict.Add(AccuracyMetric.R2, adjustedR2);
             return dict;
         }
 

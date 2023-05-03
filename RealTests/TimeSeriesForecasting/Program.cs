@@ -55,7 +55,6 @@ namespace TimeSeriesForecasting
 
         private const string LabelFile = "labels-training-set-timeseries-2009-2016.txt";
         private const string FeatureFile = "features-training-set-timeseries-2009-2016.txt";
-        private const string LossFile = "loss.txt";
         private const string Completion = "  COMPLETE\n";
 
         static void Main(string[] args)
@@ -113,7 +112,7 @@ namespace TimeSeriesForecasting
                 model = new SimpleNeuralNetwork(trainingInputTensor.size(1), trainingInputTensor.size(2),
                     trainingOutputTensor.size(1), trainingOutputTensor.size(2));
             }
-            IModelTrainer trainer = new ModelTrainer(model!, LogDir + LossFile);
+            IModelTrainer trainer = new ModelTrainer(model!, LogDir);
             Console.Write("Tuning the hyperparameters of the model on the validation set...");
             trainer.TuneHyperparameters(validationInputTensor, validationOutputTensor);
             Console.WriteLine(Completion);
