@@ -90,7 +90,7 @@ namespace TimeSeriesForecasting
         /// <param name="normalization">The normalization method. There are three allowed values: "Normalization" for
         /// Min-Max Normalization, "Standardization" for Z-Score and "None" for no normalization.</param>
         /// <param name="range">A <see cref="Tuple"/> that contains the first and last date to be included in the
-        /// processed data. Can be useful to speed up processing if the dataset contains dozens of thousands of 
+        /// processed data. It might be useful to speed up processing if the dataset contains dozens of thousands of 
         /// observations or even more.</param>
         public DataPreprocessor(IList<Record> records, (int training, int validation, int test) splits,
                                 NormalizationMethod normalization, Tuple<DateTime?, DateTime?> range)
@@ -212,7 +212,7 @@ namespace TimeSeriesForecasting
         /*
          * This method returns a table containing ALL the rows of the main table, 
          * normalized according to the Normalization property.
-         * The behavior is to normalize using only the training set observations,
+         * The behavior is to normalize using only the training set time steps,
          * i.e. the first 70% of the rows, since it prevents information leakage
          * from the validation and test set to the training set.
          */

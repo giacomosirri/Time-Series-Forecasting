@@ -28,9 +28,9 @@ namespace TestTimeSeriesForecasting
             (_input, _output) = winGen.GenerateWindows<double>(_set);
             // Number of batches = Rows - LabelWidth - Offset - InputWidth
             _batches = _set.Rows.Count - LabelWidth - Offset - InputWidth;            
-            // Number of features per observation = Number of total features - Number of label columns - 1 (timestamp column)
+            // Number of features per time step = Number of total features - Number of label columns - 1 (timestamp column)
             _features = _set.Rows[0].ItemArray.Length - _labelColumns.Length - 1;
-            // Number of labels per observation = Number of LabelColumns
+            // Number of labels per time step = Number of LabelColumns
             _labels = _labelColumns.Length;
         }
 

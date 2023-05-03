@@ -14,25 +14,25 @@ namespace TimeSeriesForecasting
         private static readonly string[] s_indexColumns = { "Date Time" };
 
         /// <summary>
-        /// The number of observations in each window.
+        /// The number of time steps in each window.
         /// </summary>
         public int WindowSize { get => InputWidth + Offset + OutputWidth; }
 
         /// <summary>
-        /// The number of observations in each label, i.e. a value that the deep learning model has to predict.
+        /// The number of time steps in each label, i.e. a value that the deep learning model has to predict.
         /// For single-output models, this number is equal to 1. For multi-output models, this number is greater than 1.
         /// </summary>
         public int OutputWidth { get; set; }
 
         /// <summary>
-        /// The number of observations in each input of the model.
+        /// The number of time steps in each input of the model.
         /// </summary>
         public int InputWidth { get; set; }
 
         /// <summary>
-        /// The distance between the input's last observation and the label's first.
-        /// Note that the distance is measured in terms of observation, not of time.
-        /// If observations are sampled every 10 minutes, this number is then equal to 
+        /// The distance between the input's last time step and the label's first.
+        /// Note that the distance is measured in terms of time steps, not time.
+        /// If time steps are sampled every 10 minutes, this number is then equal to 
         /// the time distance between inputs and labels multiplied by 6.
         /// </summary>
         public int Offset { get; set; }
@@ -101,19 +101,19 @@ namespace TimeSeriesForecasting
             }
             T[][][] featuresArr = features.ToArray();
             int featuresBatchSize = featuresArr.GetLength(0);
-            int inputObservations = featuresArr[0].GetLength(0);
+            int inputTimeSteps = featuresArr[0].GetLength(0);
             int featuresSize = featuresArr[0][0].GetLength(0);
             T[][][] labelsArr = labels.ToArray();
             int labelsBatchSize = labelsArr.GetLength(0);
-            int outputObservations = labelsArr[0].GetLength(0);
+            int outputTimeSteps = labelsArr[0].GetLength(0);
             int labelsSize = labelsArr[0][0].GetLength(0);
             T[] flattenedFeatures = featuresArr.SelectMany(x => x.SelectMany(y => y)).ToArray();
             T[] flattenedLabels = labels.SelectMany(x => x.SelectMany(y => y)).ToArray();
             Tensor featuresTensor = from_array(flattenedFeatures)
-                                    .reshape(featuresBatchSize, inputObservations, featuresSize)
+                                    .reshape(featuresBatchSize, inputTimeSteps, featuresSize)
                                     .to_type(float32);
             Tensor labelsTensor = from_array(flattenedLabels)
-                                    .reshape(labelsBatchSize, outputObservations, labelsSize)
+                                    .reshape(labelsBatchSize, outputTimeSteps, labelsSize)
                                     .to_type(float32);
             return Tuple.Create(featuresTensor, labelsTensor);
         }

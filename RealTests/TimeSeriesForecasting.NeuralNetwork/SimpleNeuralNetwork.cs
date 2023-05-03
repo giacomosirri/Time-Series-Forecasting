@@ -8,9 +8,9 @@ namespace TimeSeriesForecasting.NeuralNetwork
     {
         private readonly Linear _linear;
 
-        public SimpleNeuralNetwork(long inputObservations, long inputFeatures, long outputObservations, long outputFeatures) : base(nameof(SimpleNeuralNetwork))
+        public SimpleNeuralNetwork(long inputTimeSteps, long inputFeatures, long outputTimeSteps, long outputFeatures) : base(nameof(SimpleNeuralNetwork))
         {
-            _linear = Linear(inputObservations * inputFeatures, outputObservations * outputFeatures);
+            _linear = Linear(inputTimeSteps * inputFeatures, outputTimeSteps * outputFeatures);
             RegisterComponents();
         }
 

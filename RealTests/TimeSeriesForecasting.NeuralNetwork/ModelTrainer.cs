@@ -108,7 +108,7 @@ namespace TimeSeriesForecasting.NeuralNetwork
             _model.eval();
             var dict = new Dictionary<AccuracyMetric, double>();
             double mae = 0, mse = 0, r2 = 0, mape = 0;
-            long observations = x.shape[0];
+            long timeSteps = x.shape[0];
             Tensor[] batched_x = x.split(_batchSize);
             Tensor[] batched_y = y.split(_batchSize);
             int batches = batched_x.Length;
@@ -121,10 +121,10 @@ namespace TimeSeriesForecasting.NeuralNetwork
                 mape += (error.abs() / expectedOutput.abs()).sum().item<float>();
                 mse += error.square().sum().item<float>();
             }
-            dict.Add(AccuracyMetric.MSE, mse / observations);
-            dict.Add(AccuracyMetric.RMSE, Math.Sqrt(mse / observations));
-            dict.Add(AccuracyMetric.MAE, mae / observations);
-            dict.Add(AccuracyMetric.MAPE, 100 * (mae / observations) / y.flatten(start_dim: 1).sum().item<float>());
+            dict.Add(AccuracyMetric.MSE, mse / timeSteps);
+            dict.Add(AccuracyMetric.RMSE, Math.Sqrt(mse / timeSteps));
+            dict.Add(AccuracyMetric.MAE, mae / timeSteps);
+            dict.Add(AccuracyMetric.MAPE, 100 * (mae / timeSteps) / y.flatten(start_dim: 1).sum().item<float>());
             dict.Add(AccuracyMetric.R2, 0);
             return dict;
         }
