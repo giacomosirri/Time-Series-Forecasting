@@ -67,12 +67,11 @@ namespace TimeSeriesForecasting.NeuralNetwork
             Tensor previousOutput = tensor(float.MaxValue);
             for (int i = 0; i < MaxEpochs; i++)
             {
-                Tensor output = empty(1);
                 float epochLoss = 0.0f;
                 for (int j = 0; j < batched_x.Length; j++)
                 {
                     // Compute the loss.
-                    output = _lossFunction.forward(_model.forward(batched_x[j]), batched_y[j].flatten(start_dim: 1));                    
+                    Tensor output = _lossFunction.forward(_model.forward(batched_x[j]), batched_y[j].flatten(start_dim: 1));                    
                     // Sum the loss for this batch to the total loss for this epoch.
                     epochLoss += output.item<float>();
                     // Clear the gradients before doing the back-propagation.

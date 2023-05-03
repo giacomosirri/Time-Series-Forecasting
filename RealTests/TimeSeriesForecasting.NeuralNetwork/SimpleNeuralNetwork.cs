@@ -16,10 +16,14 @@ namespace TimeSeriesForecasting.NeuralNetwork
 
         public override Tensor forward(Tensor input)
         {
-            // Input tensor is a 3D Tensor of shape (batch_size, time_steps, features).
+            /* 
+             * Input tensor is a 3D Tensor of shape (batch_size, time_steps, features).
+             * This tensor is flattened before being fed to the network, mainly because 
+             * the network will then train faster and be more stable.
+             */
             Tensor flattenedInput = input.flatten(start_dim: 1);
             // Flattened input Tensor has shape (batch_size, time_steps * features), so it is compatible with the linear layer.
-            return _linear.forward(flattenedInput).type_as(input);
+            return _linear.forward(flattenedInput);
         }
     }
 }
