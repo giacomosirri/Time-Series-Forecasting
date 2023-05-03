@@ -102,6 +102,7 @@ namespace TimeSeriesForecasting
             Console.WriteLine(Completion);
 #endif
             NetworkModel nn;
+            /*
             if (config.ModelName == "RNN")
             {
                 nn = new RecurrentNeuralNetwork(trainingInputTensor.size(2), 
@@ -122,6 +123,13 @@ namespace TimeSeriesForecasting
             model.Fit(trainingInputTensor, trainingOutputTensor, validationInputTensor, validationOutputTensor);
             Console.WriteLine(Completion);
             Console.WriteLine($"MSE: {model.CurrentLoss:F5}\n");
+            */
+
+            Console.Write("Loading the model from file...");
+            nn = new RecurrentNeuralNetwork(trainingInputTensor.size(2), trainingOutputTensor.size(1), 
+                trainingOutputTensor.size(2), LogDir + $"RNN.model.bin");
+            IModelManager model = new ModelManager(nn, LogDir);
+            Console.WriteLine(Completion);
 
             Console.Write("Assessing model performance on the test set...");
             IDictionary<AccuracyMetric, double> metrics = model.EvaluateAccuracy(testInputTensor, testOutputTensor);
@@ -129,9 +137,11 @@ namespace TimeSeriesForecasting
             metrics.ForEach(metric => Console.WriteLine($"{metric.Key}: {metric.Value:F5}"));
             Console.WriteLine();
 
+            /*
             Console.Write("Saving the model on file...");
             model.Save();
             Console.WriteLine(Completion);
+            */
 
             DateTime endTime = DateTime.Now;
             Console.WriteLine($"Program is completed...    {endTime}\n");
