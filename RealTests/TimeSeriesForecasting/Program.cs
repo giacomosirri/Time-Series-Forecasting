@@ -101,34 +101,37 @@ namespace TimeSeriesForecasting
             labelLogger.Log(trainingOutputTensor, $"Training set values to predict: {string.Join(", ", config.LabelColumns)}");
             Console.WriteLine(Completion);
 #endif
-            NetworkModel? model = null;
+            NetworkModel nn;
             if (config.ModelName == "RNN")
             {
-                model = new RecurrentNeuralNetwork(trainingInputTensor.size(2), 
+                nn = new RecurrentNeuralNetwork(trainingInputTensor.size(2), 
                     trainingOutputTensor.size(1), trainingOutputTensor.size(2));
             }
             else if (config.ModelName == "Linear")
             {
-                model = new SimpleNeuralNetwork(trainingInputTensor.size(1), trainingInputTensor.size(2),
+                nn = new SimpleNeuralNetwork(trainingInputTensor.size(1), trainingInputTensor.size(2),
                     trainingOutputTensor.size(1), trainingOutputTensor.size(2));
             }
             else
             {
                 throw new InvalidDataException("The configuration parameter that contains the name of the model is wrong.");
             }
-            IModelTrainer trainer = new ModelTrainer(model, LogDir);
+            IModelManager model = new ModelManager(nn, LogDir);
 
             Console.Write("Training the model...");
-            trainer.Fit(trainingInputTensor, trainingOutputTensor, validationInputTensor, validationOutputTensor);
+            model.Fit(trainingInputTensor, trainingOutputTensor, validationInputTensor, validationOutputTensor);
             Console.WriteLine(Completion);
-            Console.WriteLine($"MSE: {trainer.CurrentLoss:F5}\n");
+            Console.WriteLine($"MSE: {model.CurrentLoss:F5}\n");
 
             Console.Write("Assessing model performance on the test set...");
-            IDictionary<AccuracyMetric, double> metrics = trainer.EvaluateAccuracy(testInputTensor, testOutputTensor);
+            IDictionary<AccuracyMetric, double> metrics = model.EvaluateAccuracy(testInputTensor, testOutputTensor);
             Console.WriteLine(Completion);
             metrics.ForEach(metric => Console.WriteLine($"{metric.Key}: {metric.Value:F5}"));
             Console.WriteLine();
-            trainer.Save();
+
+            Console.Write("Saving the model on file...");
+            model.Save();
+            Console.WriteLine(Completion);
 
             DateTime endTime = DateTime.Now;
             Console.WriteLine($"Program is completed...    {endTime}\n");
