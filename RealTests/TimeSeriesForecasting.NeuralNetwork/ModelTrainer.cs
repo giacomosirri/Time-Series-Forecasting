@@ -24,8 +24,8 @@ namespace TimeSeriesForecasting.NeuralNetwork
         private readonly IList<float> _losses = new List<float>();
         private readonly LossLogger _logger;
         // Hyperparameters
-        private double _learningRate;
-        private int _batchSize;
+        private double _learningRate = 1e-5;
+        private int _batchSize = 32;
 
         public bool IsTrained { get; private set; } = false;
         public float CurrentLoss
@@ -54,8 +54,8 @@ namespace TimeSeriesForecasting.NeuralNetwork
 
         public void TuneHyperparameters(Tensor x, Tensor y)
         {
-            _learningRate = 1e-5;
-            _batchSize = 32;
+            // hyperparameters to be tuned: batch_size and learning_rate
+            // (might use a learning rate scheduler instead).
         }
 
         public void Fit(Tensor x, Tensor y)
@@ -94,19 +94,11 @@ namespace TimeSeriesForecasting.NeuralNetwork
         public IDictionary<AccuracyMetric, double> EvaluateAccuracy(Tensor x, Tensor y)
         {
             _model.eval();
+            // Disabling autograd gradient calculation speeds up computation.
+            using var _ = no_grad();
             var dict = new Dictionary<AccuracyMetric, double>();
-            Tensor[] batched_x = x.split(_batchSize);
-            int batches = batched_x.Length;
             Tensor expectedOutput = y.squeeze();
-            Tensor predictedOutput = empty(x.size(0));
-            for (int i = 0; i < batches; i++)
-            {
-                long start = _batchSize*i;
-                // Control that the stop index is not greater than the number of total batches.
-                long stop = Math.Min(x.size(0), _batchSize*(i+1));
-                // Create the predicted output tensor.
-                predictedOutput.index_copy_(0, arange(start, stop, 1), _model.forward(batched_x[i]).squeeze());
-            }
+            Tensor predictedOutput = Predict(x);
             Tensor error = predictedOutput - expectedOutput;
             dict.Add(AccuracyMetric.MSE, mean(square(error)).item<float>());
             dict.Add(AccuracyMetric.RMSE, Math.Sqrt(mean(square(error)).item<float>()));
@@ -120,7 +112,17 @@ namespace TimeSeriesForecasting.NeuralNetwork
 
         public Tensor Predict(Tensor x)
         {
-            throw new NotImplementedException();
+            Tensor[] batched_x = x.split(_batchSize);
+            Tensor y = empty(x.size(0));
+            for (int i = 0; i < batched_x.Length; i++)
+            {
+                long start = _batchSize * i;
+                // Control that the stop index is not greater than the number of total batches.
+                long stop = Math.Min(x.size(0), _batchSize * (i + 1));
+                // Create the predicted output tensor.
+                y.index_copy_(0, arange(start, stop, 1), _model.forward(batched_x[i]).squeeze());
+            }
+            return y;
         }
     }
 }
