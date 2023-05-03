@@ -17,7 +17,7 @@ namespace TimeSeriesForecasting.NeuralNetwork
         R2
     }
 
-    public interface IModelTrainer
+    public interface IModelManager
     {
         public bool IsTrained { get; }
         public float CurrentLoss { get; }

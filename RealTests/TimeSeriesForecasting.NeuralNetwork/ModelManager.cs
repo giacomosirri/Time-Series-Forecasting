@@ -5,7 +5,7 @@ using static TorchSharp.torch;
 
 namespace TimeSeriesForecasting.NeuralNetwork
 {
-    public class ModelTrainer : IModelTrainer
+    public class ModelManager : IModelManager
     {
         /*
          * MaxEpochs and Arrest values can be declared as const, because they are not hyperparameters.
@@ -14,7 +14,7 @@ namespace TimeSeriesForecasting.NeuralNetwork
          * the model can be considered stable when the loss difference between two iterations is smaller 
          * than that value (currently not in use).
          */
-        private const int MaxEpochs = 100;
+        private const int MaxEpochs = 50;
         private const double Arrest = 1e-4;
 
         private readonly string _directoryPath;
@@ -25,7 +25,7 @@ namespace TimeSeriesForecasting.NeuralNetwork
         private readonly LossLogger _logger;
         // Hyperparameters
         private double _learningRate = 1e-5;
-        private int _batchSize = 32;
+        private int _batchSize = 64;
 
         public bool IsTrained { get; private set; } = false;
         public float CurrentLoss
@@ -44,7 +44,7 @@ namespace TimeSeriesForecasting.NeuralNetwork
             } 
         }
 
-        public ModelTrainer(NetworkModel model, string dirPath)
+        public ModelManager(NetworkModel model, string dirPath)
         {
             _model = model;
             _lossFunction = new MSELoss();
