@@ -13,7 +13,11 @@ namespace TimeSeriesForecasting.NeuralNetwork
          * for time series forecasting should be a good heuristic choice.
          */
         private const int HiddenSize = 64;
-        private const int Layers = 1;
+        /*
+         * The number of layers in the network is an inner hyperparameter of the network, independent from hyperparameters
+         * of the training algorithm. How to deal with this hyperparameter is still unclear.
+         */
+        private const int Layers = 3;
 
         private readonly RNN _rnn;
         private readonly Linear _linear;
@@ -28,11 +32,11 @@ namespace TimeSeriesForecasting.NeuralNetwork
         public override Tensor forward(Tensor input)
         {
             // Initialize hidden state. Hidden state is a Tensor of shape (1, batch_size, hidden_size).
-            Tensor initialHiddenState = zeros(1, input.size(0), HiddenSize);
+            Tensor initialHiddenState = zeros(Layers, input.size(0), HiddenSize);
             // For time series forecasting, it is better to use the final hidden state instead of the final output.
             (Tensor _, Tensor finalHiddenState) = _rnn.forward(input, initialHiddenState);
-            // The final hidden state is passed to a fully connected linear layer to calculate the output values.
-            return _linear.forward(finalHiddenState.squeeze());
+            // The final hidden state of the last layer is passed to a fully connected linear layer to calculate the output values.
+            return _linear.forward(finalHiddenState[-1]);
         }
     }
 }
