@@ -28,8 +28,8 @@ namespace TestTimeSeriesForecasting
             (_input, _output) = winGen.GenerateWindows<double>(_set);
             // Number of batches = Rows - LabelWidth - Offset - InputWidth
             _batches = _set.Rows.Count - LabelWidth - Offset - InputWidth;            
-            // Number of features per time step = Number of total features - Number of label columns - 1 (timestamp column)
-            _features = _set.Rows[0].ItemArray.Length - _labelColumns.Length - 1;
+            // Number of features per time step = Number of total features - 1 (timestamp column)
+            _features = _set.Rows[0].ItemArray.Length - 1;
             // Number of labels per time step = Number of LabelColumns
             _labels = _labelColumns.Length;
         }
@@ -49,12 +49,13 @@ namespace TestTimeSeriesForecasting
         public void TestInputElements()
         {
             var rnd = new Random(5678);
+            // Compares 500 values taken randomly from the dataset to see if the data has been split correctly into windows.
             for (int i = 0; i < 500; i++)
             {
                 int batch = rnd.Next(0, _batches);
                 int row = rnd.Next(0, InputWidth);
-                int col = rnd.Next(0, _features);
-                double expected = (double)_set.Rows[GetRow(batch, row)].ItemArray[GetColumn(col)]!;
+                int col = rnd.Next(1, _features);
+                double expected = (double)_set.Rows[GetRow(batch, row)].ItemArray[col]!;
                 double actual = _input[batch, row, col].item<float>();
                 Assert.True(Math.Abs(expected - actual) < _fixture.Tolerance);
             }
@@ -64,22 +65,18 @@ namespace TestTimeSeriesForecasting
         public void TestOutputElements()
         {
             var rnd = new Random(3456);
+            // Compares 500 values taken randomly from the dataset to see if the data has been split correctly into windows.
             for (int i = 0; i < 500; i++)
             {
                 int batch = rnd.Next(0, _batches);
                 int row = rnd.Next(0, LabelWidth);
-                int col = rnd.Next(0, _labels);
-                double expected = (double)_set.Rows[GetRow(batch, row)].ItemArray[GetColumn(col)]!;
-                double actual = _input[batch, row, col].item<float>();
+                int col = rnd.Next(1, _labels);
+                double expected = (double)_set.Rows[GetRow(batch, row)].ItemArray[col]!;
+                double actual = _output[batch, row, col].item<float>();
                 Assert.True(Math.Abs(expected - actual) < _fixture.Tolerance);
             }
         }
 
         private static int GetRow(int batch, int row) => batch + row;
-
-        private static int GetColumn(int column)
-        {
-            return column == 3 ? 5 : column + 1;
-        }
     }
 }

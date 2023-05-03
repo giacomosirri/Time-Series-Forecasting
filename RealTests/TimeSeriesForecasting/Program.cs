@@ -94,12 +94,12 @@ namespace TimeSeriesForecasting
 #if TEST
             var featureLogger = new TensorLogger(LogDir + FeatureFile);
             Console.Write("Logging training set features on file...");
-            featureLogger.Log(inputTensor, "Training set features");
+            featureLogger.Log(trainingInputTensor, "Training set features");
             Console.WriteLine(Completion);
 
             var labelLogger = new TensorLogger(LogDir + LabelFile);
             Console.Write("Logging training set labels on file...");
-            labelLogger.Log(outputTensor, "Training set values to predict: Temperature (°C)");
+            labelLogger.Log(trainingOutputTensor, $"Training set values to predict: {string.Join(", ", config.LabelColumns)}");
             Console.WriteLine(Completion);
 #endif
             NetworkModel? model = null;

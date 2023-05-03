@@ -5,8 +5,8 @@ namespace TestTimeSeriesForecasting
 {
     public class PreprocessorFixture : IDisposable
     {
-        // Do not change this field: 14400 = 100 days * 24 hours * 6 observations/hour
-        private const int Observations = 14400;
+        // Do not change this field: 14400 = 100 days * 24 hours * 6 timesteps/hour
+        private const int TimeSteps = 14400;
         private const int LowerBound = -10;
         private const int UpperBound = 51;
 
@@ -20,7 +20,7 @@ namespace TestTimeSeriesForecasting
             IList<Record> records = new List<Record>();
             DateTime? currentDate = FirstDatasetDate;
             var rnd = new Random(6789);
-            for (int i = 0; i < Observations; i++)
+            for (int i = 0; i < TimeSteps; i++)
             {
                 IDictionary<string, double?> values = new Dictionary<string, double?>
                 {

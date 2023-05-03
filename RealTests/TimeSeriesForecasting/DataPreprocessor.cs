@@ -115,7 +115,7 @@ namespace TimeSeriesForecasting
                 }
                 _rawData.Rows.Add(row);
             }
-            // Sort data for timestamp, it is needed in debugging below
+            // Sort data for timestamp, it is needed in debugging below.
             _rawData.DefaultView.Sort = $"{Record.Index} ASC";
             _rawData = _rawData.DefaultView.ToTable();
             int daysBetweenFirstAndLastDate = ((DateTime)_rawData.Rows[^1][Record.Index])
