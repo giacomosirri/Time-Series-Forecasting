@@ -80,40 +80,17 @@ namespace TimeSeriesForecasting
 
         public DateTime LastDate { get => _lastDate; }
 
-        public IDictionary<string, double> ColumnMinimumValue { get; private set; }
+        public IDictionary<string, double> ColumnMinimumValue { get; private set; } = new Dictionary<string, double>();
 
-        public IDictionary<string, double> ColumnMaximumValue { get; private set; }
+        public IDictionary<string, double> ColumnMaximumValue { get; private set; } = new Dictionary<string, double>();
 
-        public IDictionary<string, double> ColumnAverage { get; private set; }
+        public IDictionary<string, double> ColumnAverage { get; private set; } = new Dictionary<string, double>();
 
-        public IDictionary<string, double> ColumnStandardDeviation { get; private set; }
+        public IDictionary<string, double> ColumnStandardDeviation { get; private set; } = new Dictionary<string, double>();
 
-        /// <summary>
-        /// Creates a new instance of DataPreprocessor to operate on the given <see cref="IList{Record}"/>.
-        /// All processing parameters, such as the normalization method and the proportion of data to be
-        /// included in the training, validation and test sets are assigned to the default values.
-        /// </summary>
-        /// <param name="records">A list of <see cref="Record"/>s that represent phenomenon observations.</param>
-        public DataPreprocessor(IList<Record> records) : this(records, (70, 20, 10), NormalizationMethod.NONE, (null, null)) { }
-
-        /// <summary>
-        /// Creates a new instance of DataPreprocessor, with custom parameters to suit the needs of the client.
-        /// </summary>
-        /// <param name="records">A list of <see cref="Record"/>s that represent phenomenon observations.</param>
-        /// <param name="splitter">A <see cref="Tuple"/> with the percentages of values to be included in the 
-        /// training, validation and test set respectively.</param>
-        /// <param name="normalization">The normalization method. There are three allowed values: "Normalization" for
-        /// Min-Max Normalization, "Standardization" for Z-Score and "None" for no normalization.</param>
-        /// <param name="range">A <see cref="Tuple"/> that contains the first and last date to be included in the
-        /// processed data. It might be useful to speed up processing if the dataset contains dozens of thousands of 
-        /// observations or even more.</param>
-        public DataPreprocessor(IList<Record> records, (int training, int validation, int test) splits,
+        internal DataPreprocessor(IList<Record> records, (int training, int validation, int test) splits,
                                 NormalizationMethod normalization, (DateTime? firstValidDate, DateTime? lastValidDate) range)
         {
-            ColumnMinimumValue = new Dictionary<string, double>();
-            ColumnMaximumValue = new Dictionary<string, double>();
-            ColumnAverage = new Dictionary<string, double>();
-            ColumnStandardDeviation = new Dictionary<string, double>();
             TrainingSetPercentage = splits.training;
             ValidationSetPercentage = splits.validation;
             TestSetPercentage = splits.test;
