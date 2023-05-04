@@ -99,9 +99,6 @@ namespace TimeSeriesForecasting.NeuralNetwork
 
         public IDictionary<AccuracyMetric, double> EvaluateAccuracy(Tensor x, Tensor y)
         {
-            _model.eval();
-            // Disabling autograd gradient calculation speeds up computation.
-            using var _ = no_grad();
             var dict = new Dictionary<AccuracyMetric, double>();
             Tensor expectedOutput = y.squeeze();
             Tensor predictedOutput = Predict(x);
@@ -118,6 +115,9 @@ namespace TimeSeriesForecasting.NeuralNetwork
 
         public Tensor Predict(Tensor x)
         {
+            _model.eval();
+            // Disabling autograd gradient calculation speeds up computation.
+            using var _ = no_grad();
             Tensor[] batched_x = x.split(_batchSize);
             Tensor y = empty(x.size(0));
             for (int i = 0; i < batched_x.Length; i++)
