@@ -70,14 +70,13 @@ namespace TimeSeriesForecasting
             Console.WriteLine(Completion);
 
             Console.Write("Initializing the preprocessor...");
-            // Date range: from 01/01/2012 to 31/12/2013
-            // TODO: Create a DataPreprocessor builder.
-            var dpp = new DataPreprocessor(
-                        records,
-                        config.DatasetSplitRatio, 
-                        (NormalizationMethod)Enum.Parse(typeof(NormalizationMethod), config.NormalizationMethod.ToUpper()), 
-                        (config.FirstValidDate, config.LastValidDate)
-            );
+            NormalizationMethod normalization = (NormalizationMethod)Enum.Parse(typeof(NormalizationMethod),
+                                                    config.NormalizationMethod.ToUpper());
+            var dpp = new DataPreprocessorBuilder()
+                            .Split(config.DatasetSplitRatio)
+                            .Normalize(normalization)
+                            .AddDateRange((config.FirstValidDate, config.LastValidDate))
+                            .Build(records);
             Console.WriteLine(Completion);
 
             Console.Write("Getting the processed training, validation and test sets...");
