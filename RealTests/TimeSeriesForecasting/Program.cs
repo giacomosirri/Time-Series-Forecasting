@@ -55,6 +55,8 @@ namespace TimeSeriesForecasting
 
         private const string LabelFile = "labels-training-set-timeseries-2009-2016.txt";
         private const string FeatureFile = "features-training-set-timeseries-2009-2016.txt";
+        private const string PredictionFile = "predictions.txt";
+        private const string ExpectedFile = "expected-values.txt";
         private const string Completion = "  COMPLETE\n";
 
         static void Main(string[] args)
@@ -102,7 +104,6 @@ namespace TimeSeriesForecasting
             Console.WriteLine(Completion);
 #endif
             NetworkModel nn;
-            /*
             if (config.ModelName == "RNN")
             {
                 nn = new RecurrentNeuralNetwork(trainingInputTensor.size(2), 
@@ -123,13 +124,14 @@ namespace TimeSeriesForecasting
             model.Fit(trainingInputTensor, trainingOutputTensor, validationInputTensor, validationOutputTensor);
             Console.WriteLine(Completion);
             Console.WriteLine($"MSE: {model.CurrentLoss:F5}\n");
-            */
 
+            /*
             Console.Write("Loading the model from file...");
             nn = new RecurrentNeuralNetwork(trainingInputTensor.size(2), trainingOutputTensor.size(1), 
                 trainingOutputTensor.size(2), LogDir + $"RNN.model.bin");
             IModelManager model = new ModelManager(nn, LogDir);
             Console.WriteLine(Completion);
+            */
 
             Console.Write("Assessing model performance on the test set...");
             IDictionary<AccuracyMetric, double> metrics = model.EvaluateAccuracy(testInputTensor, testOutputTensor);
@@ -142,6 +144,22 @@ namespace TimeSeriesForecasting
             model.Save();
             Console.WriteLine(Completion);
             */
+
+            Console.Write("Predicting new values...");
+            Tensor y = model.Predict(testInputTensor);
+            Console.WriteLine(Completion);
+            double min = dpp.ColumnMinimumValue[config.LabelColumns[0]];
+            double max = dpp.ColumnMaximumValue[config.LabelColumns[0]];
+            Tensor output = y * (max - min) + min;
+            var predictionLogger = new TensorLogger(LogDir + PredictionFile);
+
+            Console.Write("Logging predicted and expected values on file...");
+            predictionLogger.Log(output.reshape(y.size(0), 1), "predictions on the test set");
+            predictionLogger.Dispose();
+            var expectedLogger = new TensorLogger(LogDir + ExpectedFile);
+            Tensor expected = testOutputTensor * (max - min) + min;
+            expectedLogger.Log(expected.reshape(y.size(0), 1), "expected values");
+            Console.WriteLine(Completion);
 
             DateTime endTime = DateTime.Now;
             Console.WriteLine($"Program is completed...    {endTime}\n");
