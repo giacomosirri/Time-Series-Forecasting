@@ -10,7 +10,7 @@ namespace TimeSeriesForecasting
     /// preprocessing operations before the <see cref="DataPreprocessor"/> instance is even 
     /// created.
     /// </summary>
-    internal class DataPreprocessorBuilder
+    public class DataPreprocessorBuilder
     {
         private (DateTime? firstDate, DateTime? lastDate) _range;
         private DataPreprocessor.NormalizationMethod _normalization;
@@ -19,7 +19,7 @@ namespace TimeSeriesForecasting
         /// <summary>
         /// Creates a new instance of <see cref="DataPreprocessorBuilder"/>.
         /// </summary>
-        internal DataPreprocessorBuilder()
+        public DataPreprocessorBuilder()
         {
             _range = (null, null);
             _normalization = DataPreprocessor.NormalizationMethod.NONE;
@@ -32,7 +32,7 @@ namespace TimeSeriesForecasting
         /// <param name="splits">A <see cref="Tuple"/> with the percentages of values to be included in the 
         /// training, validation and test set respectively.</param>
         /// <returns>This instance of <see cref="DataPreprocessorBuilder"/>.</returns>
-        internal DataPreprocessorBuilder Split((int training, int validation, int test) splits)
+        public DataPreprocessorBuilder Split((int training, int validation, int test) splits)
         {
             _splits = splits;
             return this;
@@ -43,7 +43,7 @@ namespace TimeSeriesForecasting
         /// </summary>
         /// <param name="normalization">The normalization method.</param>
         /// <returns>This instance of <see cref="DataPreprocessorBuilder"/>.</returns>
-        internal DataPreprocessorBuilder Normalize(DataPreprocessor.NormalizationMethod normalization)
+        public DataPreprocessorBuilder Normalize(DataPreprocessor.NormalizationMethod normalization)
         {
             _normalization = normalization;
             return this;
@@ -56,7 +56,7 @@ namespace TimeSeriesForecasting
         /// processed data. It might be useful to speed up processing if the dataset contains dozens of thousands of 
         /// observations or even more.</param>
         /// <returns>This instance of <see cref="DataPreprocessorBuilder"/>.</returns>
-        internal DataPreprocessorBuilder AddDateRange((DateTime? firstDate, DateTime? lastDate) range)
+        public DataPreprocessorBuilder AddDateRange((DateTime? firstDate, DateTime? lastDate) range)
         {
             _range = range;
             return this;
@@ -67,7 +67,7 @@ namespace TimeSeriesForecasting
         /// </summary>
         /// <param name="records">A list of <see cref="Record"/>s that represent phenomenon observations.</param>
         /// <returns>A new instance of <see cref="Data"/>.</returns>
-        internal DataPreprocessor Build(IList<Record> records)
+        public DataPreprocessor Build(IList<Record> records)
         {
             return new DataPreprocessor(records, _splits, _normalization, _range);
         }

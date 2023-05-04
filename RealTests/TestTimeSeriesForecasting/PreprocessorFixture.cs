@@ -33,7 +33,7 @@ namespace TestTimeSeriesForecasting
                 records.Add(new Record(values, currentDate));
                 currentDate = currentDate.Value.AddMinutes(10);
             }
-            Preprocessor = new DataPreprocessor(records);
+            Preprocessor = new DataPreprocessorBuilder().Build(records);
         }
 
         public void Dispose()

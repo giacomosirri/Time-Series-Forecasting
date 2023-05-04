@@ -66,17 +66,17 @@ namespace TestTimeSeriesForecasting
             DateTime? firstDate = new DateTime(2010, 11, 25, 10, 0, 0);
             DateTime? lastDate = new DateTime(2010, 12, 31, 23, 0, 0);
             var preprocessor = _fixture.Preprocessor;
-            preprocessor.DateRange = new Tuple<DateTime?, DateTime?>(firstDate, lastDate);
+            preprocessor.DateRange = (firstDate, lastDate);
             Assert.Equal(firstDate, preprocessor.FirstDate);
             Assert.Equal(lastDate, preprocessor.LastDate);
 
-            preprocessor.DateRange = new Tuple<DateTime?, DateTime?>(lastDate, null);
+            preprocessor.DateRange = (lastDate, null);
             Assert.Equal(lastDate, preprocessor.FirstDate);
             Assert.Equal(_fixture.LastDatasetDate, preprocessor.LastDate);
 
             DateTime? outOfBoundsFirstDate = new DateTime(2005, 1, 1, 0, 0, 0);
             DateTime? outOfBoundsLastDate = new DateTime(2020, 10, 5, 0, 0, 0);
-            preprocessor.DateRange = new Tuple<DateTime?, DateTime?>(outOfBoundsFirstDate, outOfBoundsLastDate);
+            preprocessor.DateRange = (outOfBoundsFirstDate, outOfBoundsLastDate);
             Assert.Equal(_fixture.FirstDatasetDate, preprocessor.FirstDate);
             Assert.Equal(_fixture.LastDatasetDate, preprocessor.LastDate);
         }
