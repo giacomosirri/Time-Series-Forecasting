@@ -76,7 +76,7 @@ namespace TimeSeriesForecasting
                         records,
                         config.DatasetSplitRatio, 
                         (NormalizationMethod)Enum.Parse(typeof(NormalizationMethod), config.NormalizationMethod.ToUpper()), 
-                        Tuple.Create(config.FirstValidDate, config.LastValidDate)
+                        (config.FirstValidDate, config.LastValidDate)
             );
             Console.WriteLine(Completion);
 

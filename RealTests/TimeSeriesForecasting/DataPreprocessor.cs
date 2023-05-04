@@ -35,8 +35,11 @@ namespace TimeSeriesForecasting
         private DateTime _lastDate = DateTime.MaxValue;
 
         public int TrainingSetPercentage { get; private set; }
+
         public int ValidationSetPercentage { get; private set; }
+
         public int TestSetPercentage { get; private set; }
+
         public NormalizationMethod Normalization
         {
             get => _normalization;
@@ -45,14 +48,17 @@ namespace TimeSeriesForecasting
                 _normalization = value;
                 _normalizedData = ComputeNormalization();
                 // DateRange must be updated so that the order of the operations in the pipeline is preserved.
-                DateRange = Tuple.Create(new DateTime?(_firstDate), new DateTime?(_lastDate));
+                DateRange = (_firstDate, _lastDate);
             }
         }
-        public Tuple<DateTime?, DateTime?> DateRange
+
+        public (DateTime? firstValidDate, DateTime? lastValidDate) DateRange
         {
             set
             {
-                if (value.Item1.HasValue && value.Item2.HasValue && value.Item1.Value >= value.Item2.Value)
+                if (value.firstValidDate.HasValue && 
+                    value.lastValidDate.HasValue &&
+                    value.firstValidDate.Value >= value.lastValidDate.Value)
                 {
                     throw new ArgumentException("The first item must be earlier than the second item.");
                 }
@@ -62,19 +68,24 @@ namespace TimeSeriesForecasting
                  * If the first item in the given tuple is earlier than the first date in the dataset, then the first date
                  * is set to the first date in the dataset, so it is basically a reset. The same is true for the last date.
                  */
-                _firstDate = value.Item1.HasValue ?
-                                new DateTime(Math.Max(value.Item1.Value.Ticks, datasetMinDate.Ticks)) : datasetMinDate;
-                _lastDate = value.Item2.HasValue ?
-                                new DateTime(Math.Min(value.Item2.Value.Ticks, datasetMaxDate.Ticks)) : datasetMaxDate;
+                _firstDate = value.firstValidDate.HasValue ?
+                                new DateTime(Math.Max(value.firstValidDate.Value.Ticks, datasetMinDate.Ticks)) : datasetMinDate;
+                _lastDate = value.lastValidDate.HasValue ?
+                                new DateTime(Math.Min(value.lastValidDate.Value.Ticks, datasetMaxDate.Ticks)) : datasetMaxDate;
                 _dateLimitedData = LimitDateRange();
             }
         }
+
         public DateTime FirstDate { get => _firstDate; }
+
         public DateTime LastDate { get => _lastDate; }
 
         public IDictionary<string, double> ColumnMinimumValue { get; private set; }
+
         public IDictionary<string, double> ColumnMaximumValue { get; private set; }
+
         public IDictionary<string, double> ColumnAverage { get; private set; }
+
         public IDictionary<string, double> ColumnStandardDeviation { get; private set; }
 
         /// <summary>
@@ -83,8 +94,7 @@ namespace TimeSeriesForecasting
         /// included in the training, validation and test sets are assigned to the default values.
         /// </summary>
         /// <param name="records">A list of <see cref="Record"/>s that represent phenomenon observations.</param>
-        public DataPreprocessor(IList<Record> records) : 
-            this(records, (70, 20, 10), NormalizationMethod.NONE, Tuple.Create<DateTime?, DateTime?>(null, null)) { }
+        public DataPreprocessor(IList<Record> records) : this(records, (70, 20, 10), NormalizationMethod.NONE, (null, null)) { }
 
         /// <summary>
         /// Creates a new instance of DataPreprocessor, with custom parameters to suit the needs of the client.
@@ -98,7 +108,7 @@ namespace TimeSeriesForecasting
         /// processed data. It might be useful to speed up processing if the dataset contains dozens of thousands of 
         /// observations or even more.</param>
         public DataPreprocessor(IList<Record> records, (int training, int validation, int test) splits,
-                                NormalizationMethod normalization, Tuple<DateTime?, DateTime?> range)
+                                NormalizationMethod normalization, (DateTime? firstValidDate, DateTime? lastValidDate) range)
         {
             ColumnMinimumValue = new Dictionary<string, double>();
             ColumnMaximumValue = new Dictionary<string, double>();
@@ -133,7 +143,7 @@ namespace TimeSeriesForecasting
              * This is the preprocessing PIPELINE: first data is processed, i.e. clear measurement errors are cleaned up and
              * new features are engineered, then data is normalized using the given normalization method and finally records
              * are removed if their timestamp is not inside the given range. After these three lines of code are executed,
-             * data is ready to be acquired by the client through the following Get___Set() methods.
+             * data is ready to be acquired by the client through the Get___Set() methods below.
              */
             _processedData = ProcessData();
             Normalization = normalization;
