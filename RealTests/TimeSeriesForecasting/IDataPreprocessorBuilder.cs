@@ -14,16 +14,34 @@ namespace TimeSeriesForecasting
     internal interface IDataPreprocessorBuilder
     {
         /// <summary>
-        /// Normalize the data.
+        /// Splits the data into training, validation and test sets.
         /// </summary>
-        /// <param name="normalization">An existing <see cref="NormalizationMethod"/>.</param>
-        /// <returns></returns>
-        internal IDataPreprocessorBuilder Normalize(NormalizationMethod normalization);
-
+        /// <param name="splits">A <see cref="Tuple"/> with the percentages of values to be included in the 
+        /// training, validation and test set respectively.</param>
+        /// <returns>This instance of <see cref="DataPreprocessorBuilder"/>.</returns>
         internal IDataPreprocessorBuilder Split((int training, int validation, int test) splits);
 
+        /// <summary>
+        /// Normalize the data.
+        /// </summary>
+        /// <param name="normalization">The normalization method.</param>
+        /// <returns>This instance of <see cref="DataPreprocessorBuilder"/>.</returns>
+        internal IDataPreprocessorBuilder Normalize(NormalizationMethod normalization);
+
+        /// <summary>
+        /// Clips the data to the given date boundaries.
+        /// </summary>
+        /// <param name="range">A <see cref="Tuple"/> that contains the first and last date to be included in the
+        /// processed data. It might be useful to speed up processing if the dataset contains dozens of thousands of 
+        /// observations or even more.</param>
+        /// <returns>This instance of <see cref="DataPreprocessorBuilder"/>.</returns>
         internal IDataPreprocessorBuilder AddDateRange((DateTime? firstDate, DateTime? lastDate) range);
 
+        /// <summary>
+        /// Creates a new instance of DataPreprocessor, with the custom parameters previously specified.
+        /// </summary>
+        /// <param name="records">A list of <see cref="Record"/>s that represent phenomenon observations.</param>
+        /// <returns>A new instance of <see cref="Data"/>.</returns>
         internal DataPreprocessor Build(IList<Record> records);
     }
 }
