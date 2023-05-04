@@ -54,8 +54,9 @@ namespace TestTimeSeriesForecasting
             {
                 int batch = rnd.Next(0, _batches);
                 int row = rnd.Next(0, InputWidth);
-                int col = rnd.Next(1, _features);
-                double expected = (double)_set.Rows[GetRow(batch, row)].ItemArray[col]!;
+                int col = rnd.Next(0, _features);
+                // col+1 because the _set DataTable contains the Date Time column while the input tensor does not.
+                double expected = (double)_set.Rows[batch + row].ItemArray[col+1]!;
                 double actual = _input[batch, row, col].item<float>();
                 Assert.True(Math.Abs(expected - actual) < _fixture.Tolerance);
             }
@@ -70,13 +71,12 @@ namespace TestTimeSeriesForecasting
             {
                 int batch = rnd.Next(0, _batches);
                 int row = rnd.Next(0, LabelWidth);
-                int col = rnd.Next(1, _labels);
-                double expected = (double)_set.Rows[GetRow(batch, row)].ItemArray[col]!;
+                int col = rnd.Next(0, _labels);
+                // Indexing of the row to find a label column, since the output is obviously made of label column values only.
+                double expected = (double)_set.Rows[batch + row + InputWidth + Offset][_labelColumns[col]];
                 double actual = _output[batch, row, col].item<float>();
                 Assert.True(Math.Abs(expected - actual) < _fixture.Tolerance);
             }
         }
-
-        private static int GetRow(int batch, int row) => batch + row;
     }
 }
