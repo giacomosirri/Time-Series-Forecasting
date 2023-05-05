@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>net6.0</TargetFramework>
@@ -8,7 +8,7 @@
 
   <ItemGroup>
     <PackageReference Include="libtorch-cpu-win-x64" Version="1.13.0.1" />
-    <PackageReference Include="TorchSharp" Version="0.99.4" />
+    <PackageReference Include="TorchSharp" Version="0.99.6" />
   </ItemGroup>
 
   <ItemGroup>
