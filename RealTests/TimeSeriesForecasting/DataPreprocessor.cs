@@ -140,17 +140,18 @@ namespace TimeSeriesForecasting
                                     (double)daysBetweenFirstAndLastDate / newDaysBetweenFirstAndLastDate) < 10e-2);
         }
 
-        public DataTable GetTrainingSet() => GetSet(TrainingSetPercentage);
+        public DataTable GetTrainingSet() => GetSet(TrainingSetPercentage, 0);
 
-        public DataTable GetValidationSet() => GetSet(ValidationSetPercentage);
+        public DataTable GetValidationSet() => GetSet(ValidationSetPercentage, TrainingSetPercentage);
 
-        public DataTable GetTestSet() => GetSet(TestSetPercentage);
+        public DataTable GetTestSet() => GetSet(TestSetPercentage, TrainingSetPercentage + ValidationSetPercentage);
 
-        private DataTable GetSet(int percentage)
+        private DataTable GetSet(int takePercentage, int skipPercentage)
         {
+            int takeRows = (int)Math.Round(_dateLimitedData.Rows.Count * takePercentage / 100.0);
+            int skipRows = (int)Math.Round(_dateLimitedData.Rows.Count * skipPercentage / 100.0);
             DataTable result = _dateLimitedData.Clone();
-            int rows = (int)Math.Round(_dateLimitedData.Rows.Count * percentage / 100.0);
-            for (int i = 0; i < rows; i++)
+            for (int i = skipRows; i < skipRows + takeRows; i++)
             {
                 result.ImportRow(_dateLimitedData.Rows[i]);
             }
