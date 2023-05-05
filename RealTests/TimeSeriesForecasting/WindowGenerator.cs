@@ -89,7 +89,7 @@ namespace TimeSeriesForecasting
                                 .ToArray();
                 T[][] label = table
                                 .AsEnumerable()
-                                .Skip(startIndex + InputWidth + Offset)
+                                .Skip(startIndex + InputWidth + Offset - 1)
                                 .Take(OutputWidth)
                                 .Select(dr => dr.ItemArray
                                     .Where((_, i) => LabelColumns.Contains(table.Columns[i].ColumnName))
