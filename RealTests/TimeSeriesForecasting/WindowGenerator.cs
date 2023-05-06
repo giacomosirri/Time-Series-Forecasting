@@ -1,4 +1,5 @@
 ﻿using System.Data;
+using TimeSeriesForecasting.IO;
 using static TorchSharp.torch;
 
 namespace TimeSeriesForecasting
@@ -10,9 +11,6 @@ namespace TimeSeriesForecasting
     /// </summary>
     public class WindowGenerator : IWindowGenerator
     {
-        private static readonly string s_errorMessage = "Missing value in a table cell. Please provide a complete table.";
-        private static readonly string[] s_indexColumns = { "Date Time" };
-
         /// <summary>
         /// The number of time steps in each window.
         /// </summary>
@@ -83,8 +81,9 @@ namespace TimeSeriesForecasting
                                 .Skip(startIndex)
                                 .Take(InputWidth)
                                 .Select(dr => dr.ItemArray
-                                    .Where((_, i) => !s_indexColumns.Contains(table.Columns[i].ColumnName))
-                                    .Select(item => item != null ? (T)item : throw new ArgumentException(s_errorMessage))
+                                    // Features are all the columns apart from the index of the table.
+                                    .Where((_, i) => Record.Index != table.Columns[i].ColumnName)
+                                    .Select(item => (T)item!)
                                     .ToArray())
                                 .ToArray();
                 T[][] label = table
@@ -92,8 +91,9 @@ namespace TimeSeriesForecasting
                                 .Skip(startIndex + InputWidth + Offset - 1)
                                 .Take(OutputWidth)
                                 .Select(dr => dr.ItemArray
+                                    // Labels are all the values in the LabelColumns columns.
                                     .Where((_, i) => LabelColumns.Contains(table.Columns[i].ColumnName))
-                                    .Select(item => item != null ? (T)item : throw new ArgumentException(s_errorMessage))
+                                    .Select(item => (T)item!)
                                     .ToArray())
                                 .ToArray();
                 features.Add(feature);
@@ -116,17 +116,6 @@ namespace TimeSeriesForecasting
                                     .reshape(labelsBatchSize, outputTimeSteps, labelsSize)
                                     .to_type(float32);
             return Tuple.Create(featuresTensor, labelsTensor);
-        }
-
-        /// <summary>
-        /// Clones this window generator object. The returned object has the same parameters of this one,
-        /// so that it can be used to operate on related data (e.g. to split the training, validation and test
-        /// sets using the same parameters).
-        /// </summary>
-        /// <returns>A new <see cref="WindowGenerator"/> with the same parameters as the one this method is called on.</returns>
-        public WindowGenerator Clone()
-        {
-            return new WindowGenerator(InputWidth, OutputWidth, Offset, LabelColumns);
         }
     }
 }
