@@ -84,14 +84,19 @@ namespace TimeSeriesForecasting
             DataTable validationSet = dpp.GetValidationSet();
             DataTable testSet = dpp.GetTestSet();
             Console.WriteLine(Completion);
-
-            var singleStepWindow = new WindowGenerator(config.InputWidth, config.OutputWidth, config.Offset, config.LabelColumns); 
+            
             Console.Write("Generating windows (batches) of data from the training, validation and test sets...");
+            var singleStepWindow = new WindowGenerator(config.InputWidth, config.OutputWidth, config.Offset, config.LabelColumns);
             (Tensor trainingInputTensor, Tensor trainingOutputTensor) = singleStepWindow.GenerateWindows<double>(trainingSet);
             (Tensor validationInputTensor, Tensor validationOutputTensor) = singleStepWindow.GenerateWindows<double>(validationSet);
             (Tensor testInputTensor, Tensor testOutputTensor) = singleStepWindow.GenerateWindows<double>(testSet);
             Console.WriteLine(Completion);
-#if TEST
+
+            /*
+             * The commented out code below prints training input features and labels values on file and can be used
+             * to check that the window generation algorithm is correct.
+             */
+            /*
             var featureLogger = new TensorLogger(LogDir + FeatureFile);
             Console.Write("Logging training set features on file...");
             featureLogger.Log(trainingInputTensor, "Training set features");
@@ -101,7 +106,8 @@ namespace TimeSeriesForecasting
             Console.Write("Logging training set labels on file...");
             labelLogger.Log(trainingOutputTensor, $"Training set values to predict: {string.Join(", ", config.LabelColumns)}");
             Console.WriteLine(Completion);
-#endif
+            */
+
             NetworkModel nn;
             if (config.ModelName == "RNN")
             {
