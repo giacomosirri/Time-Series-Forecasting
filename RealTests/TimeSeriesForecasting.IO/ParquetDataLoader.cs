@@ -38,6 +38,11 @@ namespace TimeSeriesForecasting.IO
                 }
                 catch (ArgumentException)
                 {
+                    /* 
+                     * The record was missing data, so it is going to be left out altogheter.
+                     * This ensures that the list of records returned by this method can be used
+                     * without worring about missing values.
+                     */
                 }
             }
             return records;
