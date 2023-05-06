@@ -1,10 +1,8 @@
 ﻿using System.Data;
 using TimeSeriesForecasting.IO;
-using TimeSeriesForecasting.NeuralNetwork;
 using System.Reflection;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using MoreLinq;
 using static TimeSeriesForecasting.DataPreprocessor;
 using static TorchSharp.torch;
 
@@ -12,17 +10,17 @@ namespace TimeSeriesForecasting
 {
     internal class Configuration
     {
-        public string[] LabelColumns { get; private set; }
-        public string NormalizationMethod { get; private set; }
-        public DateTime? FirstValidDate { get; private set; }
-        public DateTime? LastValidDate { get; private set; }
-        public (int training, int validation, int test) DatasetSplitRatio { get; private set; }
-        public int InputWidth { get; private set; }
-        public int OutputWidth { get; private set; }
-        public int Offset { get; private set; }
-        public string ModelName { get; private set; }
+        internal string[] LabelColumns { get; private set; }
+        internal string NormalizationMethod { get; private set; }
+        internal DateTime? FirstValidDate { get; private set; }
+        internal DateTime? LastValidDate { get; private set; }
+        internal (int training, int validation, int test) DatasetSplitRatio { get; private set; }
+        internal int InputWidth { get; private set; }
+        internal int OutputWidth { get; private set; }
+        internal int Offset { get; private set; }
+        internal string ModelName { get; private set; }
 
-        public Configuration() 
+        internal Configuration() 
         {
             string resourceName = "TimeSeriesForecasting.Properties.configurationSettings.json";
             using var reader = new StreamReader(Assembly.GetExecutingAssembly().GetManifestResourceStream(resourceName)!);
@@ -51,17 +49,18 @@ namespace TimeSeriesForecasting
     {
         private static readonly string ValuesFile = Properties.Resources.NumericDatasetParquetFilePath;
         private static readonly string DatesFile = Properties.Resources.TimestampDatasetParquetFilePath;
-        private static readonly string LogDir = Properties.Resources.LogDirectoryPath;
+        internal static readonly string LogDir = Properties.Resources.LogDirectoryPath;
 
+        internal const string Completion = "  COMPLETE\n"; 
+        internal const string PredictionFile = "predictions.txt";
+        internal const string ExpectedFile = "expected-values.txt";
         private const string LabelFile = "labels-training-set-timeseries-2009-2016.txt";
         private const string FeatureFile = "features-training-set-timeseries-2009-2016.txt";
-        private const string PredictionFile = "predictions.txt";
-        private const string ExpectedFile = "expected-values.txt";
-        private const string Completion = "  COMPLETE\n";
+
+        internal static Configuration Configuration { get; } = new Configuration();
 
         static void Main(string[] args)
         {
-            var config = new Configuration();
             DateTime startTime = DateTime.Now;
             Console.WriteLine($"Program is running...    {startTime}\n");
 
@@ -71,11 +70,11 @@ namespace TimeSeriesForecasting
 
             Console.Write("Initializing the preprocessor...");
             NormalizationMethod normalization = (NormalizationMethod)Enum.Parse(typeof(NormalizationMethod),
-                                                    config.NormalizationMethod.ToUpper());
+                                                    Configuration.NormalizationMethod.ToUpper());
             var dpp = new DataPreprocessorBuilder()
-                            .Split(config.DatasetSplitRatio)
+                            .Split(Configuration.DatasetSplitRatio)
                             .Normalize(normalization)
-                            .AddDateRange((config.FirstValidDate, config.LastValidDate))
+                            .AddDateRange((Configuration.FirstValidDate, Configuration.LastValidDate))
                             .Build(records);
             Console.WriteLine(Completion);
 
@@ -86,7 +85,8 @@ namespace TimeSeriesForecasting
             Console.WriteLine(Completion);
             
             Console.Write("Generating windows (batches) of data from the training, validation and test sets...");
-            var singleStepWindow = new WindowGenerator(config.InputWidth, config.OutputWidth, config.Offset, config.LabelColumns);
+            var singleStepWindow = new WindowGenerator(Configuration.InputWidth, 
+                Configuration.OutputWidth, Configuration.Offset, Configuration.LabelColumns);
             (Tensor trainingInputTensor, Tensor trainingOutputTensor) = singleStepWindow.GenerateWindows<double>(trainingSet);
             (Tensor validationInputTensor, Tensor validationOutputTensor) = singleStepWindow.GenerateWindows<double>(validationSet);
             (Tensor testInputTensor, Tensor testOutputTensor) = singleStepWindow.GenerateWindows<double>(testSet);
@@ -108,63 +108,10 @@ namespace TimeSeriesForecasting
             Console.WriteLine(Completion);
             */
 
-            NetworkModel nn;
-            if (config.ModelName == "RNN")
-            {
-                nn = new RecurrentNeuralNetwork(trainingInputTensor.size(2), 
-                    trainingOutputTensor.size(1), trainingOutputTensor.size(2));
-            }
-            else if (config.ModelName == "Linear")
-            {
-                nn = new SimpleNeuralNetwork(trainingInputTensor.size(1), trainingInputTensor.size(2),
-                    trainingOutputTensor.size(1), trainingOutputTensor.size(2));
-            }
-            else
-            {
-                throw new InvalidDataException("The configuration parameter that contains the name of the model is wrong.");
-            }
-            IModelManager model = new ModelManager(nn, LogDir);
-
-            Console.Write("Training the model...");
-            model.Fit(trainingInputTensor, trainingOutputTensor, validationInputTensor, validationOutputTensor);
-            Console.WriteLine(Completion);
-            Console.WriteLine($"MSE: {model.CurrentLoss:F5}\n");
-
-            /*
-            Console.Write("Loading the model from file...");
-            nn = new RecurrentNeuralNetwork(trainingInputTensor.size(2), trainingOutputTensor.size(1), 
-                trainingOutputTensor.size(2), LogDir + $"RNN.model.bin");
-            IModelManager model = new ModelManager(nn, LogDir);
-            Console.WriteLine(Completion);
-            */
-
-            Console.Write("Assessing model performance on the test set...");
-            IDictionary<AccuracyMetric, double> metrics = model.EvaluateAccuracy(testInputTensor, testOutputTensor);
-            Console.WriteLine(Completion);
-            metrics.ForEach(metric => Console.WriteLine($"{metric.Key}: {metric.Value:F5}"));
-            Console.WriteLine();
-
-            /*
-            Console.Write("Saving the model on file...");
-            model.Save();
-            Console.WriteLine(Completion);
-            */
-
-            Console.Write("Predicting new values...");
-            Tensor y = model.Predict(testInputTensor);
-            Console.WriteLine(Completion);
-            double min = dpp.ColumnMinimumValue[config.LabelColumns[0]];
-            double max = dpp.ColumnMaximumValue[config.LabelColumns[0]];
-            Tensor output = y * (max - min) + min;
-            var predictionLogger = new TensorLogger(LogDir + PredictionFile);
-
-            Console.Write("Logging predicted and expected values on file...");
-            predictionLogger.Log(output.reshape(y.size(0), 1), "predictions on the test set");
-            predictionLogger.Dispose();
-            var expectedLogger = new TensorLogger(LogDir + ExpectedFile);
-            Tensor expected = testOutputTensor * (max - min) + min;
-            expectedLogger.Log(expected.reshape(y.size(0), 1), "expected values");
-            Console.WriteLine(Completion);
+            ProgramTrain.Train(trainingInputTensor, trainingOutputTensor,
+                validationInputTensor, validationOutputTensor, testInputTensor, testOutputTensor);
+            ProgramPredict.Predict(testInputTensor, testOutputTensor, Configuration.InputWidth, (int)trainingInputTensor.size(2), 
+                Configuration.OutputWidth, Configuration.LabelColumns.Length);
 
             DateTime endTime = DateTime.Now;
             Console.WriteLine($"Program is completed...    {endTime}\n");
