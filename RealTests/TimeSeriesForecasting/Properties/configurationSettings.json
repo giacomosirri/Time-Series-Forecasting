@@ -12,13 +12,13 @@
   * Use format yyyy-mm-dd
   */
   "first valid date": "2009-01-01",
-  "last valid date": "2016-12-31",
+  "last valid date": "2012-12-31",
  /*
   * First value is training, second is validation and third is test. 
   * If the numbers do not add up to 100, then the default 70,20,10 split is used.
   */
-  "training validation test split": [ 70, 20, 10 ],
-  "input window width": 48,
+  "training validation test split": [ 50, 25, 25 ],
+  "input window width": 24,
   "output window width": 1,
   "offset between input and output": 1,
  /*
