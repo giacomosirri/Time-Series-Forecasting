@@ -73,7 +73,7 @@ namespace TestTimeSeriesForecasting
                 int row = rnd.Next(0, LabelWidth);
                 int col = rnd.Next(0, _labels);
                 // Indexing of the row to find a label column, since the output is obviously made of label column values only.
-                double expected = (double)_set.Rows[batch + row + InputWidth + Offset][_labelColumns[col]];
+                double expected = (double)_set.Rows[batch + row + InputWidth + Offset - 1][_labelColumns[col]];
                 double actual = _output[batch, row, col].item<float>();
                 Assert.True(Math.Abs(expected - actual) < _fixture.Tolerance);
             }
