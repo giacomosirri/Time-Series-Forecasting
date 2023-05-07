@@ -80,14 +80,6 @@ namespace TimeSeriesForecasting
 
         public DateTime LastDate { get => _lastDate; }
 
-        public IDictionary<string, double> ColumnMinimumValue { get; private set; } = new Dictionary<string, double>();
-
-        public IDictionary<string, double> ColumnMaximumValue { get; private set; } = new Dictionary<string, double>();
-
-        public IDictionary<string, double> ColumnAverage { get; private set; } = new Dictionary<string, double>();
-
-        public IDictionary<string, double> ColumnStandardDeviation { get; private set; } = new Dictionary<string, double>();
-
         internal DataPreprocessor(IList<Record> records, (int training, int validation, int test) splits,
                                 NormalizationMethod normalization, (DateTime? firstValidDate, DateTime? lastValidDate) range)
         {
@@ -244,8 +236,6 @@ namespace TimeSeriesForecasting
                             double min = normalizationTable.AsEnumerable().Min(r => r.Field<double>(cn));
                             double max = normalizationTable.AsEnumerable().Max(r => r.Field<double>(cn));
                             parameters.Add(cn, new Tuple<double, double>(min, max));
-                            ColumnMinimumValue.Add(cn, min);
-                            ColumnMaximumValue.Add(cn, max);
                         });
                     DataTable normalizedData = _processedData.Copy();
                     normalizedData.AsEnumerable().ForEach(row => normalizedData.Columns
@@ -264,16 +254,12 @@ namespace TimeSeriesForecasting
                         .Where(cn => cn != Record.Index)
                         .Select(cn => Tuple.Create(cn, normalizationTable.AsEnumerable().Average(r => r.Field<double>(cn))))
                         .ToList();
-                    // Add to the averages dictionary.
-                    averages.ForEach(item => ColumnAverage.Add(item.Item1, item.Item2));
                     IList<Tuple<string, double>> standardDeviations = normalizationTable.Columns
                         .Cast<DataColumn>()
                         .Select(col => col.ColumnName)
                         .Where(cn => cn != Record.Index)
                         .Select(cn => Tuple.Create(cn, CalculateStDev(normalizationTable.AsEnumerable().Select(row => row.Field<double>(cn)))))
                         .ToList();
-                    // Add to the standard deviation dictionary.
-                    standardDeviations.ForEach(item => ColumnAverage.Add(item.Item1, item.Item2));
                     parameters = averages
                         .Zip(standardDeviations, (avg, stdev) => new { Key = avg.Item1, Value = Tuple.Create(avg.Item2, stdev.Item2) })
                         .ToDictionary(x => x.Key, x => x.Value);
