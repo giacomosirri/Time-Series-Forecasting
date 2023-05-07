@@ -59,6 +59,28 @@ namespace TimeSeriesForecasting
 
         internal static Configuration Configuration { get; } = new Configuration();
 
+        /*
+         * This is the starting point of program execution. Initially, the program loads data of interest from file,
+         * then it preprocesses it and create the necessary data structures to perform the analysis.
+         * After that, there is a fork between the code that trains a neural network model and the code that predicts
+         * new values using a pre-trained model. 
+         * 
+         * This is for two main reasons:
+         * - Separation of concerns: Training a model and predicting a time series are two very different operations
+         * and they are not even necessarily consequential. In fact, one can train a model, save its parameters on
+         * file and then use those parameters on a completely different software. Conversely, the prediction can be
+         * made using parameters read from a file.
+         * - Efficiency: The prediction of new values is a much more frequent operation than the training of a model.
+         * 
+         * This means that this program can be run either in training mode or in prediction mode.
+         * To choose which to run, specify the correct command-line argument. There are three numerics arguments allowed:
+         * - 0: Train the model specified in the configurationSettings.json file and save its learnt parameters on file.
+         * - 1: Predict new values using the model parameters read from file.
+         * Currently, this operation merely tries to predict the actual values of the test set, which are already known. 
+         * This is obviously done for debugging purposes, but it will be changed in the final implementation.
+         * - 2: Perform operation 0 and 1 subsequently, so that the full model lifecycle is mimicked.
+         * Any other command-line argument will cease the program.
+         */
         static void Main(string[] args)
         {
             DateTime startTime = DateTime.Now;
