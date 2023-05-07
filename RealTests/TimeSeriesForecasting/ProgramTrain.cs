@@ -1,6 +1,8 @@
 ﻿using TimeSeriesForecasting.NeuralNetwork;
 using MoreLinq;
 using static TorchSharp.torch;
+using ICSharpCode.SharpZipLib;
+using TimeSeriesForecasting.IO;
 
 namespace TimeSeriesForecasting
 {
@@ -28,6 +30,8 @@ namespace TimeSeriesForecasting
 
             Console.Write("Training the model...");
             model.Fit(trainingInputTensor, trainingOutputTensor, validationInputTensor, validationOutputTensor);
+            var lossLogger = new LossLogger(Program.CurrentDirPath + "loss.txt");
+            lossLogger.Prepare(model.LossProgress.Select((value, index) => (index, value)).ToList(), "Loss progress");
             Console.WriteLine(Program.Completion);
 
             Console.Write("Assessing model performance on the test set...");

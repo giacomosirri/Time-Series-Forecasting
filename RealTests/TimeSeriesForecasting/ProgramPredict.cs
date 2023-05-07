@@ -41,11 +41,11 @@ namespace TimeSeriesForecasting
             //double max = dpp.ColumnMaximumValue[Configuration.LabelColumns[0]];
             Tensor output = y; //* (max - min) + min;
             var predictionLogger = new TensorLogger(Program.CurrentDirPath + Program.PredictionFile);
-            predictionLogger.Log(output.reshape(y.size(0), 1), "predictions on the test set");
-            predictionLogger.Dispose();
+            predictionLogger.Prepare(output.reshape(y.size(0), 1), "predictions on the test set");
+            predictionLogger.Write();
             var expectedLogger = new TensorLogger(Program.CurrentDirPath + Program.ExpectedFile);
             Tensor expected = expectedOutput; //* (max - min) + min;
-            expectedLogger.Log(expected.reshape(y.size(0), 1), "expected values");
+            expectedLogger.Prepare(expected.reshape(y.size(0), 1), "expected values");
             Console.WriteLine(Program.Completion);
         }
     }

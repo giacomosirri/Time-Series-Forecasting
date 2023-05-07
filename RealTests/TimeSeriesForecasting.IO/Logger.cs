@@ -12,22 +12,26 @@
             _stream.Flush();
         }
 
-        public void Log(T value, string message) 
+        public void Prepare(T value, string message) 
         {
-            _stream.WriteLine(message);
+            if (message != null)
+            {
+                _stream.WriteLine(message);
+            }
             _stream.WriteLine(ValueRepresentation(value));
         }
 
-        public void Log(IList<T> list, string message)
+        public void Prepare(IList<T> list, string message)
         {
-            _stream.WriteLine(message);
+            if (message != null)
+            {
+                _stream.WriteLine(message);
+            }
             list.AsEnumerable().ToList().ForEach(value => _stream.WriteLine(ValueRepresentation(value)));
         }
 
-        public void LogComment(string comment) => _stream.WriteLine(comment);
-
         protected abstract string ValueRepresentation(T value);
 
-        public void Dispose() => _stream.Close();
+        public void Write() => _stream.Close();
     }
 }
