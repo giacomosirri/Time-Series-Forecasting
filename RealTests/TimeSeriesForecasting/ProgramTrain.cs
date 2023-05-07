@@ -1,7 +1,5 @@
 ﻿using TimeSeriesForecasting.NeuralNetwork;
-using MoreLinq;
 using static TorchSharp.torch;
-using ICSharpCode.SharpZipLib;
 using TimeSeriesForecasting.IO;
 
 namespace TimeSeriesForecasting
@@ -30,15 +28,20 @@ namespace TimeSeriesForecasting
 
             Console.Write("Training the model...");
             model.Fit(trainingInputTensor, trainingOutputTensor, validationInputTensor, validationOutputTensor);
-            var lossLogger = new LossLogger(Program.CurrentDirPath + "loss.txt");
+            var lossLogger = new TupleLogger<int>(Program.CurrentDirPath + "loss.txt");
+            Console.WriteLine(Program.Completion);
+
+            Console.Write("Logging the progress of the loss during training on file...");
             lossLogger.Prepare(model.LossProgress.Select((value, index) => (index, value)).ToList(), "Loss progress");
+            lossLogger.Write();
             Console.WriteLine(Program.Completion);
 
             Console.Write("Assessing model performance on the test set...");
             IDictionary<AccuracyMetric, double> metrics = model.EvaluateAccuracy(testInputTensor, testOutputTensor);
+            var metricsLogger = new TupleLogger<string>(Program.CurrentDirPath + "metrics.txt");
+            metricsLogger.Prepare(metrics.Select(metric => (metric.Key.ToString(), (float)metric.Value)).ToList(), null);
+            metricsLogger.Write();
             Console.WriteLine(Program.Completion);
-            metrics.ForEach(metric => Console.WriteLine($"{metric.Key}: {metric.Value:F5}"));
-            Console.WriteLine();
 
             Console.Write("Saving the model on file...");
             model.Save(Program.CurrentDirPath);
