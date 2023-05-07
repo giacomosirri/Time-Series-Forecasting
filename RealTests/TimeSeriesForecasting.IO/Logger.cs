@@ -12,7 +12,7 @@
             _stream.Flush();
         }
 
-        public void Prepare(T value, string message) 
+        public void Prepare(T value, string? message) 
         {
             if (message != null)
             {
@@ -21,7 +21,7 @@
             _stream.WriteLine(ValueRepresentation(value));
         }
 
-        public void Prepare(IList<T> list, string message)
+        public void Prepare(IList<T> list, string? message)
         {
             if (message != null)
             {
