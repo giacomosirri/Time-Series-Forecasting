@@ -42,10 +42,11 @@ namespace TimeSeriesForecasting
             Tensor output = y; //* (max - min) + min;
             var predictionLogger = new TensorLogger(Program.CurrentDirPath + Program.PredictionFile);
             predictionLogger.Prepare(output.reshape(y.size(0), 1), "predictions on the test set");
-            predictionLogger.Write();
-            var expectedLogger = new TensorLogger(Program.CurrentDirPath + Program.ExpectedFile);
+            predictionLogger.Write(); 
             Tensor expected = expectedOutput; //* (max - min) + min;
+            var expectedLogger = new TensorLogger(Program.CurrentDirPath + Program.ExpectedFile);
             expectedLogger.Prepare(expected.reshape(y.size(0), 1), "expected values");
+            expectedLogger.Write();
             Console.WriteLine(Program.Completion);
         }
     }

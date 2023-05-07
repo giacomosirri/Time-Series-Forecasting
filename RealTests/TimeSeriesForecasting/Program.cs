@@ -92,7 +92,7 @@ namespace TimeSeriesForecasting
              * yyyy-mm-dd hh.mm.ss, where the date is the start time of the current execution of the program.
              */
             CurrentDirPath = $"{LogDir}{startTime.Year}-{startTime.Month:00}-{startTime.Day:00} " +
-                $"{startTime.Hour:00}.{startTime.Minute:00}.{startTime.Second:00}";
+                $"{startTime.Hour:00}.{startTime.Minute:00}.{startTime.Second:00}\\";
             Directory.CreateDirectory(CurrentDirPath);
 
             Console.Write("Loading data from .parquet file...");

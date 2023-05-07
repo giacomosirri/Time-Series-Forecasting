@@ -32,7 +32,8 @@ namespace TimeSeriesForecasting
             Console.WriteLine(Program.Completion);
 
             Console.Write("Logging the progress of the loss during training on file...");
-            lossLogger.Prepare(model.LossProgress.Select((value, index) => (index, value)).ToList(), "Loss progress");
+            lossLogger.Prepare(model.LossProgress.Select((value, index) => (index, value)).ToList(), 
+                "Loss progress - Loss after n epochs:");
             lossLogger.Write();
             Console.WriteLine(Program.Completion);
 
