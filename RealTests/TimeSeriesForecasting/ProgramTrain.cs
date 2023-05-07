@@ -28,12 +28,12 @@ namespace TimeSeriesForecasting
 
             // Create a README inside the current subdirectory.
             var descriptionLogger = new TupleLogger<string, string>(Program.CurrentDirPath + "README.md");
-            string description = $"This is a {Program.Configuration.ModelName} model, trained using Stochatic Gradient Descent" +
-                $"on data ranging from {Program.Configuration.FirstValidDate} to {Program.Configuration.LastValidDate}" +
+            string description = $"\nThis is a {Program.Configuration.ModelName} model, trained using Stochatic Gradient Descent " +
+                $"on data {(Program.Configuration.FirstValidDate.HasValue || Program.Configuration.LastValidDate.HasValue ? $"ranging {(Program.Configuration.FirstValidDate.HasValue ? $"from {Program.Configuration.FirstValidDate?.ToString("yyyy-MM-dd")}" : "")} " + $"{(Program.Configuration.LastValidDate.HasValue ? $"to {Program.Configuration.LastValidDate?.ToString("yyyy-MM-dd")}" : "")}" : "")} " +
                 $"{(Program.Configuration.NormalizationMethod == "None" ? "" : $"preprocessed using {Program.Configuration.NormalizationMethod}")}. " +
-                $"The model tries to predict the next {Program.Configuration.OutputWidth} value(s) of the variable(s) " +
-                $"{string.Join(", ", Program.Configuration.LabelColumns)} {Program.Configuration.Offset} hour(s) into the future, " +
-                $"using the previous {Program.Configuration.InputWidth} hour(s) of data.";
+                $"The model tries to predict the next {Program.Configuration.OutputWidth} value of the variable(s) " +
+                $"{string.Join(", ", Program.Configuration.LabelColumns)} {Program.Configuration.Offset} hour into the future, " +
+                $"using the previous {Program.Configuration.InputWidth} hour of data.";
             descriptionLogger.Prepare(("Description", description), null);
             descriptionLogger.Write();
 
