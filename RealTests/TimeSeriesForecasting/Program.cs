@@ -84,6 +84,8 @@ namespace TimeSeriesForecasting
          */
         static void Main(string[] args)
         {
+            int arg = int.Parse(args[0]);
+
             DateTime startTime = DateTime.Now;
             Console.WriteLine($"Program is running...    {startTime}\n");
 
@@ -91,7 +93,8 @@ namespace TimeSeriesForecasting
              * Create a new subdirectory of the log directory specified in the Resources file, with the name
              * yyyy-mm-dd hh.mm.ss, where the date is the start time of the current execution of the program.
              */
-            CurrentDirPath = $"{LogDir}{startTime.Year}-{startTime.Month:00}-{startTime.Day:00} " +
+            CurrentDirPath = $"{(arg==0 ? "training" : (arg==1 ? "predictions" : "training + predictions"))} " +
+                $"{LogDir}{startTime.Year}-{startTime.Month:00}-{startTime.Day:00} " +
                 $"{startTime.Hour:00}.{startTime.Minute:00}.{startTime.Second:00}\\";
             Directory.CreateDirectory(CurrentDirPath);
 
@@ -139,7 +142,6 @@ namespace TimeSeriesForecasting
             Console.WriteLine(Completion);
             */
 
-            int arg = int.Parse(args[0]);
             if (arg != 0 && arg != 1 && arg != 2)
             {
                 Environment.Exit(1);
@@ -152,7 +154,7 @@ namespace TimeSeriesForecasting
             if (arg == 1 || arg == 2)
             {
                 ProgramPredict.Predict(testInputTensor, testOutputTensor, Configuration.InputWidth, (int)trainingInputTensor.size(2),
-                    Configuration.OutputWidth, Configuration.LabelColumns.Length);
+                    Configuration.OutputWidth, Configuration.LabelColumns.Length, new DirectoryInfo(LogDir).GetDirectories()[0].FullName);
             }
 
             DateTime endTime = DateTime.Now;
