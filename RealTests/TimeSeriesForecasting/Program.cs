@@ -58,6 +58,7 @@ namespace TimeSeriesForecasting
         private const string FeatureFile = "features-training-set-timeseries-2009-2016.txt";
 
         internal static Configuration Configuration { get; } = new Configuration();
+        internal static string CurrentDirPath { get; private set; } = "";
 
         /*
          * This is the starting point of program execution. Initially, the program loads data of interest from file,
@@ -85,6 +86,14 @@ namespace TimeSeriesForecasting
         {
             DateTime startTime = DateTime.Now;
             Console.WriteLine($"Program is running...    {startTime}\n");
+
+            /* 
+             * Create a new subdirectory of the log directory specified in the Resources file, with the name
+             * yyyy-mm-dd hh.mm.ss, where the date is the start time of the current execution of the program.
+             */
+            CurrentDirPath = $"{LogDir}{startTime.Year}-{startTime.Month:00}-{startTime.Day:00} " +
+                $"{startTime.Hour:00}.{startTime.Minute:00}.{startTime.Second:00}";
+            Directory.CreateDirectory(CurrentDirPath);
 
             Console.Write("Loading data from .parquet file...");
             var records = new ParquetDataLoader(ValuesFile, DatesFile).GetRecords();

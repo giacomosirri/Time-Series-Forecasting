@@ -6,6 +6,10 @@ namespace TimeSeriesForecasting
 {
     internal class ProgramPredict
     {
+        /*
+         * This method does not actually predict new values right now. In fact, it is more of a test of
+         * the quality of the model, as the expected output is known.
+         */
         internal static void Predict(Tensor inputTensor, Tensor expectedOutput, 
             int inputTimeSteps, int inputFeatures, int outputTimeSteps, int outputFeatures)
         {
