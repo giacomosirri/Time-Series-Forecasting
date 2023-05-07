@@ -23,6 +23,8 @@ namespace TimeSeriesForecasting.NeuralNetwork
 
         public IList<float> LossProgress { get; }
 
+        public TimeSpan LastTrainingTime { get; }
+
         public void Fit(Tensor trainX, Tensor trainY, Tensor validX, Tensor validY);
 
         public void Fit(Tensor x, Tensor y);

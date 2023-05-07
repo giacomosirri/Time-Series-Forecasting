@@ -4,6 +4,6 @@
     {
         public TupleLogger(string filePath) : base(filePath) { }
 
-        protected override string ValueRepresentation((K key, V value) value) => $"{value.key,-3} \t: {value.value:F4}";
+        protected override string ValueRepresentation((K key, V value) value) => $"{value.key,-4} \t: {value.value:F4}";
     }
 }

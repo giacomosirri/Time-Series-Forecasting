@@ -17,7 +17,7 @@ namespace TimeSeriesForecasting.NeuralNetwork
         private const double Arrest = 1e-4;
 
         private readonly NetworkModel _model;       
-        // Type of x (features), type of y (labels) --> type of the result.
+        // Type of features, type of labels --> type of the result.
         private readonly Loss<Tensor, Tensor, Tensor> _lossFunction;
         private readonly IList<float> _losses = new List<float>();
         // Hyperparameters
@@ -39,6 +39,8 @@ namespace TimeSeriesForecasting.NeuralNetwork
                 }
             }
         }
+        // How much time the last training took.
+        public TimeSpan LastTrainingTime { get; private set; }
 
         public ModelManager(NetworkModel model)
         {
@@ -64,7 +66,7 @@ namespace TimeSeriesForecasting.NeuralNetwork
             var optimizer = new Adam(_model.parameters(), _learningRate);
             Tensor[] batched_x = trainX.split(_batchSize);
             Tensor[] batched_y = trainY.split(_batchSize);
-            Tensor previousOutput = tensor(float.MaxValue);
+            DateTime start = DateTime.Now;
             for (int i = 0; i < MaxEpochs; i++)
             {
                 float epochLoss = 0.0f;
@@ -84,6 +86,8 @@ namespace TimeSeriesForecasting.NeuralNetwork
                 // Add the average loss for all the batches in this epoch to the list of losses.
                 _losses.Add(epochLoss / batched_x.Length);
             }
+            DateTime end = DateTime.Now;
+            LastTrainingTime = end - start;
             IsTrained = true;
         }
 

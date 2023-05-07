@@ -52,6 +52,7 @@ namespace TimeSeriesForecasting
             IDictionary<AccuracyMetric, double> metrics = model.EvaluateAccuracy(testInputTensor, testOutputTensor);
             var metricsLogger = new TupleLogger<string, double>(Program.CurrentDirPath + "metrics.txt");
             metricsLogger.Prepare(metrics.Select(metric => (metric.Key.ToString(), metric.Value)).ToList(), null);
+            metricsLogger.Prepare(("Training time in seconds", model.LastTrainingTime.Seconds), null);
             metricsLogger.Write();
             Console.WriteLine(Program.Completion);
 
