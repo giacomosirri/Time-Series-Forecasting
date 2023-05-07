@@ -20,11 +20,17 @@ namespace TimeSeriesForecasting.NeuralNetwork
     public interface IModelManager
     {
         public bool IsTrained { get; }
-        public float CurrentLoss { get; }
+
+        public IList<float> LossProgress { get; }
+
         public void Fit(Tensor trainX, Tensor trainY, Tensor validX, Tensor validY);
+
         public void Fit(Tensor x, Tensor y);
+
         public IDictionary<AccuracyMetric, double> EvaluateAccuracy(Tensor x, Tensor y);
+
         public Tensor Predict(Tensor x);
-        public void Save();
+
+        public void Save(string directory);
     }
 }

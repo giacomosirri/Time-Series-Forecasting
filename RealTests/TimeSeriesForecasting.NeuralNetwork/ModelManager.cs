@@ -1,5 +1,4 @@
-﻿using TimeSeriesForecasting.IO;
-using TorchSharp;
+﻿using TorchSharp;
 using TorchSharp.Modules;
 using static TorchSharp.torch;
 
@@ -17,39 +16,34 @@ namespace TimeSeriesForecasting.NeuralNetwork
         private const int MaxEpochs = 50;
         private const double Arrest = 1e-4;
 
-        private readonly string _directoryPath;
         private readonly NetworkModel _model;       
         // Type of x (features), type of y (labels) --> type of the result.
         private readonly Loss<Tensor, Tensor, Tensor> _lossFunction;
         private readonly IList<float> _losses = new List<float>();
-        private readonly LossLogger _logger;
         // Hyperparameters
-        private double _learningRate = 1e-5;
-        private int _batchSize = 64;
+        private readonly double _learningRate = 1e-5;
+        private readonly int _batchSize = 64;
 
         public bool IsTrained { get; private set; } = false;
-        public float CurrentLoss
-        { 
+        public IList<float> LossProgress
+        {
             get
             {
                 if (IsTrained)
                 {
-                    // Return the final loss of the trained model.
-                    return _losses[^1];
+                    return _losses;
                 }
                 else
                 {
-                    throw new InvalidOperationException("Current loss is unavailable because the model has never been trained.");
+                    throw new InvalidOperationException("Loss progress is unavailable because the model has never been trained.");
                 }
-            } 
+            }
         }
 
-        public ModelManager(NetworkModel model, string dirPath)
+        public ModelManager(NetworkModel model)
         {
             _model = model;
             _lossFunction = new MSELoss();
-            _directoryPath = dirPath;
-            _logger = new LossLogger(_directoryPath + "loss.txt");
         }
 
         public void Fit(Tensor trainX, Tensor trainY, Tensor validX, Tensor validY)
@@ -91,10 +85,6 @@ namespace TimeSeriesForecasting.NeuralNetwork
                 _losses.Add(epochLoss / batched_x.Length);
             }
             IsTrained = true;
-            // Log the computed losses to file.
-            _logger.Log(_losses.AsEnumerable().Select((value, index) => (index, value)).ToList(), 
-                $"MSE with learning rate {_learningRate} and batch size {_batchSize}:");
-            _logger.Dispose();
         }
 
         public IDictionary<AccuracyMetric, double> EvaluateAccuracy(Tensor x, Tensor y)
@@ -131,6 +121,6 @@ namespace TimeSeriesForecasting.NeuralNetwork
             return y;
         }
 
-        public void Save() => _model.save(_directoryPath + $"{_model.GetName()}.model.bin");
+        public void Save(string directory) => _model.save(directory + $"{_model.GetName()}.model.bin");
     }
 }

@@ -24,12 +24,11 @@ namespace TimeSeriesForecasting
             {
                 throw new InvalidDataException("The configuration parameter that contains the name of the model is wrong.");
             }
-            IModelManager model = new ModelManager(nn, Program.LogDir);
+            IModelManager model = new ModelManager(nn);
 
             Console.Write("Training the model...");
             model.Fit(trainingInputTensor, trainingOutputTensor, validationInputTensor, validationOutputTensor);
             Console.WriteLine(Program.Completion);
-            Console.WriteLine($"MSE: {model.CurrentLoss:F5}\n");
 
             Console.Write("Assessing model performance on the test set...");
             IDictionary<AccuracyMetric, double> metrics = model.EvaluateAccuracy(testInputTensor, testOutputTensor);
@@ -38,7 +37,7 @@ namespace TimeSeriesForecasting
             Console.WriteLine();
 
             Console.Write("Saving the model on file...");
-            model.Save();
+            model.Save(Program.CurrentDirPath);
             Console.WriteLine(Program.Completion);
         }
     }
