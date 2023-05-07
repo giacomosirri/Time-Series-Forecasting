@@ -4,7 +4,6 @@
     {
         public TupleLogger(string filePath) : base(filePath) { }
 
-        protected override string ValueRepresentation((T key, float value) value) => 
-            $"After {value.key,-2} epochs\t: {value.value:F4}";
+        protected override string ValueRepresentation((T key, float value) value) => $"{value.key,-2} \t: {value.value:F4}";
     }
 }
