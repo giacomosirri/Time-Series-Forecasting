@@ -51,9 +51,7 @@ namespace TimeSeriesForecasting
         private static readonly string DatesFile = Properties.Resources.TimestampDatasetParquetFilePath;
         internal static readonly string LogDir = Properties.Resources.LogDirectoryPath;
 
-        internal const string Completion = "  COMPLETE\n"; 
-        internal const string PredictionFile = "predictions.txt";
-        internal const string ExpectedFile = "expected-values.txt";
+        internal const string Completion = "  COMPLETE\n";
         private const string LabelFile = "labels-training-set-timeseries-2009-2016.txt";
         private const string FeatureFile = "features-training-set-timeseries-2009-2016.txt";
 
@@ -84,19 +82,33 @@ namespace TimeSeriesForecasting
          */
         static void Main(string[] args)
         {
-            int arg = int.Parse(args[0]);
-
             DateTime startTime = DateTime.Now;
             Console.WriteLine($"Program is running...    {startTime}\n");
 
-            /* 
-             * Create a new subdirectory of the log directory specified in the Resources file, with the name
-             * yyyy-mm-dd hh.mm.ss, where the date is the start time of the current execution of the program.
-             */
-            CurrentDirPath = $"{(arg==0 ? "training" : (arg==1 ? "predictions" : "training + predictions"))} " +
-                $"{LogDir}{startTime.Year}-{startTime.Month:00}-{startTime.Day:00} " +
-                $"{startTime.Hour:00}.{startTime.Minute:00}.{startTime.Second:00}\\";
-            Directory.CreateDirectory(CurrentDirPath);
+            int arg = int.Parse(args[0]);
+            // If the program is running in prediction mode, the directory where the model is located must be provided.
+            if (arg == 1)
+            {
+                if (args.Length > 1)
+                {
+                    CurrentDirPath = args[1];
+                }
+                else
+                {
+                    Environment.Exit(1);
+                }
+            }
+            else
+            {
+                /* 
+                 * Create a new subdirectory of the log directory specified in the Resources file, with the name
+                 * yyyy-mm-dd hh.mm.ss, where the date is the start time of the current execution of the program.
+                 */
+                CurrentDirPath = $"{LogDir}{(arg == 0 ? "training" : (arg == 1 ? "predictions" : "training + predictions"))} " +
+                    $"{startTime.Year}-{startTime.Month:00}-{startTime.Day:00} " +
+                    $"{startTime.Hour:00}.{startTime.Minute:00}.{startTime.Second:00}\\";
+                Directory.CreateDirectory(CurrentDirPath);
+            }
 
             Console.Write("Loading data from .parquet file...");
             var records = new ParquetDataLoader(ValuesFile, DatesFile).GetRecords();
@@ -154,7 +166,7 @@ namespace TimeSeriesForecasting
             if (arg == 1 || arg == 2)
             {
                 ProgramPredict.Predict(testInputTensor, testOutputTensor, Configuration.InputWidth, (int)trainingInputTensor.size(2),
-                    Configuration.OutputWidth, Configuration.LabelColumns.Length, new DirectoryInfo(LogDir).GetDirectories()[0].FullName);
+                    Configuration.OutputWidth, Configuration.LabelColumns.Length);
             }
 
             DateTime endTime = DateTime.Now;
