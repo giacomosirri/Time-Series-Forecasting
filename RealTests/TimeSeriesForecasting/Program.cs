@@ -130,10 +130,21 @@ namespace TimeSeriesForecasting
             Console.WriteLine(Completion);
             */
 
-            ProgramTrain.Train(trainingInputTensor, trainingOutputTensor,
-                validationInputTensor, validationOutputTensor, testInputTensor, testOutputTensor);
-            ProgramPredict.Predict(testInputTensor, testOutputTensor, Configuration.InputWidth, (int)trainingInputTensor.size(2), 
-                Configuration.OutputWidth, Configuration.LabelColumns.Length);
+            int arg = int.Parse(args[0]);
+            if (arg != 0 && arg != 1 && arg != 2)
+            {
+                Environment.Exit(1);
+            }
+            if (arg == 0 || arg == 2)
+            {
+                ProgramTrain.Train(trainingInputTensor, trainingOutputTensor,
+                    validationInputTensor, validationOutputTensor, testInputTensor, testOutputTensor);
+            }
+            if (arg == 1 || arg == 2)
+            {
+                ProgramPredict.Predict(testInputTensor, testOutputTensor, Configuration.InputWidth, (int)trainingInputTensor.size(2),
+                    Configuration.OutputWidth, Configuration.LabelColumns.Length);
+            }
 
             DateTime endTime = DateTime.Now;
             Console.WriteLine($"Program is completed...    {endTime}\n");
