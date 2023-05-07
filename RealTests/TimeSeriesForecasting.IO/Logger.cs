@@ -1,5 +1,6 @@
 ﻿namespace TimeSeriesForecasting.IO
 {
+    // Uses the Template Method pattern.
     public abstract class Logger<T>
     {
         protected readonly StreamWriter _stream;
