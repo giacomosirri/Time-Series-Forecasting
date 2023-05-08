@@ -123,6 +123,13 @@
   <data name="NumericDatasetParquetFilePath" xml:space="preserve">
     <value>C:\\Users\\sirri\\Desktop\\Coding\\Tirocinio\\TorchSharp\\datasets\\timeseries-2009-2016-no-datetime.parquet</value>
   </data>
+  <assembly alias="System.Windows.Forms" name="System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" />
+  <data name="plot_loss_progress" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\plot_loss_progress.py;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="plot_predicted_vs_expected" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\plot_predicted_vs_expected.py;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
   <data name="TimestampDatasetParquetFilePath" xml:space="preserve">
     <value>C:\\Users\\sirri\\Desktop\\Coding\\Tirocinio\\TorchSharp\\datasets\\timeseries-2009-2016-datetime.parquet</value>
   </data>
