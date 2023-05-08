@@ -6,7 +6,7 @@ namespace TimeSeriesForecasting
 {
     internal class ProgramTrain
     {
-        internal static void Train(Tensor trainingInputTensor, Tensor trainingOutputTensor, 
+        internal static void Train(Tensor trainingInputTensor, Tensor trainingOutputTensor,
             Tensor validationInputTensor, Tensor validationOutputTensor, Tensor testInputTensor, Tensor testOutputTensor)
         {
             NetworkModel nn;
@@ -43,10 +43,14 @@ namespace TimeSeriesForecasting
             Console.WriteLine(Program.Completion);
 
             Console.Write("Logging the progress of the loss during training on file...");
-            lossLogger.Prepare(model.LossProgress.Select((value, index) => (index, value)).ToList(), 
+            lossLogger.Prepare(model.LossProgress.Select((value, index) => (index, value)).ToList(),
                 "Loss after n epochs:");
             lossLogger.Write();
             Console.WriteLine(Program.Completion);
+
+            Console.Write("Drawing a graph to show loss progress...");
+            (bool res, string? message) = Program.DrawGraph("loss");
+            Console.WriteLine(res ? Program.Completion : message);
 
             Console.Write("Assessing model performance on the test set...");
             IDictionary<AccuracyMetric, double> metrics = model.EvaluateAccuracy(testInputTensor, testOutputTensor);

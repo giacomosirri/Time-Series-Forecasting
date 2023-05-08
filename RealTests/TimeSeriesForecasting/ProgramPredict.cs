@@ -44,6 +44,10 @@ namespace TimeSeriesForecasting
             expectedLogger.Prepare(expectedOutput.reshape(output.size(0), 1), "Expected values of the predicted variable");
             expectedLogger.Write();
             Console.WriteLine(Program.Completion);
+
+            Console.Write("Drawing a graph to compared predicted and expected output...");
+            (bool res, string? message) = Program.DrawGraph("predicted");
+            Console.WriteLine(res ? Program.Completion : message);
         }
     }
 }
