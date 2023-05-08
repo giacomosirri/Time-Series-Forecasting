@@ -14,7 +14,18 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" />
 
   <ItemGroup>
+    <None Remove="plot_loss_progress.py" />
+    <None Remove="plot_predicted_vs_expected.py" />
     <None Remove="Properties\configurationSettings.json" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="plot_loss_progress.py">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="plot_predicted_vs_expected.py">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
 
   <ItemGroup>

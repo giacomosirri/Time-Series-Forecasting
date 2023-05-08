@@ -79,26 +79,6 @@ namespace TimeSeriesForecasting.Properties {
         }
         
         /// <summary>
-        ///   Cerca una risorsa localizzata di tipo System.Byte[].
-        /// </summary>
-        internal static byte[] plot_loss_progress {
-            get {
-                object obj = ResourceManager.GetObject("plot_loss_progress", resourceCulture);
-                return ((byte[])(obj));
-            }
-        }
-        
-        /// <summary>
-        ///   Cerca una risorsa localizzata di tipo System.Byte[].
-        /// </summary>
-        internal static byte[] plot_predicted_vs_expected {
-            get {
-                object obj = ResourceManager.GetObject("plot_predicted_vs_expected", resourceCulture);
-                return ((byte[])(obj));
-            }
-        }
-        
-        /// <summary>
         ///   Cerca una stringa localizzata simile a C:\\Users\\sirri\\Desktop\\Coding\\Tirocinio\\TorchSharp\\datasets\\timeseries-2009-2016-datetime.parquet.
         /// </summary>
         internal static string TimestampDatasetParquetFilePath {
