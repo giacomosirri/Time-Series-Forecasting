@@ -47,7 +47,7 @@ namespace TimeSeriesForecasting
             expectedLogger.Write();
             Console.WriteLine(Program.Completion);
 
-            Console.Write("Drawing a graph to compared predicted and expected output...");
+            Console.Write("Drawing a graph to compare predicted and expected output...");
             (bool res, string? message) = Program.RunPythonScript(ScriptName);
             Console.WriteLine(res ? Program.Completion : message);
         }

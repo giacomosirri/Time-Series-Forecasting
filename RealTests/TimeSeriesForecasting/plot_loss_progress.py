@@ -1,3 +1,6 @@
+# This is a Python script that plots the progress of the loss during the training of the model.
+# The figure is saved on a file called 'loss_progress_graph.png'.
+
 import sys
 import numpy as np
 import matplotlib.pyplot as plt
@@ -7,7 +10,7 @@ if len(sys.argv) > 1:
 else:
     exit(1)
 
-with open(f'{directory}loss-progress.txt', 'r') as f:
+with open(f'{directory}loss_progress.txt', 'r') as f:
     next(f)
     values = []
     for line in f:
@@ -17,4 +20,4 @@ with open(f'{directory}loss-progress.txt', 'r') as f:
 loss = np.array(values)
 
 plt.plot(loss, "b-")
-plt.savefig(f'{directory}loss-progress.png')
+plt.savefig(f'{directory}loss_progress_graph.png')

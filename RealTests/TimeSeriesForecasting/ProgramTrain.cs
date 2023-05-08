@@ -41,7 +41,7 @@ namespace TimeSeriesForecasting
 
             Console.Write("Training the model...");
             model.Fit(trainingInputTensor, trainingOutputTensor, validationInputTensor, validationOutputTensor);
-            var lossLogger = new TupleLogger<int, float>(Program.CurrentDirPath + "loss-progress.txt");
+            var lossLogger = new TupleLogger<int, float>(Program.CurrentDirPath + "loss_progress.txt");
             Console.WriteLine(Program.Completion);
 
             Console.Write("Logging the progress of the loss during training on file...");
