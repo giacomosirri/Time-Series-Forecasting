@@ -61,7 +61,7 @@ namespace TimeSeriesForecasting.Properties {
         }
         
         /// <summary>
-        ///   Cerca una stringa localizzata simile a C:\\Users\\sirri\\Desktop\\Coding\\Tirocinio\\TorchSharp\\RealTests\\Logs\\.
+        ///   Cerca una stringa localizzata simile a C:\Users\sirri\Desktop\Coding\Tirocinio\TorchSharp\RealTests\Logs\.
         /// </summary>
         internal static string LogDirectoryPath {
             get {
