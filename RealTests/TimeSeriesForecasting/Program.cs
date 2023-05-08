@@ -187,22 +187,18 @@ namespace TimeSeriesForecasting
                     var assembly = Assembly.GetExecutingAssembly();
                     // Name of the python script.
                     resourceName = assembly.GetManifestResourceNames().Where(fileName => fileName.Contains(id)).Single();
-                    using Stream stream = assembly.GetManifestResourceStream(resourceName)!;
-                    using var reader = new StreamReader(stream);
-                    string script = reader.ReadToEnd();
                 }
-                catch (Exception ex) when (ex is ArgumentException || ex is ArgumentNullException || 
-                                           ex is FileLoadException || ex is FileNotFoundException)
+                catch (Exception ex) when (ex is InvalidOperationException || ex is ArgumentNullException)
                 {
-                    return (false, "Could not load python script.");
+                    return (false, "Could not find the requested python script.");
                 }
+                // Create and execute a new python process to draw the graph.
                 var process = new Process();
                 process.StartInfo.FileName = "python";
                 process.StartInfo.Arguments = $"{resourceName} {CurrentDirPath}";
                 process.StartInfo.UseShellExecute = false;
                 process.StartInfo.RedirectStandardOutput = true;
                 process.Start();
-                string output = process.StandardOutput.ReadToEnd();
                 process.WaitForExit();
                 return (true, null);
             }
