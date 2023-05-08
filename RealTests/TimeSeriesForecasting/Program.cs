@@ -51,6 +51,7 @@ namespace TimeSeriesForecasting
         private static readonly string ValuesFile = Properties.Resources.NumericDatasetParquetFilePath;
         private static readonly string DatesFile = Properties.Resources.TimestampDatasetParquetFilePath;
         internal static readonly string LogDir = Properties.Resources.LogDirectoryPath;
+        internal static readonly char Separator = Path.DirectorySeparatorChar;
 
         internal const string Completion = "  COMPLETE\n";
         private const string LabelFile = "labels-training-set-timeseries-2009-2016.txt";
@@ -105,9 +106,9 @@ namespace TimeSeriesForecasting
                  * Create a new subdirectory of the log directory specified in the Resources file, with the name
                  * yyyy-mm-dd hh.mm.ss, where the date is the start time of the current execution of the program.
                  */
-                CurrentDirPath = $"{LogDir}{(arg == 0 ? "training" : (arg == 1 ? "predictions" : "training + predictions"))} " +
-                    $"{startTime.Year}-{startTime.Month:00}-{startTime.Day:00} " +
-                    $"{startTime.Hour:00}.{startTime.Minute:00}.{startTime.Second:00}\\";
+                CurrentDirPath = $"{LogDir}{(arg == 0 ? "training" : (arg == 1 ? "predictions" : "training+predictions"))}---" +
+                    $"{startTime.Year}-{startTime.Month:00}-{startTime.Day:00}---" +
+                    $"{startTime.Hour:00}.{startTime.Minute:00}.{startTime.Second:00}{Separator}";
                 Directory.CreateDirectory(CurrentDirPath);
             }
 
@@ -177,15 +178,16 @@ namespace TimeSeriesForecasting
             Console.WriteLine($"Elapsed time: {elapsedTime}");
         }
 
-        internal static (bool result, string? message) RunPythonScript(string filePath)
+        internal static (bool result, string? message) RunPythonScript(string scriptName)
         {
             if ((Environment.GetEnvironmentVariable("PATH") != null) && 
                 Environment.GetEnvironmentVariable("PATH")!.Contains("Python"))
             {
+                string scriptPath = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)!, scriptName);
                 // Create and execute a new python process to draw the graph.
                 var process = new Process();
                 process.StartInfo.FileName = "python";
-                process.StartInfo.Arguments = $"{filePath} {CurrentDirPath}";
+                process.StartInfo.Arguments = $"{scriptPath} {CurrentDirPath}";
                 process.StartInfo.UseShellExecute = false;
                 process.StartInfo.RedirectStandardOutput = true;
                 bool res = process.Start();

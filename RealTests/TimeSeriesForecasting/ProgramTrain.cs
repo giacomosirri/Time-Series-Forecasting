@@ -6,6 +6,8 @@ namespace TimeSeriesForecasting
 {
     internal class ProgramTrain
     {
+        private static readonly string ScriptName = "plot_loss_progress.py";
+
         internal static void Train(Tensor trainingInputTensor, Tensor trainingOutputTensor,
             Tensor validationInputTensor, Tensor validationOutputTensor, Tensor testInputTensor, Tensor testOutputTensor)
         {
@@ -49,9 +51,7 @@ namespace TimeSeriesForecasting
             Console.WriteLine(Program.Completion);
 
             Console.Write("Drawing a graph to show loss progress...");
-            string fileName = $"{Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location)}\\" +
-                $"plot_loss_progress.py";
-            (bool res, string? message) = Program.RunPythonScript(fileName);
+            (bool res, string? message) = Program.RunPythonScript(ScriptName);
             Console.WriteLine(res ? Program.Completion : message);
 
             Console.Write("Assessing model performance on the test set...");

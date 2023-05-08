@@ -6,6 +6,8 @@ namespace TimeSeriesForecasting
 {
     internal class ProgramPredict
     {
+        private static readonly string ScriptName = "plot_predicted_vs_expected.py";
+
         /*
          * This method does not actually predict new values right now. In fact, it is more of a test of
          * the quality of the model, as the expected output is known.
@@ -46,9 +48,7 @@ namespace TimeSeriesForecasting
             Console.WriteLine(Program.Completion);
 
             Console.Write("Drawing a graph to compared predicted and expected output...");
-            string fileName = $"{Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location)}\\" +
-                $"plot_predicted_vs_expected.py";
-            (bool res, string? message) = Program.RunPythonScript(fileName);
+            (bool res, string? message) = Program.RunPythonScript(ScriptName);
             Console.WriteLine(res ? Program.Completion : message);
         }
     }
