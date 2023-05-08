@@ -5,6 +5,7 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using static TimeSeriesForecasting.DataPreprocessor;
 using static TorchSharp.torch;
+using System.Diagnostics;
 
 namespace TimeSeriesForecasting
 {
@@ -174,6 +175,38 @@ namespace TimeSeriesForecasting
 
             TimeSpan elapsedTime = endTime - startTime;
             Console.WriteLine($"Elapsed time: {elapsedTime}");
+        }
+
+        internal static (bool result, string? message) DrawGraph(string id)
+        {
+            if (Environment.GetEnvironmentVariable("PATH")!.Contains("Python"))
+            {
+                string resourceName = "";
+                try
+                {
+                    var assembly = Assembly.GetExecutingAssembly();
+                    // Name of the python script.
+                    resourceName = assembly.GetManifestResourceNames().Where(fileName => fileName.Contains(id)).Single();
+                    using Stream stream = assembly.GetManifestResourceStream(resourceName)!;
+                    using var reader = new StreamReader(stream);
+                    string script = reader.ReadToEnd();
+                }
+                catch (Exception ex) when (ex is ArgumentException || ex is ArgumentNullException || 
+                                           ex is FileLoadException || ex is FileNotFoundException)
+                {
+                    return (false, "Could not load python script.");
+                }
+                var process = new Process();
+                process.StartInfo.FileName = "python";
+                process.StartInfo.Arguments = $"{resourceName} {CurrentDirPath}";
+                process.StartInfo.UseShellExecute = false;
+                process.StartInfo.RedirectStandardOutput = true;
+                process.Start();
+                string output = process.StandardOutput.ReadToEnd();
+                process.WaitForExit();
+                return (true, null);
+            }
+            else return (false, "Python is not installed on your system. Please install it and try again.");
         }
     }
 }
