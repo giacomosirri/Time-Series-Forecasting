@@ -49,7 +49,9 @@ namespace TimeSeriesForecasting
             Console.WriteLine(Program.Completion);
 
             Console.Write("Drawing a graph to show loss progress...");
-            (bool res, string? message) = Program.DrawGraph("loss");
+            string fileName = $"{Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location)}\\" +
+                $"plot_loss_progress.py";
+            (bool res, string? message) = Program.RunPythonScript(fileName);
             Console.WriteLine(res ? Program.Completion : message);
 
             Console.Write("Assessing model performance on the test set...");

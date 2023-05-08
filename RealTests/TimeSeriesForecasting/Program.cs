@@ -177,32 +177,26 @@ namespace TimeSeriesForecasting
             Console.WriteLine($"Elapsed time: {elapsedTime}");
         }
 
-        internal static (bool result, string? message) DrawGraph(string id)
+        internal static (bool result, string? message) RunPythonScript(string filePath)
         {
-            if (Environment.GetEnvironmentVariable("PATH")!.Contains("Python"))
+            if ((Environment.GetEnvironmentVariable("PATH") != null) && 
+                Environment.GetEnvironmentVariable("PATH")!.Contains("Python"))
             {
-                string resourceName = "";
-                try
-                {
-                    var assembly = Assembly.GetExecutingAssembly();
-                    // Name of the python script.
-                    resourceName = assembly.GetManifestResourceNames().Where(fileName => fileName.Contains(id)).Single();
-                }
-                catch (Exception ex) when (ex is InvalidOperationException || ex is ArgumentNullException)
-                {
-                    return (false, "Could not find the requested python script.");
-                }
                 // Create and execute a new python process to draw the graph.
                 var process = new Process();
                 process.StartInfo.FileName = "python";
-                process.StartInfo.Arguments = $"{resourceName} {CurrentDirPath}";
+                process.StartInfo.Arguments = $"{filePath} {CurrentDirPath}";
                 process.StartInfo.UseShellExecute = false;
                 process.StartInfo.RedirectStandardOutput = true;
-                process.Start();
+                bool res = process.Start();
+                if (!res)
+                {
+                    return (false, "Python script could not be executed.");
+                }
                 process.WaitForExit();
                 return (true, null);
             }
-            else return (false, "Python is not installed on your system. Please install it and try again.");
+            else return (false, "  Python is not installed on your system. Please install it and try again.\n");
         }
     }
 }

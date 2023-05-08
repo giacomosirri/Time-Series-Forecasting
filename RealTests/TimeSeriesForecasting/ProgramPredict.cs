@@ -46,7 +46,9 @@ namespace TimeSeriesForecasting
             Console.WriteLine(Program.Completion);
 
             Console.Write("Drawing a graph to compared predicted and expected output...");
-            (bool res, string? message) = Program.DrawGraph("predicted");
+            string fileName = $"{Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location)}\\" +
+                $"plot_predicted_vs_expected.py";
+            (bool res, string? message) = Program.RunPythonScript(fileName);
             Console.WriteLine(res ? Program.Completion : message);
         }
     }
