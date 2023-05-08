@@ -1,8 +1,0 @@
-{
-  "profiles": {
-    "TimeSeriesForecasting": {
-      "commandName": "Project",
-      "commandLineArgs": "0"
-    }
-  }
-}
