@@ -194,6 +194,10 @@ namespace TimeSeriesForecasting
                 row["year sin"] = Math.Sin(secondsSinceEpoch * (2 * Math.PI / SecondsInYear));
                 row["year cos"] = Math.Cos(secondsSinceEpoch * (2 * Math.PI / SecondsInYear));
             }
+            // Remove columns that do not matter for predictions.
+            processedData.Columns.Remove("wd (deg)");
+            processedData.Columns.Remove("max. wv (m/s)");
+            processedData.Columns.Remove("wv (m/s)");
 #endif
             return processedData;
         }
