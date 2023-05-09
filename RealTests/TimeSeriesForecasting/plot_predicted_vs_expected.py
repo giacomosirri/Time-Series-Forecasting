@@ -33,6 +33,15 @@ with open(f'{directory}expected.txt', 'r') as f:
             values.append(float(line))
 expected = np.array(values)
 
-plt.plot(predictions[:500], "b-")
-plt.plot(expected[:500], "r-")
-plt.savefig(f'{directory}predicted_vs_expected_graph.png')
+plt.plot(predictions[:24], "bo-", label="predictions")
+plt.plot(expected[:24], "rx", label="known values")
+plt.title("Predicted vs expected values for the first day of the test set.")
+plt.legend(loc='upper right', fontsize='medium', frameon=True)
+plt.savefig(f'{directory}predicted_vs_expected_1day.png')
+
+days = 20
+plt.plot(predictions[-24*days:], "b-", label="predictions")
+plt.plot(expected[-24*days:], "r-", label="known values")
+plt.title(f"Predicted vs expected trend for the last {days} days of the test set.")
+plt.legend(loc='upper right', fontsize='medium', frameon=True)
+plt.savefig(f'{directory}predicted_vs_expected_long_run.png')
