@@ -42,11 +42,14 @@ namespace TimeSeriesForecasting.NeuralNetwork
 
         public override Tensor forward(Tensor input)
         {
-            // The Recurrent Neural Network's hidden state is initialized to zeros because the second parameter is null.
-            // For time series forecasting, it is better to use the final hidden state instead of the final output.
-            (Tensor _, Tensor finalHiddenState) = _rnn.forward(input, null);
-            // The final hidden state of the last layer is passed to a fully connected linear layer to calculate the output values.
-            return _linear.forward(finalHiddenState[-1]);
+            // The second parameter of the forward method call is null, so RNN's hidden state is initialized to zeros.
+            (Tensor output, Tensor finalHiddenState) = _rnn.forward(input, null);
+            // Note that: LastTimeStepOutput = finalHiddenState[-1]
+            // See https://stackoverflow.com/questions/48302810/whats-the-difference-between-hidden-and-output-in-pytorch-lstm
+            // for reference.
+            var lastTimeStepOutput = output.narrow(1, output.size(1) - 1, 1).squeeze();
+            // The last time step output is passed to a linear layer to get the final output of the RNN.
+            return _linear.forward(lastTimeStepOutput);
         }
     }
 }
