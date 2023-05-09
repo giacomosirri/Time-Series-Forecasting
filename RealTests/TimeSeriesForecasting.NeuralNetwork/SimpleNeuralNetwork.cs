@@ -13,7 +13,7 @@ namespace TimeSeriesForecasting.NeuralNetwork
          * U(−sqrt(k), sqrt(k)), where k = 1 / input_features.
          */
         public SimpleNeuralNetwork(long inputTimeSteps, long inputFeatures, long outputTimeSteps, long outputFeatures) 
-            : base(nameof(SimpleNeuralNetwork))
+            : base(nameof(Linear))
         {
             _linear = Linear(inputTimeSteps * inputFeatures, outputTimeSteps * outputFeatures);
             RegisterComponents();

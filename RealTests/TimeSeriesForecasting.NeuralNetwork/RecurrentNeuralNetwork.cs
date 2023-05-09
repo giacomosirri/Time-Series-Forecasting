@@ -17,7 +17,7 @@ namespace TimeSeriesForecasting.NeuralNetwork
          * The number of layers in the network is an inner hyperparameter of the network, independent from hyperparameters
          * of the training algorithm. How to deal with this hyperparameter is still unclear.
          */
-        private const int Layers = 3;
+        internal int Layers { get; } = 1;
 
         private readonly RNN _rnn;
         private readonly Linear _linear;
@@ -41,10 +41,9 @@ namespace TimeSeriesForecasting.NeuralNetwork
 
         public override Tensor forward(Tensor input)
         {
-            // Initialize hidden state. Hidden state is a Tensor of shape (1, batch_size, hidden_size).
-            Tensor initialHiddenState = zeros(Layers, input.size(0), HiddenSize);
+            // The Recurrent Neural Network's hidden state is initialized to zeros because the second parameter is null.
             // For time series forecasting, it is better to use the final hidden state instead of the final output.
-            (Tensor _, Tensor finalHiddenState) = _rnn.forward(input, initialHiddenState);
+            (Tensor _, Tensor finalHiddenState) = _rnn.forward(input, null);
             // The final hidden state of the last layer is passed to a fully connected linear layer to calculate the output values.
             return _linear.forward(finalHiddenState[-1]);
         }
