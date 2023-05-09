@@ -7,12 +7,13 @@ namespace TimeSeriesForecasting.NeuralNetwork
     public class RecurrentNeuralNetwork : NetworkModel
     {
         /* 
-         * The number of features in the hidden state. The hidden state is the "memory" of a recurrent neural network,
-         * so having a lot of features in it allows to capture more complex patterns. However, the computational
-         * complexity of the training can become enormous really fast, so a good compromise must be taken. Using 64
-         * for time series forecasting should be a good heuristic choice.
+         * The number of features in the hidden state, i.e. the number of neurons in a layer.
+         * The hidden state is the "memory" of a recurrent neural network, so having a lot of features in it 
+         * allows to capture more complex patterns. However, the computational complexity of the training can 
+         * become enormous really fast, so a good compromise must be taken. Using 16 for time series forecasting 
+         * should be a good heuristic choice.
          */
-        private const int HiddenSize = 64;
+        private const int HiddenSize = 16;
         /*
          * The number of layers in the network is an inner hyperparameter of the network, independent from hyperparameters
          * of the training algorithm. How to deal with this hyperparameter is still unclear.
