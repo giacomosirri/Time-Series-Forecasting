@@ -33,7 +33,7 @@ namespace TimeSeriesForecasting.NeuralNetwork
              * the network will then train faster and be more stable.
              */
             Tensor flattenedInput = input.flatten(start_dim: 1);
-            // Flattened input Tensor has shape (batch_size, time_steps * features), so it is compatible with the linear layer.
+            // Flattened input Tensor has shape (batch_size, time_steps * features).
             return _linear.forward(flattenedInput);
         }
     }

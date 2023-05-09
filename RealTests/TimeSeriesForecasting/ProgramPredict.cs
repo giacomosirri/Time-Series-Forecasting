@@ -27,6 +27,10 @@ namespace TimeSeriesForecasting
                 nn = new SimpleNeuralNetwork(inputTimeSteps, inputFeatures,
                     outputTimeSteps, outputFeatures, Program.CurrentDirPath + $"Linear.model.bin");
             }
+            else if (Program.Configuration.ModelName == "LSTM")
+            {
+                nn = new LSTM(inputFeatures, outputTimeSteps, outputFeatures, Program.CurrentDirPath + $"LSTM.model.bin");
+            }
             else
             {
                 throw new InvalidDataException("The configuration parameter that contains the name of the model is wrong.");
