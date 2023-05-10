@@ -14,8 +14,15 @@ namespace TimeSeriesForecasting
         public string NormalizationMethod { get; set; } = "";
         public DateTime? FirstValidDate { get; set; }
         public DateTime? LastValidDate { get; set; }
+        /*
+         * This property is used to set the values from the json configuration file,
+         * so it basically readonly from the Program's point of view.
+         */
         public int[] DatasetSplitRatio { private get; set; } = Array.Empty<int>();
-        public (int training, int validation, int test) DatasetSplitRatios
+        /*
+         * This property is used by the Program to access the splits.
+         */
+        public (int training, int validation, int test) TrainingValidationTestSplits
         { 
             get => (DatasetSplitRatio[0], DatasetSplitRatio[1], DatasetSplitRatio[2]);
         }
@@ -105,7 +112,7 @@ namespace TimeSeriesForecasting
             NormalizationMethod normalization = (NormalizationMethod)Enum.Parse(typeof(NormalizationMethod),
                                                     Configuration.NormalizationMethod.ToUpper());
             var dpp = new DataPreprocessorBuilder()
-                            .Split(Configuration.DatasetSplitRatios)
+                            .Split(Configuration.TrainingValidationTestSplits)
                             .Normalize(normalization)
                             .AddDateRange((Configuration.FirstValidDate, Configuration.LastValidDate))
                             .Build(records);
