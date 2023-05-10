@@ -8,10 +8,39 @@ using System.Reflection;
 
 namespace TimeSeriesForecasting
 {
+    /*
+     * This class encapsulates all the configuration parameters that pertain only to the training 
+     * of the model, but that will not be of interest when predicting future unknown values.
+     * Actually, the same normalization method used during training must be applied to input data also
+     * when predicting. However, the normalizer is serialized when training and deserialized before
+     * predicting, so that there is consistency of scale between training and prediction input data
+     * without the need for the user to specify the normalizer as a global configuration parameter.
+     */
+    internal class TrainingConfiguration
+    {
+        // The normalization method to apply to the training data.
+        public string NormalizationMethod { internal get; set; } = "";
+
+        // The first timestamp in temporal order to be considered during training.
+        public DateTime? FirstValidDate { internal get; set; }
+
+        // The first timestamp in temporal order to be considered during training.
+        public DateTime? LastValidDate { internal get; set; }
+
+        // This property is used by the JsonConvert object to fetch the split ratios array from the configuration file.
+        public int[] DatasetSplitRatios { private get; set; } = Array.Empty<int>();
+
+        // The fraction of data reserved for training, validation and test respectively.
+        internal (int training, int validation, int test) DatasetSplitRatio
+            => (DatasetSplitRatios[0], DatasetSplitRatios[1], DatasetSplitRatios[2]) = (70, 20, 10);
+    }
+
     internal class ProgramTrain
     {
         private static readonly string ScriptName = "plot_loss_progress.py";
         internal static string UserInputDirectory { get; private set; } = "";
+
+        private static TrainingConfiguration _trainingConfiguration = new TrainingConfiguration();
 
         internal static void Train(string inputDirectoryPath)
         {
@@ -21,11 +50,11 @@ namespace TimeSeriesForecasting
 
             Console.Write("Initializing the preprocessor...");
             NormalizationMethod normalization = (NormalizationMethod)Enum.Parse(typeof(NormalizationMethod),
-                                                    GlobalConfiguration.NormalizationMethod.ToUpper());
+                                                    _trainingConfiguration.NormalizationMethod.ToUpper());
             var dpp = new DataPreprocessorBuilder()
-                            .Split(GlobalConfiguration.TrainingValidationTestSplits)
+                            .Split(_trainingConfiguration.DatasetSplitRatio)
                             .Normalize(normalization)
-                            .AddDateRange((GlobalConfiguration.FirstValidDate, GlobalConfiguration.LastValidDate))
+                            .AddDateRange((_trainingConfiguration.FirstValidDate, _trainingConfiguration.LastValidDate))
                             .Build(records);
             Console.WriteLine(Program.Completion);
 
@@ -36,8 +65,8 @@ namespace TimeSeriesForecasting
             Console.WriteLine(Program.Completion);
 
             Console.Write("Generating windows (batches) of data from the training, validation and test sets...");
-            var singleStepWindow = new WindowGenerator(GlobalConfiguration.InputWidth,
-                GlobalConfiguration.OutputWidth, GlobalConfiguration.Offset, GlobalConfiguration.LabelColumns);
+            var singleStepWindow = new WindowGenerator(Program.GlobalConfiguration.InputWidth,
+                Program.GlobalConfiguration.OutputWidth, Program.GlobalConfiguration.Offset, Program.GlobalConfiguration.LabelColumns);
             (Tensor trainingInputTensor, Tensor trainingOutputTensor) = singleStepWindow.GenerateWindows<double>(trainingSet);
             (Tensor validationInputTensor, Tensor validationOutputTensor) = singleStepWindow.GenerateWindows<double>(validationSet);
             (Tensor testInputTensor, Tensor testOutputTensor) = singleStepWindow.GenerateWindows<double>(testSet);
@@ -65,9 +94,9 @@ namespace TimeSeriesForecasting
 
             // Create a README inside the current subdirectory.
             var descriptionLogger = new TupleLogger<string, string>(Program.LogDirPath + "README.md");
-            string description = $"\nThis is a {Program.GlobalConfiguration.ModelName} model, trained using Stochatic Gradient Descent " +
-                $"on data {(Program.GlobalConfiguration.FirstValidDate.HasValue || Program.GlobalConfiguration.LastValidDate.HasValue ? $"ranging {(Program.GlobalConfiguration.FirstValidDate.HasValue ? $"from {Program.GlobalConfiguration.FirstValidDate?.ToString("yyyy-MM-dd")}" : "")} " + $"{(Program.GlobalConfiguration.LastValidDate.HasValue ? $"to {Program.GlobalConfiguration.LastValidDate?.ToString("yyyy-MM-dd")}" : "")}" : "")} " +
-                $"{(Program.GlobalConfiguration.NormalizationMethod == "None" ? "" : $"preprocessed using {Program.GlobalConfiguration.NormalizationMethod}")}. " +
+            string description = $"\nThis is a LSTM model, trained using Stochatic Gradient Descent " +
+                $"on data {(_trainingConfiguration.FirstValidDate.HasValue || _trainingConfiguration.LastValidDate.HasValue ? $"ranging {(_trainingConfiguration.FirstValidDate.HasValue ? $"from {_trainingConfiguration.FirstValidDate?.ToString("yyyy-MM-dd")}" : "")} " + $"{(_trainingConfiguration.LastValidDate.HasValue ? $"to {_trainingConfiguration.LastValidDate?.ToString("yyyy-MM-dd")}" : "")}" : "")} " +
+                $"{(_trainingConfiguration.NormalizationMethod == "None" ? "" : $"preprocessed using {_trainingConfiguration.NormalizationMethod}")}. " +
                 $"The model tries to predict the next {Program.GlobalConfiguration.OutputWidth} value of the variable(s) " +
                 $"{string.Join(", ", Program.GlobalConfiguration.LabelColumns)} {Program.GlobalConfiguration.Offset} hour into the future, " +
                 $"using the previous {Program.GlobalConfiguration.InputWidth} hour of data.";
@@ -86,7 +115,7 @@ namespace TimeSeriesForecasting
             Console.WriteLine(Program.Completion);
 
             Console.Write("Drawing a graph to show loss progress...");
-            (bool res, string? message) = Program.RunPythonScript(ScriptName);
+            (bool res, string? message) = RunPythonScript(ScriptName);
             Console.WriteLine(res ? Program.Completion : message);
 
             // Train and test commands are differentiated by the following code.
@@ -118,7 +147,7 @@ namespace TimeSeriesForecasting
                 Console.WriteLine(Program.Completion);
 
                 Console.Write("Drawing a graph to compare predicted and expected output...");
-                (res, message) = Program.RunPythonScript(ScriptName);
+                (res, message) = RunPythonScript(ScriptName);
                 Console.WriteLine(res ? Program.Completion : message);
             }
         }

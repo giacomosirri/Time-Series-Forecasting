@@ -1,10 +1,4 @@
-﻿using System.Data;
-using TimeSeriesForecasting.IO;
-using System.Reflection;
-using Newtonsoft.Json;
-using static TimeSeriesForecasting.DataPreprocessor;
-using static TorchSharp.torch;
-using System.Diagnostics;
+﻿using Newtonsoft.Json;
 using System.CommandLine;
 
 namespace TimeSeriesForecasting
@@ -26,19 +20,19 @@ namespace TimeSeriesForecasting
     public class GlobalConfiguration
     {
         // The name of the columns that contain the values to predict.
-        public string[] LabelColumns { get; set; } = Array.Empty<string>();
+        public string[] LabelColumns { internal get; set; } = Array.Empty<string>();
 
         // The name of the column that contains the primary keys.
-        public string IndexColumn { get; set; } = string.Empty;
+        public string IndexColumn { internal get; set; } = string.Empty;
 
         // The number of time steps in the input to the model.
-        public int InputWidth { get; set; }
+        public int InputWidth { internal get; set; }
 
         // The number of time steps in the output that the model must produce.
-        public int OutputWidth { get; set; }
+        public int OutputWidth { internal get; set; }
 
         // The distance in time steps between the input and the output.
-        public int Offset { get; set; }
+        public int Offset { internal get; set; }
     }
 
     internal class Program
