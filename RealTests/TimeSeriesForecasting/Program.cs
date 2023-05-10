@@ -2,48 +2,27 @@
 using TimeSeriesForecasting.IO;
 using System.Reflection;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 using static TimeSeriesForecasting.DataPreprocessor;
 using static TorchSharp.torch;
 using System.Diagnostics;
 
 namespace TimeSeriesForecasting
 {
-    internal class Configuration
+    public class Configuration
     {
-        internal string[] LabelColumns { get; private set; }
-        internal string NormalizationMethod { get; private set; }
-        internal DateTime? FirstValidDate { get; private set; }
-        internal DateTime? LastValidDate { get; private set; }
-        internal (int training, int validation, int test) DatasetSplitRatio { get; private set; }
-        internal int InputWidth { get; private set; }
-        internal int OutputWidth { get; private set; }
-        internal int Offset { get; private set; }
-        internal string ModelName { get; private set; }
-
-        internal Configuration() 
-        {
-            string resourceName = "TimeSeriesForecasting.Properties.configurationSettings.json";
-            using var reader = new StreamReader(Assembly.GetExecutingAssembly().GetManifestResourceStream(resourceName)!);
-            JObject jsonObject = JsonConvert.DeserializeObject<JObject>(reader.ReadToEnd())!;
-            LabelColumns = jsonObject["label columns"]!.ToObject<string[]>()!;
-            NormalizationMethod = jsonObject["normalization method"]?.Value<string>() ?? "None";
-            FirstValidDate = jsonObject["first valid date"]?.Value<DateTime>();
-            LastValidDate = jsonObject["last valid date"]?.Value<DateTime>();
-            int[] splits = jsonObject["training validation test split"]?.ToObject<int[]>()!;
-            if ((splits != null) && (splits[0] + splits[1] + splits[2] == 100))
-            {
-                DatasetSplitRatio = (splits[0], splits[1], splits[2]);
-            }
-            else
-            {
-                DatasetSplitRatio = (70, 20, 10);
-            }
-            InputWidth = jsonObject["input window width"]!.Value<int>();
-            OutputWidth = jsonObject["output window width"]!.Value<int>();
-            Offset = jsonObject["offset between input and output"]!.Value<int>();
-            ModelName = jsonObject["ANN model"]!.Value<string>()!;
+        public string[] LabelColumns { get; set; } = Array.Empty<string>();
+        public string NormalizationMethod { get; set; } = "";
+        public DateTime? FirstValidDate { get; set; }
+        public DateTime? LastValidDate { get; set; }
+        public int[] DatasetSplitRatio { private get; set; } = Array.Empty<int>();
+        public (int training, int validation, int test) DatasetSplitRatios
+        { 
+            get => (DatasetSplitRatio[0], DatasetSplitRatio[1], DatasetSplitRatio[2]);
         }
+        public int InputWidth { get; set; }
+        public int OutputWidth { get; set; }
+        public int Offset { get; set; }
+        public string ModelName { get; set; } = "";
     }
 
     internal class Program
@@ -57,7 +36,7 @@ namespace TimeSeriesForecasting
         private const string LabelFile = "labels-training-set-timeseries-2009-2016.txt";
         private const string FeatureFile = "features-training-set-timeseries-2009-2016.txt";
 
-        internal static Configuration Configuration { get; } = new Configuration();
+        internal static Configuration Configuration { get; private set; } = new Configuration();
         internal static string CurrentDirPath { get; private set; } = "";
 
         /*
@@ -87,6 +66,12 @@ namespace TimeSeriesForecasting
             DateTime startTime = DateTime.Now;
             Console.WriteLine($"Program is running...    {startTime}\n");
 
+            string resourceName = "TimeSeriesForecasting.Properties.configurationSettings.json";
+            using var reader = new StreamReader(Assembly.GetExecutingAssembly().GetManifestResourceStream(resourceName)!);
+            //Console.WriteLine(JsonConvert.SerializeObject(Configuration, Formatting.Indented));
+            JsonSerializerSettings settings = new() { DateFormatString = "yyyy-MM-dd" };
+            Configuration = JsonConvert.DeserializeObject<Configuration>(reader.ReadToEnd(), settings)!;
+            
             int arg = int.Parse(args[0]);
             // If the program is running in prediction mode, the directory where the model is located must be provided.
             if (arg == 1)
@@ -120,7 +105,7 @@ namespace TimeSeriesForecasting
             NormalizationMethod normalization = (NormalizationMethod)Enum.Parse(typeof(NormalizationMethod),
                                                     Configuration.NormalizationMethod.ToUpper());
             var dpp = new DataPreprocessorBuilder()
-                            .Split(Configuration.DatasetSplitRatio)
+                            .Split(Configuration.DatasetSplitRatios)
                             .Normalize(normalization)
                             .AddDateRange((Configuration.FirstValidDate, Configuration.LastValidDate))
                             .Build(records);

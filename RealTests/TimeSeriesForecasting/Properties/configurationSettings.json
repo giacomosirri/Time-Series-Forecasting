@@ -2,27 +2,32 @@
  * IMPORTANT: The only properties that can be removed are the normalization method, the dates and the splits.
  */
 {
-  "label columns": [ "T (degC)" ],
+  "LabelColumns": [
+    "T (degC)" // Name of the label column
+  ],
  /* 
   * The field below is optional. If it is not present, the data is not normalized.
   * The value can be either "Standardization" or "Min_Max_Normalization".
   */
-  "normalization method": "Min_Max_Normalization",
+  "NormalizationMethod": "Min_Max_Normalization",
  /* 
-  * Use format yyyy-mm-dd
+  * Use format yyyy-MM-dd
   */
-  "first valid date": "2009-01-01",
-  "last valid date": "2012-12-31",
- /*
-  * First value is training, second is validation and third is test. 
-  * If the numbers do not add up to 100, then the default 70,20,10 split is used.
+  "FirstValidDate": "2009-01-01",
+  "LastValidDate": "2012-12-31",
+  /*
+  * If the numbers do not add up to 100, then the default 70/20/10 split is used.
   */
-  "training validation test split": [ 50, 25, 25 ],
-  "input window width": 24,
-  "output window width": 1,
-  "offset between input and output": 1,
+  "DatasetSplitRatio": [
+    50, // Training
+    25, // Validation
+    25 // Test
+  ],
+  "InputWidth": 24,
+  "OutputWidth": 1,
+  "Offset": 1,
  /*
   * Specify the model of artificial neural network.
   */
-  "ANN model": "RNN"
+  "ModelName": "RNN"
 }
