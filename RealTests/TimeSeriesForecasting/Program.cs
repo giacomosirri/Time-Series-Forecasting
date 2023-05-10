@@ -9,51 +9,53 @@ using System.CommandLine;
 
 namespace TimeSeriesForecasting
 {
-    internal enum Mode
+    // The available running modes for this program.
+    internal enum RunningMode
     {
         TEST,
         TRAIN,
         PREDICT
     }
 
-    public class Configuration
+    /*
+     * This class encapsulates all the global configuration parameters.
+     * These parameters are needed for every running mode, as the input to both the training 
+     * and the prediction is a parquet table, which has one index column and one or more 
+     * label columns and which must be split into windows of data usually called "time series".
+     */
+    public class GlobalConfiguration
     {
+        // The name of the columns that contain the values to predict.
         public string[] LabelColumns { get; set; } = Array.Empty<string>();
-        public string NormalizationMethod { get; set; } = "";
-        public DateTime? FirstValidDate { get; set; }
-        public DateTime? LastValidDate { get; set; }
-        /*
-         * This property is used to set the values from the json configuration file,
-         * so it basically readonly from the Program's point of view.
-         */
-        public int[] DatasetSplitRatio { private get; set; } = Array.Empty<int>();
-        /*
-         * This property is used by the Program to access the splits.
-         */
-        public (int training, int validation, int test) TrainingValidationTestSplits
-        { 
-            get => (DatasetSplitRatio[0], DatasetSplitRatio[1], DatasetSplitRatio[2]);
-        }
+
+        // The name of the column that contains the primary keys.
+        public string IndexColumn { get; set; } = string.Empty;
+
+        // The number of time steps in the input to the model.
         public int InputWidth { get; set; }
+
+        // The number of time steps in the output that the model must produce.
         public int OutputWidth { get; set; }
+
+        // The distance in time steps between the input and the output.
         public int Offset { get; set; }
-        public string ModelName { get; set; } = "";
     }
 
     internal class Program
     {
-        private static readonly (string train, string predict, string all) _availableInputModes = ("train", "predict", "all");
-        private static Mode Mode { get; set; }
+        private static RunningMode Mode { get; set; }
+        internal static string UserInputDirectory { get; private set; } = "";
+        internal static bool IsLogEnabled { get; private set; }
 
+        // To be removed.
         private static readonly string ValuesFile = Properties.Resources.NumericDatasetParquetFilePath;
         private static readonly string DatesFile = Properties.Resources.TimestampDatasetParquetFilePath;
         internal static readonly string LogDir = Properties.Resources.LogDirectoryPath;
 
         internal const string Completion = "  COMPLETE\n";
 
-        internal static Configuration Configuration { get; private set; } = new Configuration();
+        internal static GlobalConfiguration GlobalConfiguration { get; private set; } = new GlobalConfiguration();
         internal static string LogDirPath { get; private set; } = "";
-        internal static string UserInputDir { get; private set; } = "";
 
         /*
          * This is the starting point of program execution. Initially, the program loads data of interest from file,
@@ -82,8 +84,12 @@ namespace TimeSeriesForecasting
             DateTime startTime = DateTime.Now;
             Console.WriteLine($"Program is running...    {startTime}\n");
 
+            // Create command line.
             var rootCommand = new RootCommand("App that creates, trains and runs a neural network for time series forecasting.");
 
+            /*
+             * Create command "train", add its options and arguments and set its behavior.
+             */
             var trainCommand = new Command("train", "Trains the neural network, i.e. changes its parameters according to the provided data, " +
                 "but does not test the new trained model.");
             var trainLogOption = new Option<bool>("--log", "if true, some output that aids the understanding of the training process is created.")
@@ -95,7 +101,28 @@ namespace TimeSeriesForecasting
             trainCommand.AddOption(trainLogOption);
             var trainArgument = new Argument<string>("input", "The relative or absolute path of the input directory.");
             trainCommand.AddArgument(trainArgument);
+            trainCommand.SetHandler((bool log, string inputDirPath) =>
+            {
+                try
+                {
+                    Mode = RunningMode.TRAIN;
+                    UserInputDirectory = Path.GetFullPath(inputDirPath);
+                    IsLogEnabled = log;
+                    string globalConfigFile = Directory.GetFiles(UserInputDirectory, "global_config.json").Single();
+                    using var reader = new StreamReader(Path.Combine(new string[] { UserInputDirectory, globalConfigFile }));
+                    var settings = new JsonSerializerSettings() { DateFormatString = "yyyy-MM-dd" };
+                    GlobalConfiguration = JsonConvert.DeserializeObject<GlobalConfiguration>(reader.ReadToEnd(), settings)!;
+                }
+                catch (Exception ex) when (ex is ArgumentNullException || ex is InvalidOperationException)
+                {
+                    // There is a problem in the user input, so the program cannot run.
+                    Environment.Exit(1);
+                }
+            }, trainLogOption, trainArgument);
 
+            /*
+             * Create command "test", add its options and arguments and set its behavior.
+             */
             var testCommand = new Command("train", "Trains the neural network, i.e. changes its parameters according to the provided data, " +
                 "but does not test the new trained model.");
             var testLogOption = new Option<bool>("--log", "if true, some output that aids the understanding of the training process is created.")
@@ -115,21 +142,17 @@ namespace TimeSeriesForecasting
             rootCommand.AddCommand(trainCommand);
             rootCommand.AddCommand(testCommand);
             rootCommand.AddCommand(predictCommand);
-
-            trainCommand.SetHandler((string inputDirPath) =>
-            {
-                try
-                {
-                    UserInputDir = Path.GetFullPath(inputDirPath);
-                    string configFile = Directory.GetFiles(UserInputDir, "config.json").Single();
-                    using var reader = new StreamReader(Path.Combine(new string[] { UserInputDir, configFile }));
-                    var settings = new JsonSerializerSettings() { DateFormatString = "yyyy-MM-dd" };
-                    Configuration = JsonConvert.DeserializeObject<Configuration>(reader.ReadToEnd(), settings)!;
-                }
-                catch (Exception) { }
-            }, trainArgument);
-
             rootCommand.Invoke(args);
+
+
+
+
+
+
+
+
+
+
 
             Console.Write("Loading data from .parquet file...");
             var records = new ParquetDataLoader(ValuesFile, DatesFile).GetRecords();
@@ -137,11 +160,11 @@ namespace TimeSeriesForecasting
 
             Console.Write("Initializing the preprocessor...");
             NormalizationMethod normalization = (NormalizationMethod)Enum.Parse(typeof(NormalizationMethod),
-                                                    Configuration.NormalizationMethod.ToUpper());
+                                                    GlobalConfiguration.NormalizationMethod.ToUpper());
             var dpp = new DataPreprocessorBuilder()
-                            .Split(Configuration.TrainingValidationTestSplits)
+                            .Split(GlobalConfiguration.TrainingValidationTestSplits)
                             .Normalize(normalization)
-                            .AddDateRange((Configuration.FirstValidDate, Configuration.LastValidDate))
+                            .AddDateRange((GlobalConfiguration.FirstValidDate, GlobalConfiguration.LastValidDate))
                             .Build(records);
             Console.WriteLine(Completion);
 
@@ -152,8 +175,8 @@ namespace TimeSeriesForecasting
             Console.WriteLine(Completion);
             
             Console.Write("Generating windows (batches) of data from the training, validation and test sets...");
-            var singleStepWindow = new WindowGenerator(Configuration.InputWidth, 
-                Configuration.OutputWidth, Configuration.Offset, Configuration.LabelColumns);
+            var singleStepWindow = new WindowGenerator(GlobalConfiguration.InputWidth, 
+                GlobalConfiguration.OutputWidth, GlobalConfiguration.Offset, GlobalConfiguration.LabelColumns);
             (Tensor trainingInputTensor, Tensor trainingOutputTensor) = singleStepWindow.GenerateWindows<double>(trainingSet);
             (Tensor validationInputTensor, Tensor validationOutputTensor) = singleStepWindow.GenerateWindows<double>(validationSet);
             (Tensor testInputTensor, Tensor testOutputTensor) = singleStepWindow.GenerateWindows<double>(testSet);
@@ -175,15 +198,15 @@ namespace TimeSeriesForecasting
             Console.WriteLine(Completion);
             */
 
-            if (Mode == Mode.TRAIN || Mode == Mode.TEST)
+            if (Mode == RunningMode.TRAIN || Mode == RunningMode.TEST)
             {
                 ProgramTrain.Train(trainingInputTensor, trainingOutputTensor,
                     validationInputTensor, validationOutputTensor, testInputTensor, testOutputTensor);
             }
-            if (Mode == Mode.PREDICT)
+            if (Mode == RunningMode.PREDICT)
             {
-                ProgramPredict.Predict(testInputTensor, testOutputTensor, Configuration.InputWidth, (int)trainingInputTensor.size(2),
-                    Configuration.OutputWidth, Configuration.LabelColumns.Length);
+                ProgramPredict.Predict(testInputTensor, testOutputTensor, GlobalConfiguration.InputWidth, (int)trainingInputTensor.size(2),
+                    GlobalConfiguration.OutputWidth, GlobalConfiguration.LabelColumns.Length);
             }
 
             DateTime endTime = DateTime.Now;

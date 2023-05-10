@@ -17,17 +17,17 @@ namespace TimeSeriesForecasting
         {
             Console.Write("Loading the model from file...");
             NetworkModel nn;
-            if (Program.Configuration.ModelName == "RNN")
+            if (Program.GlobalConfiguration.ModelName == "RNN")
             {
                 nn = new RecurrentNeuralNetwork(inputFeatures, 
                     outputTimeSteps, outputFeatures, Program.LogDirPath + $"RNN.model.bin");
             }
-            else if (Program.Configuration.ModelName == "Linear")
+            else if (Program.GlobalConfiguration.ModelName == "Linear")
             {
                 nn = new SimpleNeuralNetwork(inputTimeSteps, inputFeatures,
                     outputTimeSteps, outputFeatures, Program.LogDirPath + $"Linear.model.bin");
             }
-            else if (Program.Configuration.ModelName == "LSTM")
+            else if (Program.GlobalConfiguration.ModelName == "LSTM")
             {
                 nn = new LSTM(inputFeatures, outputTimeSteps, outputFeatures, Program.LogDirPath + $"LSTM.model.bin");
             }

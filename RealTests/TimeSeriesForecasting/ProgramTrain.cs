@@ -8,21 +8,26 @@ namespace TimeSeriesForecasting
     {
         private static readonly string ScriptName = "plot_loss_progress.py";
 
+        internal static void ParseInputDirectory(string inputDirectory)
+        {
+
+        }
+
         internal static void Train(Tensor trainingInputTensor, Tensor trainingOutputTensor,
             Tensor validationInputTensor, Tensor validationOutputTensor, Tensor testInputTensor, Tensor testOutputTensor)
         {
             NetworkModel nn;
-            if (Program.Configuration.ModelName == "RNN")
+            if (Program.GlobalConfiguration.ModelName == "RNN")
             {
                 nn = new RecurrentNeuralNetwork(trainingInputTensor.size(2),
                     trainingOutputTensor.size(1), trainingOutputTensor.size(2));
             }
-            else if (Program.Configuration.ModelName == "Linear")
+            else if (Program.GlobalConfiguration.ModelName == "Linear")
             {
                 nn = new SimpleNeuralNetwork(trainingInputTensor.size(1), trainingInputTensor.size(2),
                     trainingOutputTensor.size(1), trainingOutputTensor.size(2));
             }
-            else if (Program.Configuration.ModelName == "LSTM")
+            else if (Program.GlobalConfiguration.ModelName == "LSTM")
             {
                 nn = new LSTM(trainingInputTensor.size(2),
                     trainingOutputTensor.size(1), trainingOutputTensor.size(2));
@@ -35,12 +40,12 @@ namespace TimeSeriesForecasting
 
             // Create a README inside the current subdirectory.
             var descriptionLogger = new TupleLogger<string, string>(Program.LogDirPath + "README.md");
-            string description = $"\nThis is a {Program.Configuration.ModelName} model, trained using Stochatic Gradient Descent " +
-                $"on data {(Program.Configuration.FirstValidDate.HasValue || Program.Configuration.LastValidDate.HasValue ? $"ranging {(Program.Configuration.FirstValidDate.HasValue ? $"from {Program.Configuration.FirstValidDate?.ToString("yyyy-MM-dd")}" : "")} " + $"{(Program.Configuration.LastValidDate.HasValue ? $"to {Program.Configuration.LastValidDate?.ToString("yyyy-MM-dd")}" : "")}" : "")} " +
-                $"{(Program.Configuration.NormalizationMethod == "None" ? "" : $"preprocessed using {Program.Configuration.NormalizationMethod}")}. " +
-                $"The model tries to predict the next {Program.Configuration.OutputWidth} value of the variable(s) " +
-                $"{string.Join(", ", Program.Configuration.LabelColumns)} {Program.Configuration.Offset} hour into the future, " +
-                $"using the previous {Program.Configuration.InputWidth} hour of data.";
+            string description = $"\nThis is a {Program.GlobalConfiguration.ModelName} model, trained using Stochatic Gradient Descent " +
+                $"on data {(Program.GlobalConfiguration.FirstValidDate.HasValue || Program.GlobalConfiguration.LastValidDate.HasValue ? $"ranging {(Program.GlobalConfiguration.FirstValidDate.HasValue ? $"from {Program.GlobalConfiguration.FirstValidDate?.ToString("yyyy-MM-dd")}" : "")} " + $"{(Program.GlobalConfiguration.LastValidDate.HasValue ? $"to {Program.GlobalConfiguration.LastValidDate?.ToString("yyyy-MM-dd")}" : "")}" : "")} " +
+                $"{(Program.GlobalConfiguration.NormalizationMethod == "None" ? "" : $"preprocessed using {Program.GlobalConfiguration.NormalizationMethod}")}. " +
+                $"The model tries to predict the next {Program.GlobalConfiguration.OutputWidth} value of the variable(s) " +
+                $"{string.Join(", ", Program.GlobalConfiguration.LabelColumns)} {Program.GlobalConfiguration.Offset} hour into the future, " +
+                $"using the previous {Program.GlobalConfiguration.InputWidth} hour of data.";
             descriptionLogger.Prepare(("Description", description), null);
             descriptionLogger.Write();
 
