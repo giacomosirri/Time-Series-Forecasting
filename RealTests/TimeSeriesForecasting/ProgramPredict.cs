@@ -20,16 +20,16 @@ namespace TimeSeriesForecasting
             if (Program.Configuration.ModelName == "RNN")
             {
                 nn = new RecurrentNeuralNetwork(inputFeatures, 
-                    outputTimeSteps, outputFeatures, Program.CurrentDirPath + $"RNN.model.bin");
+                    outputTimeSteps, outputFeatures, Program.LogDirPath + $"RNN.model.bin");
             }
             else if (Program.Configuration.ModelName == "Linear")
             {
                 nn = new SimpleNeuralNetwork(inputTimeSteps, inputFeatures,
-                    outputTimeSteps, outputFeatures, Program.CurrentDirPath + $"Linear.model.bin");
+                    outputTimeSteps, outputFeatures, Program.LogDirPath + $"Linear.model.bin");
             }
             else if (Program.Configuration.ModelName == "LSTM")
             {
-                nn = new LSTM(inputFeatures, outputTimeSteps, outputFeatures, Program.CurrentDirPath + $"LSTM.model.bin");
+                nn = new LSTM(inputFeatures, outputTimeSteps, outputFeatures, Program.LogDirPath + $"LSTM.model.bin");
             }
             else
             {
@@ -43,10 +43,10 @@ namespace TimeSeriesForecasting
             Console.WriteLine(Program.Completion);
 
             Console.Write("Logging predicted and expected values on file...");
-            var predictionLogger = new TensorLogger(Program.CurrentDirPath + "predictions.txt");
+            var predictionLogger = new TensorLogger(Program.LogDirPath + "predictions.txt");
             predictionLogger.Prepare(output.reshape(output.size(0), 1), "Predictions on the test set");
             predictionLogger.Write(); 
-            var expectedLogger = new TensorLogger(Program.CurrentDirPath + "expected.txt");
+            var expectedLogger = new TensorLogger(Program.LogDirPath + "expected.txt");
             expectedLogger.Prepare(expectedOutput.reshape(output.size(0), 1), "Expected values of the predicted variable");
             expectedLogger.Write();
             Console.WriteLine(Program.Completion);

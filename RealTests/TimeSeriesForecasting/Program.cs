@@ -9,6 +9,13 @@ using System.CommandLine;
 
 namespace TimeSeriesForecasting
 {
+    internal enum Mode
+    {
+        TRAIN,
+        PREDICT,
+        TRAIN_AND_PREDICT
+    }
+
     public class Configuration
     {
         public string[] LabelColumns { get; set; } = Array.Empty<string>();
@@ -35,6 +42,9 @@ namespace TimeSeriesForecasting
 
     internal class Program
     {
+        private static readonly (string train, string predict, string all) _availableInputModes = ("train", "predict", "all");
+        private static Mode Mode { get; set; }
+
         private static readonly string ValuesFile = Properties.Resources.NumericDatasetParquetFilePath;
         private static readonly string DatesFile = Properties.Resources.TimestampDatasetParquetFilePath;
         internal static readonly string LogDir = Properties.Resources.LogDirectoryPath;
@@ -45,7 +55,8 @@ namespace TimeSeriesForecasting
         private const string FeatureFile = "features-training-set-timeseries-2009-2016.txt";
 
         internal static Configuration Configuration { get; private set; } = new Configuration();
-        internal static string CurrentDirPath { get; private set; } = "";
+        internal static string LogDirPath { get; private set; } = "";
+        internal static string UserInputDir { get; private set; } = "";
 
         /*
          * This is the starting point of program execution. Initially, the program loads data of interest from file,
@@ -74,45 +85,67 @@ namespace TimeSeriesForecasting
             DateTime startTime = DateTime.Now;
             Console.WriteLine($"Program is running...    {startTime}\n");
 
-            var fileOption = new Option<string>("--input", "The input directory's absolute path.");
-            var rootCommand = new RootCommand("App that creates, trains and runs a neural network for time series forecasting");
+            var fileOption = new Option<string>(name: "--input", description: "The input directory's absolute path.");
+            var rootCommand = new RootCommand("App that creates, trains and runs a neural network for time series forecasting.");
             rootCommand.AddOption(fileOption);
-            rootCommand.SetHandler((string input) => 
-            {
-                string fullDirectoryPath = Path.GetFullPath(input);
-                Console.WriteLine($"Input directory path: {fullDirectoryPath}");
-            }, fileOption);
+            rootCommand.SetHandler((string input) => UserInputDir = Path.GetFullPath(input), fileOption);
             rootCommand.Invoke(args);
 
-            string resourceName = "TimeSeriesForecasting.Properties.configurationSettings.json";
-            using var reader = new StreamReader(Assembly.GetExecutingAssembly().GetManifestResourceStream(resourceName)!);
-            //Console.WriteLine(JsonConvert.SerializeObject(Configuration, Formatting.Indented));
-            JsonSerializerSettings settings = new() { DateFormatString = "yyyy-MM-dd" };
-            Configuration = JsonConvert.DeserializeObject<Configuration>(reader.ReadToEnd(), settings)!;
-            
-            int arg = int.Parse(args[0]);
-            // If the program is running in prediction mode, the directory where the model is located must be provided.
-            if (arg == 1)
+            try
             {
-                if (args.Length > 1)
+                string configFile = Directory.GetFiles(UserInputDir, "config.json").Single();
+                using var reader = new StreamReader(Path.Combine(new string[] { UserInputDir, configFile }));
+                var settings = new JsonSerializerSettings() { DateFormatString = "yyyy-MM-dd" };
+                Configuration = JsonConvert.DeserializeObject<Configuration>(reader.ReadToEnd(), settings)!;
+            }
+            catch (Exception ex) when (ex is ArgumentNullException || ex is InvalidOperationException)
+            {
+                // There is no config.json file, so the program cannot run.
+                Environment.Exit(1);
+            }
+
+            var modeOption = new Option<string>(
+                name: "--mode",
+                description:
+                    "The mode of execution. There are three different modes for this program:\n" +
+                    $"{_availableInputModes.train} - Trains the neural network, i.e. changes its parameters according to the provided data. " +
+                            "This mode includes the test of the new trained model." +
+                    $"{_availableInputModes.predict} - Predicts new values according to the provided configuration." +
+                    $"{_availableInputModes.all} - Performs both the training and the predictions."
+            ); ;
+            rootCommand.AddOption(modeOption);
+            rootCommand.SetHandler((string mode) =>
+            {
+                if (mode == _availableInputModes.train)
                 {
-                    CurrentDirPath = args[1];
+                    Mode = Mode.TRAIN;
+                }
+                else if (mode == _availableInputModes.predict)
+                {
+                    Mode = Mode.PREDICT;
+                }
+                else if (mode == _availableInputModes.all)
+                {
+                    Mode = Mode.TRAIN_AND_PREDICT;
                 }
                 else
                 {
+                    // The mode provided by the user is not supported by this program.
                     Environment.Exit(1);
                 }
+            }, modeOption);
+            rootCommand.Invoke(args);
+
+            int arg = int.Parse(args[0]);
+            // If the program is running in prediction mode, the directory where the model is located must be provided.
+            if (Mode == Mode.PREDICT)
+            {
             }
             else
             {
-                /* 
-                 * Create a new subdirectory of the log directory specified in the Resources file, with the name
-                 * yyyy-mm-dd hh.mm.ss, where the date is the start time of the current execution of the program.
-                 */
-                CurrentDirPath = $"{LogDir}{(arg == 0 ? "training" : (arg == 1 ? "predictions" : "training+predictions"))}---" +
-                    $"{startTime.Year}-{startTime.Month:00}-{startTime.Day:00}---" +
-                    $"{startTime.Hour:00}.{startTime.Minute:00}.{startTime.Second:00}{Separator}";
-                Directory.CreateDirectory(CurrentDirPath);
+                // Create a new log subdirectory inside the input directory provided by the user.
+                LogDirPath = Path.Combine(new string[] { UserInputDir, "Log" });
+                Directory.CreateDirectory(LogDirPath);
             }
 
             Console.Write("Loading data from .parquet file...");
@@ -190,7 +223,7 @@ namespace TimeSeriesForecasting
                 // Create and execute a new python process to draw the graph.
                 var process = new Process();
                 process.StartInfo.FileName = "python";
-                process.StartInfo.Arguments = $"{scriptPath} {CurrentDirPath}";
+                process.StartInfo.Arguments = $"{scriptPath} {LogDirPath}";
                 process.StartInfo.UseShellExecute = false;
                 process.StartInfo.RedirectStandardOutput = true;
                 bool res = process.Start();

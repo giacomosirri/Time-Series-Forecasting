@@ -34,7 +34,7 @@ namespace TimeSeriesForecasting
             IModelManager model = new ModelManager(nn);
 
             // Create a README inside the current subdirectory.
-            var descriptionLogger = new TupleLogger<string, string>(Program.CurrentDirPath + "README.md");
+            var descriptionLogger = new TupleLogger<string, string>(Program.LogDirPath + "README.md");
             string description = $"\nThis is a {Program.Configuration.ModelName} model, trained using Stochatic Gradient Descent " +
                 $"on data {(Program.Configuration.FirstValidDate.HasValue || Program.Configuration.LastValidDate.HasValue ? $"ranging {(Program.Configuration.FirstValidDate.HasValue ? $"from {Program.Configuration.FirstValidDate?.ToString("yyyy-MM-dd")}" : "")} " + $"{(Program.Configuration.LastValidDate.HasValue ? $"to {Program.Configuration.LastValidDate?.ToString("yyyy-MM-dd")}" : "")}" : "")} " +
                 $"{(Program.Configuration.NormalizationMethod == "None" ? "" : $"preprocessed using {Program.Configuration.NormalizationMethod}")}. " +
@@ -46,7 +46,7 @@ namespace TimeSeriesForecasting
 
             Console.Write("Training the model...");
             model.Fit(trainingInputTensor, trainingOutputTensor, validationInputTensor, validationOutputTensor);
-            var lossLogger = new TupleLogger<int, float>(Program.CurrentDirPath + "loss_progress.txt");
+            var lossLogger = new TupleLogger<int, float>(Program.LogDirPath + "loss_progress.txt");
             Console.WriteLine(Program.Completion);
 
             Console.Write("Logging the progress of the loss during training on file...");
@@ -61,14 +61,14 @@ namespace TimeSeriesForecasting
 
             Console.Write("Assessing model performance on the test set...");
             IDictionary<AccuracyMetric, double> metrics = model.EvaluateAccuracy(testInputTensor, testOutputTensor);
-            var metricsLogger = new TupleLogger<string, double>(Program.CurrentDirPath + "metrics.txt");
+            var metricsLogger = new TupleLogger<string, double>(Program.LogDirPath + "metrics.txt");
             metricsLogger.Prepare(metrics.Select(metric => (metric.Key.ToString(), metric.Value)).ToList(), null);
             metricsLogger.Prepare(("Training time in seconds", model.LastTrainingTime.Seconds), null);
             metricsLogger.Write();
             Console.WriteLine(Program.Completion);
 
             Console.Write("Saving the model on file...");
-            model.Save(Program.CurrentDirPath);
+            model.Save(Program.LogDirPath);
             Console.WriteLine(Program.Completion);
         }
     }
