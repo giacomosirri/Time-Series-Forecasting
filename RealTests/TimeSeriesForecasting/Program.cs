@@ -11,9 +11,9 @@ namespace TimeSeriesForecasting
 {
     internal enum Mode
     {
+        TEST,
         TRAIN,
-        PREDICT,
-        TRAIN_AND_PREDICT
+        PREDICT
     }
 
     public class Configuration
@@ -48,11 +48,8 @@ namespace TimeSeriesForecasting
         private static readonly string ValuesFile = Properties.Resources.NumericDatasetParquetFilePath;
         private static readonly string DatesFile = Properties.Resources.TimestampDatasetParquetFilePath;
         internal static readonly string LogDir = Properties.Resources.LogDirectoryPath;
-        internal static readonly char Separator = Path.DirectorySeparatorChar;
 
         internal const string Completion = "  COMPLETE\n";
-        private const string LabelFile = "labels-training-set-timeseries-2009-2016.txt";
-        private const string FeatureFile = "features-training-set-timeseries-2009-2016.txt";
 
         internal static Configuration Configuration { get; private set; } = new Configuration();
         internal static string LogDirPath { get; private set; } = "";
@@ -85,68 +82,54 @@ namespace TimeSeriesForecasting
             DateTime startTime = DateTime.Now;
             Console.WriteLine($"Program is running...    {startTime}\n");
 
-            var fileOption = new Option<string>(name: "--input", description: "The input directory's absolute path.");
             var rootCommand = new RootCommand("App that creates, trains and runs a neural network for time series forecasting.");
-            rootCommand.AddOption(fileOption);
-            rootCommand.SetHandler((string input) => UserInputDir = Path.GetFullPath(input), fileOption);
+
+            var trainCommand = new Command("train", "Trains the neural network, i.e. changes its parameters according to the provided data, " +
+                "but does not test the new trained model.");
+            var trainLogOption = new Option<bool>("--log", "if true, some output that aids the understanding of the training process is created.")
+            {
+                IsRequired = false,
+            };
+            trainLogOption.SetDefaultValue(true);
+            trainLogOption.AddAlias("--l");
+            trainCommand.AddOption(trainLogOption);
+            var trainArgument = new Argument<string>("input", "The relative or absolute path of the input directory.");
+            trainCommand.AddArgument(trainArgument);
+
+            var testCommand = new Command("train", "Trains the neural network, i.e. changes its parameters according to the provided data, " +
+                "but does not test the new trained model.");
+            var testLogOption = new Option<bool>("--log", "if true, some output that aids the understanding of the training process is created.")
+            {
+                IsRequired = false
+            };
+            testLogOption.AddAlias("--l");
+            testLogOption.SetDefaultValue(true);
+            testCommand.AddOption(testLogOption); 
+            var testArgument = new Argument<string>("input", "The relative or absolute path of the input directory.");
+            testCommand.AddArgument(testArgument);
+
+            var predictCommand = new Command("predict", "Predicts future values using a trained neural network.");
+            var predictArgument = new Argument<string>("input", "The relative or absolute path of the input directory.");
+            predictCommand.AddArgument(predictArgument);
+
+            rootCommand.AddCommand(trainCommand);
+            rootCommand.AddCommand(testCommand);
+            rootCommand.AddCommand(predictCommand);
+
+            trainCommand.SetHandler((string inputDirPath) =>
+            {
+                try
+                {
+                    UserInputDir = Path.GetFullPath(inputDirPath);
+                    string configFile = Directory.GetFiles(UserInputDir, "config.json").Single();
+                    using var reader = new StreamReader(Path.Combine(new string[] { UserInputDir, configFile }));
+                    var settings = new JsonSerializerSettings() { DateFormatString = "yyyy-MM-dd" };
+                    Configuration = JsonConvert.DeserializeObject<Configuration>(reader.ReadToEnd(), settings)!;
+                }
+                catch (Exception) { }
+            }, trainArgument);
+
             rootCommand.Invoke(args);
-
-            try
-            {
-                string configFile = Directory.GetFiles(UserInputDir, "config.json").Single();
-                using var reader = new StreamReader(Path.Combine(new string[] { UserInputDir, configFile }));
-                var settings = new JsonSerializerSettings() { DateFormatString = "yyyy-MM-dd" };
-                Configuration = JsonConvert.DeserializeObject<Configuration>(reader.ReadToEnd(), settings)!;
-            }
-            catch (Exception ex) when (ex is ArgumentNullException || ex is InvalidOperationException)
-            {
-                // There is no config.json file, so the program cannot run.
-                Environment.Exit(1);
-            }
-
-            var modeOption = new Option<string>(
-                name: "--mode",
-                description:
-                    "The mode of execution. There are three different modes for this program:\n" +
-                    $"{_availableInputModes.train} - Trains the neural network, i.e. changes its parameters according to the provided data. " +
-                            "This mode includes the test of the new trained model." +
-                    $"{_availableInputModes.predict} - Predicts new values according to the provided configuration." +
-                    $"{_availableInputModes.all} - Performs both the training and the predictions."
-            ); ;
-            rootCommand.AddOption(modeOption);
-            rootCommand.SetHandler((string mode) =>
-            {
-                if (mode == _availableInputModes.train)
-                {
-                    Mode = Mode.TRAIN;
-                }
-                else if (mode == _availableInputModes.predict)
-                {
-                    Mode = Mode.PREDICT;
-                }
-                else if (mode == _availableInputModes.all)
-                {
-                    Mode = Mode.TRAIN_AND_PREDICT;
-                }
-                else
-                {
-                    // The mode provided by the user is not supported by this program.
-                    Environment.Exit(1);
-                }
-            }, modeOption);
-            rootCommand.Invoke(args);
-
-            int arg = int.Parse(args[0]);
-            // If the program is running in prediction mode, the directory where the model is located must be provided.
-            if (Mode == Mode.PREDICT)
-            {
-            }
-            else
-            {
-                // Create a new log subdirectory inside the input directory provided by the user.
-                LogDirPath = Path.Combine(new string[] { UserInputDir, "Log" });
-                Directory.CreateDirectory(LogDirPath);
-            }
 
             Console.Write("Loading data from .parquet file...");
             var records = new ParquetDataLoader(ValuesFile, DatesFile).GetRecords();
@@ -181,27 +164,23 @@ namespace TimeSeriesForecasting
              * to check that the window generation algorithm is correct.
              */
             /*
-            var featureLogger = new TensorLogger(LogDir + FeatureFile);
+            var featureLogger = new TensorLogger(LogDir + "training-features.txt");
             Console.Write("Logging training set features on file...");
             featureLogger.Log(trainingInputTensor, "Training set features");
             Console.WriteLine(Completion);
 
-            var labelLogger = new TensorLogger(LogDir + LabelFile);
+            var labelLogger = new TensorLogger(LogDir + "training-labels.txt");
             Console.Write("Logging training set labels on file...");
             labelLogger.Log(trainingOutputTensor, $"Training set values to predict: {string.Join(", ", config.LabelColumns)}");
             Console.WriteLine(Completion);
             */
 
-            if (arg != 0 && arg != 1 && arg != 2)
-            {
-                Environment.Exit(1);
-            }
-            if (arg == 0 || arg == 2)
+            if (Mode == Mode.TRAIN || Mode == Mode.TEST)
             {
                 ProgramTrain.Train(trainingInputTensor, trainingOutputTensor,
                     validationInputTensor, validationOutputTensor, testInputTensor, testOutputTensor);
             }
-            if (arg == 1 || arg == 2)
+            if (Mode == Mode.PREDICT)
             {
                 ProgramPredict.Predict(testInputTensor, testOutputTensor, Configuration.InputWidth, (int)trainingInputTensor.size(2),
                     Configuration.OutputWidth, Configuration.LabelColumns.Length);
