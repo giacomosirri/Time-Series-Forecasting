@@ -43,8 +43,7 @@ namespace TimeSeriesForecasting
 
     internal class Program
     {
-        private static RunningMode Mode { get; set; }
-        internal static string UserInputDirectory { get; private set; } = "";
+        internal static RunningMode Mode { get; set; }
         internal static bool IsLogEnabled { get; private set; }
 
         // To be removed.
@@ -106,12 +105,14 @@ namespace TimeSeriesForecasting
                 try
                 {
                     Mode = RunningMode.TRAIN;
-                    UserInputDirectory = Path.GetFullPath(inputDirPath);
+                    var userInputDir = Path.GetFullPath(inputDirPath);
                     IsLogEnabled = log;
-                    string globalConfigFile = Directory.GetFiles(UserInputDirectory, "global_config.json").Single();
-                    using var reader = new StreamReader(Path.Combine(new string[] { UserInputDirectory, globalConfigFile }));
+                    // Try to find the file "global_config.json" inside the directory provided by the user.
+                    string globalConfigFile = Directory.GetFiles(userInputDir, "global_config.json").Single();
+                    using var reader = new StreamReader(Path.Combine(new string[] { userInputDir, globalConfigFile }));
                     var settings = new JsonSerializerSettings() { DateFormatString = "yyyy-MM-dd" };
                     GlobalConfiguration = JsonConvert.DeserializeObject<GlobalConfiguration>(reader.ReadToEnd(), settings)!;
+                    ProgramTrain.Train(userInputDir);
                 }
                 catch (Exception ex) when (ex is ArgumentNullException || ex is InvalidOperationException)
                 {
@@ -144,99 +145,11 @@ namespace TimeSeriesForecasting
             rootCommand.AddCommand(predictCommand);
             rootCommand.Invoke(args);
 
-
-
-
-
-
-
-
-
-
-
-            Console.Write("Loading data from .parquet file...");
-            var records = new ParquetDataLoader(ValuesFile, DatesFile).GetRecords();
-            Console.WriteLine(Completion);
-
-            Console.Write("Initializing the preprocessor...");
-            NormalizationMethod normalization = (NormalizationMethod)Enum.Parse(typeof(NormalizationMethod),
-                                                    GlobalConfiguration.NormalizationMethod.ToUpper());
-            var dpp = new DataPreprocessorBuilder()
-                            .Split(GlobalConfiguration.TrainingValidationTestSplits)
-                            .Normalize(normalization)
-                            .AddDateRange((GlobalConfiguration.FirstValidDate, GlobalConfiguration.LastValidDate))
-                            .Build(records);
-            Console.WriteLine(Completion);
-
-            Console.Write("Getting the processed training, validation and test sets...");
-            DataTable trainingSet = dpp.GetTrainingSet();
-            DataTable validationSet = dpp.GetValidationSet();
-            DataTable testSet = dpp.GetTestSet();
-            Console.WriteLine(Completion);
-            
-            Console.Write("Generating windows (batches) of data from the training, validation and test sets...");
-            var singleStepWindow = new WindowGenerator(GlobalConfiguration.InputWidth, 
-                GlobalConfiguration.OutputWidth, GlobalConfiguration.Offset, GlobalConfiguration.LabelColumns);
-            (Tensor trainingInputTensor, Tensor trainingOutputTensor) = singleStepWindow.GenerateWindows<double>(trainingSet);
-            (Tensor validationInputTensor, Tensor validationOutputTensor) = singleStepWindow.GenerateWindows<double>(validationSet);
-            (Tensor testInputTensor, Tensor testOutputTensor) = singleStepWindow.GenerateWindows<double>(testSet);
-            Console.WriteLine(Completion);
-
-            /*
-             * The commented out code below prints training input features and labels values on file and can be used
-             * to check that the window generation algorithm is correct.
-             */
-            /*
-            var featureLogger = new TensorLogger(LogDir + "training-features.txt");
-            Console.Write("Logging training set features on file...");
-            featureLogger.Log(trainingInputTensor, "Training set features");
-            Console.WriteLine(Completion);
-
-            var labelLogger = new TensorLogger(LogDir + "training-labels.txt");
-            Console.Write("Logging training set labels on file...");
-            labelLogger.Log(trainingOutputTensor, $"Training set values to predict: {string.Join(", ", config.LabelColumns)}");
-            Console.WriteLine(Completion);
-            */
-
-            if (Mode == RunningMode.TRAIN || Mode == RunningMode.TEST)
-            {
-                ProgramTrain.Train(trainingInputTensor, trainingOutputTensor,
-                    validationInputTensor, validationOutputTensor, testInputTensor, testOutputTensor);
-            }
-            if (Mode == RunningMode.PREDICT)
-            {
-                ProgramPredict.Predict(testInputTensor, testOutputTensor, GlobalConfiguration.InputWidth, (int)trainingInputTensor.size(2),
-                    GlobalConfiguration.OutputWidth, GlobalConfiguration.LabelColumns.Length);
-            }
-
             DateTime endTime = DateTime.Now;
             Console.WriteLine($"Program is completed...    {endTime}\n");
 
             TimeSpan elapsedTime = endTime - startTime;
             Console.WriteLine($"Elapsed time: {elapsedTime}");
-        }
-
-        internal static (bool result, string? message) RunPythonScript(string scriptName)
-        {
-            if ((Environment.GetEnvironmentVariable("PATH") != null) && 
-                Environment.GetEnvironmentVariable("PATH")!.Contains("Python"))
-            {
-                string scriptPath = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)!, scriptName);
-                // Create and execute a new python process to draw the graph.
-                var process = new Process();
-                process.StartInfo.FileName = "python";
-                process.StartInfo.Arguments = $"{scriptPath} {LogDirPath}";
-                process.StartInfo.UseShellExecute = false;
-                process.StartInfo.RedirectStandardOutput = true;
-                bool res = process.Start();
-                if (!res)
-                {
-                    return (false, "Python script could not be executed.");
-                }
-                process.WaitForExit();
-                return (true, null);
-            }
-            else return (false, "  Python is not installed on your system. Please install it and try again.\n");
         }
     }
 }
