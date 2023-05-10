@@ -5,6 +5,7 @@ using Newtonsoft.Json;
 using static TimeSeriesForecasting.DataPreprocessor;
 using static TorchSharp.torch;
 using System.Diagnostics;
+using System.CommandLine;
 
 namespace TimeSeriesForecasting
 {
@@ -72,6 +73,16 @@ namespace TimeSeriesForecasting
         {
             DateTime startTime = DateTime.Now;
             Console.WriteLine($"Program is running...    {startTime}\n");
+
+            var fileOption = new Option<string>("--input", "The input directory's absolute path.");
+            var rootCommand = new RootCommand("App that creates, trains and runs a neural network for time series forecasting");
+            rootCommand.AddOption(fileOption);
+            rootCommand.SetHandler((string input) => 
+            {
+                string fullDirectoryPath = Path.GetFullPath(input);
+                Console.WriteLine($"Input directory path: {fullDirectoryPath}");
+            }, fileOption);
+            rootCommand.Invoke(args);
 
             string resourceName = "TimeSeriesForecasting.Properties.configurationSettings.json";
             using var reader = new StreamReader(Assembly.GetExecutingAssembly().GetManifestResourceStream(resourceName)!);
