@@ -19,7 +19,7 @@
         /// Returns the name of the column that acts as index for a record, similar to an index in a Pandas' Series or DataFrame.
         /// Such column must be of type <see cref="DateTime"/>, as these record represent time steps in a time series.
         /// </summary>
-        public static string Index { get; } = "Date Time";
+        public static string Index { get; set; } = "";
 
         public IDictionary<string, double> Features { get; private set; }
         

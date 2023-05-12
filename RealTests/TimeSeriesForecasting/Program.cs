@@ -2,6 +2,7 @@
 using System.CommandLine;
 using System.Diagnostics;
 using System.Reflection;
+using TimeSeriesForecasting.IO;
 
 namespace TimeSeriesForecasting
 {
@@ -16,8 +17,8 @@ namespace TimeSeriesForecasting
         // The name of the columns that contain the values to predict.
         public string[] LabelColumns { internal get; set; } = Array.Empty<string>();
 
-        // The name of the column that contains the primary keys.
-        public string IndexColumn { internal get; set; } = string.Empty;
+        // The name of the primary key (or index).
+        public string IndexColumn { set => Record.Index = value; }
 
         // The number of time steps in the input to the model.
         public int InputWidth { internal get; set; }
