@@ -94,23 +94,28 @@ namespace TimeSeriesForecasting
             trainCommand.AddOption(trainLogOption);
             var trainArgument = new Argument<string>("input", "The relative or absolute path of the input directory.");
             trainCommand.AddArgument(trainArgument);
-            trainCommand.SetHandler((bool log, string inputDirPath) =>
+            trainCommand.SetHandler((bool log, string inputDirectoryPath) =>
             {
+                // Sets the running mode and the log enabling based on the command and its log option.
+                Mode = RunningMode.TRAIN;
+                IsLogEnabled = log;
                 try
-                {
-                    Mode = RunningMode.TRAIN;
-                    var userInputDir = Path.GetFullPath(inputDirPath);
-                    IsLogEnabled = log;
-                    // Try to find the file "global_config.json" inside the directory provided by the user.
-                    string globalConfigFile = Directory.GetFiles(userInputDir, "global_config.json").Single();
-                    using var reader = new StreamReader(Path.Combine(new string[] { userInputDir, globalConfigFile }));
-                    var settings = new JsonSerializerSettings() { DateFormatString = "yyyy-MM-dd" };
-                    GlobalConfiguration = JsonConvert.DeserializeObject<GlobalConfiguration>(reader.ReadToEnd(), settings)!;
-                    ProgramTrain.Train(userInputDir);
+                {                
+                    // Calculate the asbolute path of the input directory.
+                    string userInputDir = Path.GetFullPath(inputDirectoryPath);
+                    // Then try to read the config file inside the directory. If not present, an exception is thrown.
+                    CreateGlobalConfiguration(userInputDir);
+                    // Finally execute the train command.
+                    ProgramTrain.ExecuteTrainCommand(userInputDir);
                 }
-                catch (Exception ex) when (ex is ArgumentNullException || ex is InvalidOperationException)
+                catch (Exception ex) when (ex is IOException)
                 {
-                    // There is a problem in the user input, so the program cannot run.
+                    Console.WriteLine("An unexpected error happened when reading a directory or file. The program is stopped.");
+                    Environment.Exit(1);
+                }
+                catch (Exception)
+                {
+                    Console.WriteLine("The given path is not a valid directory, so the program cannot run.");
                     Environment.Exit(1);
                 }
             }, trainLogOption, trainArgument);
@@ -129,6 +134,30 @@ namespace TimeSeriesForecasting
             testCommand.AddOption(testLogOption); 
             var testArgument = new Argument<string>("input", "The relative or absolute path of the input directory.");
             testCommand.AddArgument(testArgument);
+            testCommand.SetHandler((bool log, string inputDirectoryPath) =>
+            {
+                // Sets the running mode and the log enabling based on the command and its log option.
+                Mode = RunningMode.TEST;
+                IsLogEnabled = log;
+                try
+                {
+                    // Calculate the asbolute path of the input directory.
+                    string userInputDir = Path.GetFullPath(inputDirectoryPath);
+                    // Then try to read the config file inside the directory. If not present, an exception is thrown.
+                    CreateGlobalConfiguration(userInputDir);
+                    ProgramTrain.ExecuteTrainCommand(userInputDir);
+                }
+                catch (Exception ex) when (ex is IOException)
+                {
+                    Console.WriteLine("An unexpected error happened when reading a directory or file. The program is stopped.");
+                    Environment.Exit(1);
+                }
+                catch (Exception)
+                {
+                    Console.WriteLine("The given path is not a valid directory, so the program cannot run.");
+                    Environment.Exit(1);
+                }
+            }, trainLogOption, trainArgument);
 
             var predictCommand = new Command("predict", "Predicts future values using a trained neural network.");
             var predictArgument = new Argument<string>("input", "The relative or absolute path of the input directory.");
@@ -144,6 +173,31 @@ namespace TimeSeriesForecasting
 
             TimeSpan elapsedTime = endTime - startTime;
             Console.WriteLine($"Elapsed time: {elapsedTime}");
+        }
+
+        /*
+         * This method creates and returns a global configuration object from the configuration file
+         * found inside the user directory. A InvalidArgumentException is raised if no such file is present.
+         */
+        private static GlobalConfiguration CreateGlobalConfiguration(string inputDirectoryPath)
+        {
+            try
+            {
+                // Try to find the file "global_config.json" inside the directory provided by the user.
+                string globalConfigFile = Directory.GetFiles(inputDirectoryPath, "global_config.json").Single();
+                using var reader = new StreamReader(globalConfigFile);
+                var settings = new JsonSerializerSettings() { DateFormatString = "yyyy-MM-dd" };
+                return JsonConvert.DeserializeObject<GlobalConfiguration>(reader.ReadToEnd(), settings)!;
+            }
+            // Distinguish between an unpredictable I/O problem and a wrong user input. 
+            catch (Exception ex) when (ex is IOException)
+            {
+                throw new IOException("Something went wrong when reading the directory or the config file.");
+            }
+            catch (Exception)
+            {
+                throw new ArgumentException("The given path is not a directory or does not contain a file named 'global_config.json'.");
+            }
         }
     }
 }

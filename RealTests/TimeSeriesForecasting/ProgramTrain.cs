@@ -42,7 +42,7 @@ namespace TimeSeriesForecasting
 
         private static TrainingConfiguration _trainingConfiguration = new TrainingConfiguration();
 
-        internal static void Train(string inputDirectoryPath)
+        internal static void ExecuteTrainCommand(string inputDirectoryPath)
         {
             Console.Write("Loading data from .parquet file...");
             var records = new ParquetDataLoader(ValuesFile, DatesFile).GetRecords();
