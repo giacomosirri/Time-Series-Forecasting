@@ -37,13 +37,23 @@ namespace TimeSeriesForecasting
 
     internal class ProgramTrain
     {
-        private static readonly string ScriptName = "plot_loss_progress.py";
-        internal static string UserInputDirectory { get; private set; } = "";
+        private const string ScriptName = "plot_loss_progress.py";
 
-        private static TrainingConfiguration _trainingConfiguration = new TrainingConfiguration();
+        private static string _userDirectory = "";
+        private static bool _test;
+        private static readonly TrainingConfiguration _trainingConfiguration = new();
+
+        internal static void ExecuteTrainCommand(string inputDirectoryPath, bool test) 
+        {
+            _test = test;
+            ExecuteTrainCommand(inputDirectoryPath);
+        }
 
         internal static void ExecuteTrainCommand(string inputDirectoryPath)
         {
+            _test = false;
+            _userDirectory = inputDirectoryPath;
+
             Console.Write("Loading data from .parquet file...");
             var records = new ParquetDataLoader(ValuesFile, DatesFile).GetRecords();
             Console.WriteLine(Program.Completion);
@@ -92,34 +102,41 @@ namespace TimeSeriesForecasting
             NetworkModel nn = new LSTM(trainingInputTensor.size(2), trainingOutputTensor.size(1), trainingOutputTensor.size(2));
             IModelManager model = new ModelManager(nn);
 
-            // Create a README inside the current subdirectory.
-            var descriptionLogger = new TupleLogger<string, string>(Program.LogDirPath + "README.md");
-            string description = $"\nThis is a LSTM model, trained using Stochatic Gradient Descent " +
-                $"on data {(_trainingConfiguration.FirstValidDate.HasValue || _trainingConfiguration.LastValidDate.HasValue ? $"ranging {(_trainingConfiguration.FirstValidDate.HasValue ? $"from {_trainingConfiguration.FirstValidDate?.ToString("yyyy-MM-dd")}" : "")} " + $"{(_trainingConfiguration.LastValidDate.HasValue ? $"to {_trainingConfiguration.LastValidDate?.ToString("yyyy-MM-dd")}" : "")}" : "")} " +
-                $"{(_trainingConfiguration.NormalizationMethod == "None" ? "" : $"preprocessed using {_trainingConfiguration.NormalizationMethod}")}. " +
-                $"The model tries to predict the next {Program.GlobalConfiguration.OutputWidth} value of the variable(s) " +
-                $"{string.Join(", ", Program.GlobalConfiguration.LabelColumns)} {Program.GlobalConfiguration.Offset} hour into the future, " +
-                $"using the previous {Program.GlobalConfiguration.InputWidth} hour of data.";
-            descriptionLogger.Prepare(("Description", description), null);
-            descriptionLogger.Write();
-
             Console.Write("Training the model...");
             model.Fit(trainingInputTensor, trainingOutputTensor, validationInputTensor, validationOutputTensor);
             var lossLogger = new TupleLogger<int, float>(Program.LogDirPath + "loss_progress.txt");
             Console.WriteLine(Program.Completion);
 
-            Console.Write("Logging the progress of the loss during training on file...");
-            lossLogger.Prepare(model.LossProgress.Select((value, index) => (index, value)).ToList(),
-                "Loss after n epochs:");
-            lossLogger.Write();
+            Console.Write("Saving the model on file...");
+            model.Save(Program.LogDirPath);
             Console.WriteLine(Program.Completion);
 
-            Console.Write("Drawing a graph to show loss progress...");
-            (bool res, string? message) = RunPythonScript(ScriptName);
-            Console.WriteLine(res ? Program.Completion : message);
+            if (Program.IsLogEnabled)
+            {
+                // Create a README inside the current subdirectory.
+                var descriptionLogger = new TupleLogger<string, string>(Program.LogDirPath + "README.md");
+                string description = $"\nThis is a LSTM model, trained using Stochatic Gradient Descent " +
+                    $"on data {(_trainingConfiguration.FirstValidDate.HasValue || _trainingConfiguration.LastValidDate.HasValue ? $"ranging {(_trainingConfiguration.FirstValidDate.HasValue ? $"from {_trainingConfiguration.FirstValidDate?.ToString("yyyy-MM-dd")}" : "")} " + $"{(_trainingConfiguration.LastValidDate.HasValue ? $"to {_trainingConfiguration.LastValidDate?.ToString("yyyy-MM-dd")}" : "")}" : "")} " +
+                    $"{(_trainingConfiguration.NormalizationMethod == "None" ? "" : $"preprocessed using {_trainingConfiguration.NormalizationMethod}")}. " +
+                    $"The model tries to predict the next {Program.GlobalConfiguration.OutputWidth} value of the variable(s) " +
+                    $"{string.Join(", ", Program.GlobalConfiguration.LabelColumns)} {Program.GlobalConfiguration.Offset} hour into the future, " +
+                    $"using the previous {Program.GlobalConfiguration.InputWidth} hour of data.";
+                descriptionLogger.Prepare(("Description", description), null);
+                descriptionLogger.Write();
+
+                Console.Write("Logging the progress of the loss during training on file...");
+                lossLogger.Prepare(model.LossProgress.Select((value, index) => (index, value)).ToList(),
+                    "Loss after n epochs:");
+                lossLogger.Write();
+                Console.WriteLine(Program.Completion);
+
+                Console.Write("Drawing a graph to show loss progress...");
+                (bool res, string? message) = Program.RunPythonScript(ScriptName);
+                Console.WriteLine(res ? Program.Completion : message);
+            }
 
             // Train and test commands are differentiated by the following code.
-            if (Program.Mode == RunningMode.TEST)
+            if (_test)
             {
                 Console.Write("Assessing model performance on the test set...");
                 IDictionary<AccuracyMetric, double> metrics = model.EvaluateAccuracy(testInputTensor, testOutputTensor);
@@ -127,10 +144,6 @@ namespace TimeSeriesForecasting
                 metricsLogger.Prepare(metrics.Select(metric => (metric.Key.ToString(), metric.Value)).ToList(), null);
                 metricsLogger.Prepare(("Training time in seconds", model.LastTrainingTime.Seconds), null);
                 metricsLogger.Write();
-                Console.WriteLine(Program.Completion);
-
-                Console.Write("Saving the model on file...");
-                model.Save(Program.LogDirPath);
                 Console.WriteLine(Program.Completion);
 
                 Console.Write("Predicting new values...");
@@ -147,33 +160,9 @@ namespace TimeSeriesForecasting
                 Console.WriteLine(Program.Completion);
 
                 Console.Write("Drawing a graph to compare predicted and expected output...");
-                (res, message) = RunPythonScript(ScriptName);
+                (bool res, string? message) = Program.RunPythonScript(ScriptName);
                 Console.WriteLine(res ? Program.Completion : message);
             }
-        }
-
-        internal static (bool result, string? message) RunPythonScript(string scriptName)
-        {
-            if ((Environment.GetEnvironmentVariable("PATH") != null) &&
-                Environment.GetEnvironmentVariable("PATH")!.Contains("Python"))
-            {
-                string scriptPath = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)!, scriptName);
-                // Create and execute a new python process to draw the graph.
-                var process = new Process();
-                process.StartInfo.FileName = "python";
-                // The arguments are the name of the script and the path of the directory where the data is located.
-                process.StartInfo.Arguments = $"{scriptPath} {LogDirPath}";
-                process.StartInfo.UseShellExecute = false;
-                process.StartInfo.RedirectStandardOutput = true;
-                bool res = process.Start();
-                if (!res)
-                {
-                    return (false, "Python script could not be executed.");
-                }
-                process.WaitForExit();
-                return (true, null);
-            }
-            else return (false, "  Python is not installed on your system. Please install it and try again.\n");
         }
     }
 }
