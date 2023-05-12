@@ -9,7 +9,7 @@ namespace TimeSeriesForecasting
      * This class encapsulates all the global configuration parameters.
      * These parameters are needed for every running mode, as the input to both the training 
      * and the prediction is a parquet table, which has one index column and one or more 
-     * label columns and which must be split into windows of data usually called "time series".
+     * label columns and which must be split into windows of data (usually called "time series").
      */
     public class GlobalConfiguration
     {
@@ -38,9 +38,6 @@ namespace TimeSeriesForecasting
 
         internal static bool IsLogEnabled { get; private set; }
 
-        /*
-         * 
-         */
         internal static GlobalConfiguration GlobalConfiguration { get; private set; } = new GlobalConfiguration();
 
         static void Main(string[] args)
@@ -69,25 +66,8 @@ namespace TimeSeriesForecasting
             trainCommand.SetHandler((bool log, string inputDirectoryPath) =>
             {
                 IsLogEnabled = log;
-                try
-                {                
-                    // Calculate the asbolute path of the input directory.
-                    string userInputDir = Path.GetFullPath(inputDirectoryPath);
-                    // Then try to read the config file inside the directory. If not present, an exception is thrown.
-                    GlobalConfiguration = GetGlobalConfiguration(userInputDir);
-                    // Finally execute the train command.
-                    ProgramTrain.ExecuteTrainCommand(userInputDir);
-                }
-                catch (Exception ex) when (ex is IOException)
-                {
-                    Console.WriteLine(IOErrorMessage);
-                    Environment.Exit(1);
-                }
-                catch (Exception)
-                {
-                    Console.WriteLine(DirectoryErrorMessage);
-                    Environment.Exit(1);
-                }
+                GlobalConfiguration = GetConfigurationOrExit(inputDirectoryPath);
+                ProgramTrain.ExecuteTrainCommand(Path.GetFullPath(inputDirectoryPath));
             }, trainLogOption, trainArgument);
 
             // Create command 'test'.
@@ -97,26 +77,10 @@ namespace TimeSeriesForecasting
             testCommand.AddArgument(testArgument);
             testCommand.SetHandler((string inputDirectoryPath) =>
             {
-                // In test mode the log is always enabled, because testing a model and getting no output would not make any sense.
+                // In test mode the log is always enabled, because testing a model and not getting any output would make no sense.
                 IsLogEnabled = true;
-                try
-                {
-                    // Calculate the asbolute path of the input directory.
-                    string userInputDir = Path.GetFullPath(inputDirectoryPath);
-                    // Then try to read the config file inside the directory. If not present, an exception is thrown.
-                    GlobalConfiguration = GetGlobalConfiguration(userInputDir);
-                    ProgramTest.ExecuteTestCommand(userInputDir);
-                }
-                catch (Exception ex) when (ex is IOException)
-                {
-                    Console.WriteLine(IOErrorMessage);
-                    Environment.Exit(1);
-                }
-                catch (Exception)
-                {
-                    Console.WriteLine(DirectoryErrorMessage);
-                    Environment.Exit(1);
-                }
+                GlobalConfiguration = GetConfigurationOrExit(inputDirectoryPath);
+                ProgramTest.ExecuteTestCommand(Path.GetFullPath(inputDirectoryPath));
             }, testArgument);
 
             // Create command "predict".
@@ -126,24 +90,8 @@ namespace TimeSeriesForecasting
             predictCommand.SetHandler((string inputDirectoryPath) =>
             {
                 IsLogEnabled = true;
-                try
-                {
-                    // Calculate the asbolute path of the input directory.
-                    string userInputDir = Path.GetFullPath(inputDirectoryPath);
-                    // Then try to read the config file inside the directory. If not present, an exception is thrown.
-                    GlobalConfiguration = GetGlobalConfiguration(userInputDir);
-                    ProgramPredict.ExecutePredictCommand(userInputDir);
-                }
-                catch (Exception ex) when (ex is IOException)
-                {
-                    Console.WriteLine(IOErrorMessage);
-                    Environment.Exit(1);
-                }
-                catch (Exception)
-                {
-                    Console.WriteLine(DirectoryErrorMessage);
-                    Environment.Exit(1);
-                }
+                GlobalConfiguration = GetConfigurationOrExit(inputDirectoryPath);
+                ProgramPredict.ExecutePredictCommand(Path.GetFullPath(inputDirectoryPath));
             }, testArgument);
 
             // Add the new commands to the root command.
@@ -161,18 +109,43 @@ namespace TimeSeriesForecasting
         }
 
         /*
-         * This method creates and returns a global configuration object deserializing the configuration file
-         * found inside the user directory. An ArgumentException is thrown if no such file is present.
+         * This method attemps to retrieve a global configuration object from the input directory.
+         * If it fails, the program is stopped.
          */
-        private static GlobalConfiguration GetGlobalConfiguration(string inputDirectoryPath)
+        private static GlobalConfiguration GetConfigurationOrExit(string inputDirectoryPath)
         {
             try
             {
-                // Try to find the file "global_config.json" inside the directory provided by the user.
-                string globalConfigFile = Directory.GetFiles(inputDirectoryPath, "global_config.json").Single();
-                using var reader = new StreamReader(globalConfigFile);
+                // Try to find the file "global_config.json" inside the input directory.
+                string globalConfigFile = Directory.GetFiles(Path.GetFullPath(inputDirectoryPath), "global_config.json").Single();
+                // Then return the global configuration object obtained through the deserialization of the configuration file.
+                return GetConfiguration<GlobalConfiguration>(globalConfigFile);
+            }
+            catch (Exception ex) when (ex is IOException)
+            {
+                StopProgram(IOErrorMessage);
+                return new GlobalConfiguration();
+            }
+            // If either the directory provided by the user does not exist or is inaccessible or its path is too long,
+            // or if there is no json configuration file inside it, then the program is stopped.
+            catch (Exception)
+            {
+                StopProgram(DirectoryErrorMessage);
+                return new GlobalConfiguration();
+            }
+        }
+
+        /*
+         * This method creates and returns a configuration object deserializing the configuration file
+         * provided as an argument. An ArgumentException is thrown if no such file is present.
+         */
+        internal static T GetConfiguration<T>(string configFile)
+        {
+            try
+            {
+                using var reader = new StreamReader(configFile);
                 var settings = new JsonSerializerSettings() { DateFormatString = "yyyy-MM-dd" };
-                return JsonConvert.DeserializeObject<GlobalConfiguration>(reader.ReadToEnd(), settings)!;
+                return JsonConvert.DeserializeObject<T>(reader.ReadToEnd(), settings)!;
             }
             // Distinguish between an unpredictable I/O problem and a wrong user input. 
             catch (Exception ex) when (ex is IOException)
@@ -181,8 +154,17 @@ namespace TimeSeriesForecasting
             }
             catch (Exception)
             {
-                throw new ArgumentException("The given path is not a directory or does not contain a file named 'global_config.json'.");
+                throw new ArgumentException("The given path is not a directory or does not contain the requested file.");
             }
+        }
+
+        /*
+         * This method prints the given error message to the standard output, then terminates this process.
+         */
+        private static void StopProgram(string errorMessage)
+        {
+            Console.WriteLine(errorMessage);
+            Environment.Exit(1);
         }
 
         /*
