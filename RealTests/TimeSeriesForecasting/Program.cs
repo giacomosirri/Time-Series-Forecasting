@@ -34,7 +34,7 @@ namespace TimeSeriesForecasting
     {
         internal const string Completion = "  COMPLETE\n";
         private const string IOErrorMessage = "An error occurred when reading a directory or file. The program has been stopped.";
-        private const string DirectoryErrorMessage = "The directory you provided is not valid. The program has been stopped.";
+        internal const string DirectoryErrorMessage = "The directory you provided is not valid. The program has been stopped.";
 
         internal static bool IsLogEnabled { get; private set; }
 

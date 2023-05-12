@@ -3,8 +3,6 @@ using static TorchSharp.torch;
 using TimeSeriesForecasting.IO;
 using static TimeSeriesForecasting.DataPreprocessor;
 using System.Data;
-using System.Diagnostics;
-using System.Reflection;
 
 namespace TimeSeriesForecasting
 {
@@ -35,24 +33,33 @@ namespace TimeSeriesForecasting
             => (DatasetSplitRatios[0], DatasetSplitRatios[1], DatasetSplitRatios[2]) = (70, 20, 10);
     }
 
+
     internal class ProgramTrain
     {
+        private const string ValuesFile = "data-values.parquet";
+        private const string DatesFile = "data-dates.parquet";
+        private const string TrainingSubdirectory = "\\training";
+        private const string TrainingConfigFile = "training_config.json";
         private const string ScriptName = "plot_loss_progress.py";
 
-        private static string _userDirectory = "";
-        private static bool _test;
+        // The test code is executed only if directly specified in the method call.
+        private static bool _test = false;
         private static readonly TrainingConfiguration _trainingConfiguration = new();
 
-        internal static void ExecuteTrainCommand(string inputDirectoryPath, bool test) 
+        internal static void ExecuteTrainCommand(string inputDirectoryAbsolutePath, bool test)
         {
             _test = test;
-            ExecuteTrainCommand(inputDirectoryPath);
+            ExecuteTrainCommand(inputDirectoryAbsolutePath);
         }
 
-        internal static void ExecuteTrainCommand(string inputDirectoryPath)
+        internal static void ExecuteTrainCommand(string inputDirectoryAbsolutePath)
         {
-            _test = false;
-            _userDirectory = inputDirectoryPath;
+            // Check if all necessary files and subdirectories exist and if they don't, terminate the program.
+            if (!IsInputDirectoryValid(inputDirectoryAbsolutePath))
+            {
+                Console.WriteLine(Program.DirectoryErrorMessage);
+                Environment.Exit(1);
+            }
 
             Console.Write("Loading data from .parquet file...");
             var records = new ParquetDataLoader(ValuesFile, DatesFile).GetRecords();
@@ -162,6 +169,31 @@ namespace TimeSeriesForecasting
                 Console.Write("Drawing a graph to compare predicted and expected output...");
                 (bool res, string? message) = Program.RunPythonScript(ScriptName);
                 Console.WriteLine(res ? Program.Completion : message);
+            }
+        }
+
+        /*
+         * This method checks if the given directory path represents a valid directory for the scope of this class.
+         */
+        private static bool IsInputDirectoryValid(string directoryPath)
+        {
+            try
+            {
+                // A file called data-values.parquet must exist.
+                _ = Directory.GetFiles(directoryPath, ValuesFile).Single();
+                // A file called data-datetimes.parquet must exist.
+                _ = Directory.GetFiles(directoryPath, DatesFile).Single();
+                // A /training subdirectory must exist.
+                string trainingDir = Directory.GetDirectories(directoryPath, TrainingSubdirectory).Single();
+                // A file called training_config.json must exist inside the training subdirectory.
+                _ = Directory.GetFiles(trainingDir, TrainingConfigFile).Single();
+                // If all the necessary files and subdirectories have been found, then return true.
+                return true;
+            }
+            catch (Exception ex) when (ex is ArgumentNullException || ex is InvalidOperationException) 
+            {
+                // If any necessary file or subdirectory is not found, then return false.
+                return false;
             }
         }
     }
