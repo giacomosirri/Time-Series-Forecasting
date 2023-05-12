@@ -39,6 +39,7 @@ namespace TimeSeriesForecasting
         private const string ValuesFile = "data-values.parquet";
         private const string DatesFile = "data-dates.parquet";
         private const string TrainingSubdirectory = "training";
+        private const string ModelSubdirectory = "model";
         private const string TrainingConfigFile = "training_config.json";
         private const string ScriptName = "plot_loss_progress.py";
 
@@ -65,6 +66,10 @@ namespace TimeSeriesForecasting
             string datesFileAbsolutePath = Path.Combine(new string[] { inputDirectoryAbsolutePath, DatesFile });
             string trainingDirectoryAbsolutePath = Path.Combine(new string[] { inputDirectoryAbsolutePath, TrainingSubdirectory });
             string configFileAbsolutePath = Path.Combine(new string[] { inputDirectoryAbsolutePath, TrainingConfigFile });
+
+            // The model subdirectory may not exist yet. The code below creates this directory only if not already present.
+            string modelDirectoryAbsolutePath = Path.Combine(new string[] { inputDirectoryAbsolutePath, ModelSubdirectory });
+            Directory.CreateDirectory(modelDirectoryAbsolutePath);
 
             // Load the training configuration from the config file.
             TrainingConfiguration trainingConfiguration = Program.GetConfiguration<TrainingConfiguration>(configFileAbsolutePath);
@@ -122,7 +127,7 @@ namespace TimeSeriesForecasting
             Console.WriteLine(Program.Completion);
 
             Console.Write("Saving the model on file...");
-            model.Save(trainingDirectoryAbsolutePath);
+            model.Save(modelDirectoryAbsolutePath);
             Console.WriteLine(Program.Completion);
 
             if (Program.IsLogEnabled)
