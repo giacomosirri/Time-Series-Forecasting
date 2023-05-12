@@ -16,25 +16,7 @@ namespace TimeSeriesForecasting
             int outputTimeSteps, int outputFeatures)
         {
             Console.Write("Loading the model from file...");
-            NetworkModel nn;
-            if (Program.GlobalConfiguration.ModelName == "RNN")
-            {
-                nn = new RecurrentNeuralNetwork(inputFeatures, 
-                    outputTimeSteps, outputFeatures, Program.LogDirPath + $"RNN.model.bin");
-            }
-            else if (Program.GlobalConfiguration.ModelName == "Linear")
-            {
-                nn = new SimpleNeuralNetwork(inputTimeSteps, inputFeatures,
-                    outputTimeSteps, outputFeatures, Program.LogDirPath + $"Linear.model.bin");
-            }
-            else if (Program.GlobalConfiguration.ModelName == "LSTM")
-            {
-                nn = new LSTM(inputFeatures, outputTimeSteps, outputFeatures, Program.LogDirPath + $"LSTM.model.bin");
-            }
-            else
-            {
-                throw new InvalidDataException("The configuration parameter that contains the name of the model is wrong.");
-            }
+            NetworkModel nn = new LSTM(inputFeatures, outputTimeSteps, outputFeatures, Program.LogDirPath + $"LSTM.model.bin");
             IModelManager model = new ModelManager(nn);
             Console.WriteLine(Program.Completion);
 
