@@ -38,13 +38,12 @@ namespace TimeSeriesForecasting
     {
         private const string ValuesFile = "data-values.parquet";
         private const string DatesFile = "data-dates.parquet";
-        private const string TrainingSubdirectory = "\\training";
+        private const string TrainingSubdirectory = "training";
         private const string TrainingConfigFile = "training_config.json";
         private const string ScriptName = "plot_loss_progress.py";
 
         // The test code is executed only if directly specified in the method call.
         private static bool _test = false;
-        private static readonly TrainingConfiguration _trainingConfiguration = new();
 
         internal static void ExecuteTrainCommand(string inputDirectoryAbsolutePath, bool test)
         {
@@ -61,17 +60,26 @@ namespace TimeSeriesForecasting
                 Environment.Exit(1);
             }
 
+            // The existence of these files has already been checked.
+            string valuesFileAbsolutePath = Path.Combine(new string[] { inputDirectoryAbsolutePath, ValuesFile });
+            string datesFileAbsolutePath = Path.Combine(new string[] { inputDirectoryAbsolutePath, DatesFile });
+            string trainingDirectoryAbsolutePath = Path.Combine(new string[] { inputDirectoryAbsolutePath, TrainingSubdirectory });
+            string configFileAbsolutePath = Path.Combine(new string[] { inputDirectoryAbsolutePath, TrainingConfigFile });
+
+            // Load the training configuration from the config file.
+            TrainingConfiguration trainingConfiguration = Program.GetConfiguration<TrainingConfiguration>(configFileAbsolutePath);
+
             Console.Write("Loading data from .parquet file...");
-            var records = new ParquetDataLoader(ValuesFile, DatesFile).GetRecords();
+            var records = new ParquetDataLoader(valuesFileAbsolutePath, datesFileAbsolutePath).GetRecords();
             Console.WriteLine(Program.Completion);
 
             Console.Write("Initializing the preprocessor...");
             NormalizationMethod normalization = (NormalizationMethod)Enum.Parse(typeof(NormalizationMethod),
-                                                    _trainingConfiguration.NormalizationMethod.ToUpper());
+                                                    trainingConfiguration.NormalizationMethod.ToUpper());
             var dpp = new DataPreprocessorBuilder()
-                            .Split(_trainingConfiguration.DatasetSplitRatio)
+                            .Split(trainingConfiguration.DatasetSplitRatio)
                             .Normalize(normalization)
-                            .AddDateRange((_trainingConfiguration.FirstValidDate, _trainingConfiguration.LastValidDate))
+                            .AddDateRange((trainingConfiguration.FirstValidDate, trainingConfiguration.LastValidDate))
                             .Build(records);
             Console.WriteLine(Program.Completion);
 
@@ -111,20 +119,19 @@ namespace TimeSeriesForecasting
 
             Console.Write("Training the model...");
             model.Fit(trainingInputTensor, trainingOutputTensor, validationInputTensor, validationOutputTensor);
-            var lossLogger = new TupleLogger<int, float>(Program.LogDirPath + "loss_progress.txt");
             Console.WriteLine(Program.Completion);
 
             Console.Write("Saving the model on file...");
-            model.Save(Program.LogDirPath);
+            model.Save(trainingDirectoryAbsolutePath);
             Console.WriteLine(Program.Completion);
 
             if (Program.IsLogEnabled)
             {
                 // Create a README inside the current subdirectory.
-                var descriptionLogger = new TupleLogger<string, string>(Program.LogDirPath + "README.md");
-                string description = $"\nThis is a LSTM model, trained using Stochatic Gradient Descent " +
-                    $"on data {(_trainingConfiguration.FirstValidDate.HasValue || _trainingConfiguration.LastValidDate.HasValue ? $"ranging {(_trainingConfiguration.FirstValidDate.HasValue ? $"from {_trainingConfiguration.FirstValidDate?.ToString("yyyy-MM-dd")}" : "")} " + $"{(_trainingConfiguration.LastValidDate.HasValue ? $"to {_trainingConfiguration.LastValidDate?.ToString("yyyy-MM-dd")}" : "")}" : "")} " +
-                    $"{(_trainingConfiguration.NormalizationMethod == "None" ? "" : $"preprocessed using {_trainingConfiguration.NormalizationMethod}")}. " +
+                var descriptionLogger = new TupleLogger<string, string>(Path.Combine(new string[] { trainingDirectoryAbsolutePath, "README.md" }));
+                string description = $"\nThis is a LSTM model trained " +
+                    $"on data {(trainingConfiguration.FirstValidDate.HasValue || trainingConfiguration.LastValidDate.HasValue ? $"ranging {(trainingConfiguration.FirstValidDate.HasValue ? $"from {trainingConfiguration.FirstValidDate?.ToString("yyyy-MM-dd")}" : "")} " + $"{(trainingConfiguration.LastValidDate.HasValue ? $"to {trainingConfiguration.LastValidDate?.ToString("yyyy-MM-dd")}" : "")}" : "")} " +
+                    $"{(trainingConfiguration.NormalizationMethod == "None" ? "" : $"preprocessed using {trainingConfiguration.NormalizationMethod}")}. " +
                     $"The model tries to predict the next {Program.GlobalConfiguration.OutputWidth} value of the variable(s) " +
                     $"{string.Join(", ", Program.GlobalConfiguration.LabelColumns)} {Program.GlobalConfiguration.Offset} hour into the future, " +
                     $"using the previous {Program.GlobalConfiguration.InputWidth} hour of data.";
@@ -132,13 +139,13 @@ namespace TimeSeriesForecasting
                 descriptionLogger.Write();
 
                 Console.Write("Logging the progress of the loss during training on file...");
-                lossLogger.Prepare(model.LossProgress.Select((value, index) => (index, value)).ToList(),
-                    "Loss after n epochs:");
+                var lossLogger = new TupleLogger<int, float>(Path.Combine(new string[] { trainingDirectoryAbsolutePath, "loss-progress.txt" }));
+                lossLogger.Prepare(model.LossProgress.Select((value, index) => (index, value)).ToList(), "Loss after n epochs:");
                 lossLogger.Write();
                 Console.WriteLine(Program.Completion);
 
                 Console.Write("Drawing a graph to show loss progress...");
-                (bool res, string? message) = Program.RunPythonScript(ScriptName);
+                (bool res, string? message) = Program.RunPythonScript(ScriptName, trainingDirectoryAbsolutePath);
                 Console.WriteLine(res ? Program.Completion : message);
             }
 
@@ -147,7 +154,7 @@ namespace TimeSeriesForecasting
             {
                 Console.Write("Assessing model performance on the test set...");
                 IDictionary<AccuracyMetric, double> metrics = model.EvaluateAccuracy(testInputTensor, testOutputTensor);
-                var metricsLogger = new TupleLogger<string, double>(Program.LogDirPath + "metrics.txt");
+                var metricsLogger = new TupleLogger<string, double>(Path.Combine(new string[] {trainingDirectoryAbsolutePath, "metrics.txt"}));
                 metricsLogger.Prepare(metrics.Select(metric => (metric.Key.ToString(), metric.Value)).ToList(), null);
                 metricsLogger.Prepare(("Training time in seconds", model.LastTrainingTime.Seconds), null);
                 metricsLogger.Write();
@@ -158,16 +165,16 @@ namespace TimeSeriesForecasting
                 Console.WriteLine(Program.Completion);
 
                 Console.Write("Logging predicted and expected values on file...");
-                var predictionLogger = new TensorLogger(Program.LogDirPath + "predictions.txt");
+                var predictionLogger = new TensorLogger(Path.Combine(new string[] { trainingDirectoryAbsolutePath, "predictions.txt" }));
                 predictionLogger.Prepare(output.reshape(output.size(0), 1), "Predictions on the test set");
                 predictionLogger.Write();
-                var expectedLogger = new TensorLogger(Program.LogDirPath + "expected.txt");
+                var expectedLogger = new TensorLogger(Path.Combine(new string[] { trainingDirectoryAbsolutePath, "expected.txt" }));
                 expectedLogger.Prepare(testOutputTensor.reshape(output.size(0), 1), "Expected values of the predicted variable");
                 expectedLogger.Write();
                 Console.WriteLine(Program.Completion);
 
                 Console.Write("Drawing a graph to compare predicted and expected output...");
-                (bool res, string? message) = Program.RunPythonScript(ScriptName);
+                (bool res, string? message) = Program.RunPythonScript(ScriptName, trainingDirectoryAbsolutePath);
                 Console.WriteLine(res ? Program.Completion : message);
             }
         }
