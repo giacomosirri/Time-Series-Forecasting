@@ -58,13 +58,13 @@ namespace TimeSeriesForecasting
         // The test code is executed only if directly specified in the method call.
         private static bool _test = false;
 
-        internal static void ExecuteTrainCommand(string inputDirectoryAbsolutePath, bool test)
+        internal static void ExecuteTrainCommand(string inputDirectoryAbsolutePath, string outputDirectoryAbsolutePath, bool test)
         {
             _test = test;
-            ExecuteTrainCommand(inputDirectoryAbsolutePath);
+            ExecuteTrainCommand(inputDirectoryAbsolutePath, outputDirectoryAbsolutePath);
         }
 
-        internal static void ExecuteTrainCommand(string inputDirectoryAbsolutePath)
+        internal static void ExecuteTrainCommand(string inputDirectoryAbsolutePath, string outputDirectoryAbsolutePath)
         {
             // Check if all necessary files and subdirectories exist and if they don't, terminate the program.
             if (!IsInputDirectoryValid(inputDirectoryAbsolutePath))
@@ -76,12 +76,15 @@ namespace TimeSeriesForecasting
             // The existence of these files has already been checked.
             string valuesFileAbsolutePath = Path.Combine(new string[] { inputDirectoryAbsolutePath, ValuesFile });
             string datesFileAbsolutePath = Path.Combine(new string[] { inputDirectoryAbsolutePath, DatesFile });
-            string trainingDirectoryAbsolutePath = Path.Combine(new string[] { inputDirectoryAbsolutePath, TrainingSubdirectory });
-            string configFileAbsolutePath = Path.Combine(new string[] { trainingDirectoryAbsolutePath, TrainingConfigFile });
+            string inputTrainingDirectoryAbsolutePath = Path.Combine(new string[] { inputDirectoryAbsolutePath, TrainingSubdirectory });
+            string configFileAbsolutePath = Path.Combine(new string[] { inputTrainingDirectoryAbsolutePath, TrainingConfigFile });
 
             // The model subdirectory may not exist yet. The code below creates this directory only if not already present.
-            string modelDirectoryAbsolutePath = Path.Combine(new string[] { inputDirectoryAbsolutePath, ModelSubdirectory });
+            string modelDirectoryAbsolutePath = Path.Combine(new string[] { outputDirectoryAbsolutePath, ModelSubdirectory });
             Directory.CreateDirectory(modelDirectoryAbsolutePath);
+            // Same for the training output subdirectory.
+            string outputTrainingDirectoryAbsolutePath = Path.Combine(new string[] { outputDirectoryAbsolutePath, TrainingSubdirectory });
+            Directory.CreateDirectory(outputTrainingDirectoryAbsolutePath);
 
             // Load the training configuration from the config file.
             TrainingConfiguration trainingConfiguration = Program.GetConfiguration<TrainingConfiguration>(configFileAbsolutePath);
@@ -145,7 +148,7 @@ namespace TimeSeriesForecasting
             if (Program.IsLogEnabled)
             {
                 // Create a README inside the current subdirectory.
-                var descriptionLogger = new TupleLogger<string, string>(Path.Combine(new string[] { trainingDirectoryAbsolutePath, "README.md" }));
+                var descriptionLogger = new TupleLogger<string, string>(Path.Combine(new string[] { outputTrainingDirectoryAbsolutePath, "README.md" }));
                 string description = $"\nThis is a LSTM model trained " +
                     $"on data {(trainingConfiguration.FirstValidDate.HasValue || trainingConfiguration.LastValidDate.HasValue ? $"ranging {(trainingConfiguration.FirstValidDate.HasValue ? $"from {trainingConfiguration.FirstValidDate?.ToString("yyyy-MM-dd")}" : "")} " + $"{(trainingConfiguration.LastValidDate.HasValue ? $"to {trainingConfiguration.LastValidDate?.ToString("yyyy-MM-dd")}" : "")}" : "")} " +
                     $"{(trainingConfiguration.NormalizationMethod == "None" ? "" : $"preprocessed using {trainingConfiguration.NormalizationMethod}")}. " +
@@ -156,13 +159,13 @@ namespace TimeSeriesForecasting
                 descriptionLogger.Write();
 
                 Console.Write("Logging the progress of the loss during training on file...");
-                var lossLogger = new TupleLogger<int, float>(Path.Combine(new string[] { trainingDirectoryAbsolutePath, "loss_progress.txt" }));
+                var lossLogger = new TupleLogger<int, float>(Path.Combine(new string[] { outputTrainingDirectoryAbsolutePath, "loss_progress.txt" }));
                 lossLogger.Prepare(model.LossProgress.Select((value, index) => (index, value)).ToList(), "Loss after n epochs:");
                 lossLogger.Write();
                 Console.WriteLine(Program.Completion);
 
                 Console.Write("Drawing a graph to show loss progress...");
-                (bool res, string? message) = Program.RunPythonScript("plot_loss_progress.py", trainingDirectoryAbsolutePath);
+                (bool res, string? message) = Program.RunPythonScript("plot_loss_progress.py", outputTrainingDirectoryAbsolutePath);
                 Console.WriteLine(res ? Program.Completion : message);
             }
 
@@ -171,7 +174,7 @@ namespace TimeSeriesForecasting
             {
                 Console.Write("Assessing model performance on the test set...");
                 IDictionary<AccuracyMetric, double> metrics = model.EvaluateAccuracy(testInputTensor, testOutputTensor);
-                var metricsLogger = new TupleLogger<string, double>(Path.Combine(new string[] {trainingDirectoryAbsolutePath, "metrics.txt"}));
+                var metricsLogger = new TupleLogger<string, double>(Path.Combine(new string[] {outputTrainingDirectoryAbsolutePath, "metrics.txt"}));
                 metricsLogger.Prepare(metrics.Select(metric => (metric.Key.ToString(), metric.Value)).ToList(), null);
                 metricsLogger.Prepare(("Training time in seconds", model.LastTrainingTime.Seconds), null);
                 metricsLogger.Write();
@@ -182,16 +185,16 @@ namespace TimeSeriesForecasting
                 Console.WriteLine(Program.Completion);
 
                 Console.Write("Logging predicted and expected values on file...");
-                var predictionLogger = new TensorLogger(Path.Combine(new string[] { trainingDirectoryAbsolutePath, "predictions.txt" }));
+                var predictionLogger = new TensorLogger(Path.Combine(new string[] { outputTrainingDirectoryAbsolutePath, "predictions.txt" }));
                 predictionLogger.Prepare(output.reshape(output.size(0), 1), "Predictions on the test set");
                 predictionLogger.Write();
-                var expectedLogger = new TensorLogger(Path.Combine(new string[] { trainingDirectoryAbsolutePath, "expected.txt" }));
+                var expectedLogger = new TensorLogger(Path.Combine(new string[] { outputTrainingDirectoryAbsolutePath, "expected.txt" }));
                 expectedLogger.Prepare(testOutputTensor.reshape(output.size(0), 1), "Expected values of the predicted variable");
                 expectedLogger.Write();
                 Console.WriteLine(Program.Completion);
 
                 Console.Write("Drawing a graph to compare predicted and expected output...");
-                (bool res, string? message) = Program.RunPythonScript("plot_predicted_vs_expected.py", trainingDirectoryAbsolutePath);
+                (bool res, string? message) = Program.RunPythonScript("plot_predicted_vs_expected.py", outputTrainingDirectoryAbsolutePath);
                 Console.WriteLine(res ? Program.Completion : message);
             }
         }

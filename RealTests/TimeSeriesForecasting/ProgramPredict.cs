@@ -2,7 +2,7 @@
 {
     internal class ProgramPredict
     {
-        internal static void ExecutePredictCommand(string inputDirectoryPath)
+        internal static void ExecutePredictCommand(string inputDirectoryAbsolutePath, string outputDirectoryAbsolutePath)
         {
             throw new NotImplementedException();
         }
