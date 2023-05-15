@@ -398,3 +398,7 @@ FodyWeavers.xsd
 *.sln.iml
 /RealTests/TimeSeriesForecasting/Properties/launchSettings.json
 /RealTests/Input/config.json
+/RealTests/Input/training/training_config.json
+/RealTests/Input/data-dates.parquet
+/RealTests/Input/data-values.parquet
+/RealTests/Input/global_config.json
