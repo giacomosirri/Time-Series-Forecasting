@@ -2,15 +2,17 @@
 # The figure is saved on a file called 'loss_progress_graph.png'.
 
 import sys
+import os
 import numpy as np
 import matplotlib.pyplot as plt
 
 if len(sys.argv) > 1:
     directory = sys.argv[1]
+    file_name = "loss_progress_graph.png"
 else:
     exit(1)
 
-with open(f'{directory}loss_progress.txt', 'r') as f:
+with open(os.path.join(directory, "loss_progress.txt"), 'r') as f:
     next(f)
     values = []
     for line in f:
@@ -20,4 +22,4 @@ with open(f'{directory}loss_progress.txt', 'r') as f:
 loss = np.array(values)
 
 plt.plot(loss, "b-")
-plt.savefig(f'{directory}loss_progress_graph.png')
+plt.savefig(os.path.join(directory, file_name))

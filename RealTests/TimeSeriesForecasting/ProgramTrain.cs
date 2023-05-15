@@ -157,7 +157,7 @@ namespace TimeSeriesForecasting
                 descriptionLogger.Write();
 
                 Console.Write("Logging the progress of the loss during training on file...");
-                var lossLogger = new TupleLogger<int, float>(Path.Combine(new string[] { trainingDirectoryAbsolutePath, "loss-progress.txt" }));
+                var lossLogger = new TupleLogger<int, float>(Path.Combine(new string[] { trainingDirectoryAbsolutePath, "loss_progress.txt" }));
                 lossLogger.Prepare(model.LossProgress.Select((value, index) => (index, value)).ToList(), "Loss after n epochs:");
                 lossLogger.Write();
                 Console.WriteLine(Program.Completion);

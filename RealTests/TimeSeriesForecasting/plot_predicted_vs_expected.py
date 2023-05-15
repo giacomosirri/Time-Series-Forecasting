@@ -5,15 +5,18 @@
 # The figure is ultimately saved on a file called 'predicted_vs_expected_graph.png'.
 
 import sys
+import os
 import numpy as np
 import matplotlib.pyplot as plt
 
 if len(sys.argv) > 1:
     directory = sys.argv[1]
+    trend_file_name = "predicted_vs_expected_long_run.png"
+    singleday_file_name = "predicted_vs_expected_1day.png"
 else:
     exit(1)
 
-with open(f'{directory}predictions.txt', 'r') as f:
+with open(os.path.join(directory, "predictions.txt"), 'r') as f:
     next(f)
     next(f)
     values = []
@@ -23,7 +26,7 @@ with open(f'{directory}predictions.txt', 'r') as f:
             values.append(float(line))
 predictions = np.array(values)
 
-with open(f'{directory}expected.txt', 'r') as f:
+with open(os.path.join(directory, "expected.txt"), 'r') as f:
     next(f)
     next(f)
     values = []
@@ -33,11 +36,15 @@ with open(f'{directory}expected.txt', 'r') as f:
             values.append(float(line))
 expected = np.array(values)
 
+y_lim_lower = np.min(predictions.min(), expected.min()) * 0.9
+y_lim_upper = np.max(predictions.max(), expected.max()) * 1.1
+
 plt.plot(predictions[:24], "bo-", label="predictions")
 plt.plot(expected[:24], "rx", label="known values")
 plt.title("Predicted vs expected values for the first day of the test set")
 plt.legend(loc='upper right', fontsize='medium', frameon=True)
-plt.savefig(f'{directory}predicted_vs_expected_1day.png')
+plt.ylim(y_lim_lower, y_lim_upper)
+plt.savefig(os.path.join(directory, singleday_file_name))
 
 days = 20
 plt.clf();
@@ -46,4 +53,5 @@ plt.plot(predictions[-24*days:], "b-", label="predictions")
 plt.plot(expected[-24*days:], "r-", label="known values")
 plt.title(f"Predicted vs expected trend for the last {days} days of the test set")
 plt.legend(loc='upper right', fontsize='medium', frameon=True)
-plt.savefig(f'{directory}predicted_vs_expected_long_run.png')
+plt.ylim(y_lim_lower, y_lim_upper)
+plt.savefig(os.path.join(directory, trend_file_name))

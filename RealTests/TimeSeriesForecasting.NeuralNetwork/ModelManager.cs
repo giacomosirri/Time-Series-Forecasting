@@ -125,6 +125,6 @@ namespace TimeSeriesForecasting.NeuralNetwork
             return y;
         }
 
-        public void Save(string directory) => _model.save(directory + $"{_model.GetName()}.model.bin");
+        public void Save(string directory) => _model.save(Path.Combine(new string[] { directory, "LSTM.model.bin" }));
     }
 }
