@@ -36,22 +36,18 @@ with open(os.path.join(directory, "expected.txt"), 'r') as f:
             values.append(float(line))
 expected = np.array(values)
 
-y_lim_lower = np.min(predictions.min(), expected.min()) * 0.9
-y_lim_upper = np.max(predictions.max(), expected.max()) * 1.1
-
 plt.plot(predictions[:24], "bo-", label="predictions")
 plt.plot(expected[:24], "rx", label="known values")
 plt.title("Predicted vs expected values for the first day of the test set")
 plt.legend(loc='upper right', fontsize='medium', frameon=True)
-plt.ylim(y_lim_lower, y_lim_upper)
 plt.savefig(os.path.join(directory, singleday_file_name))
 
-days = 20
 plt.clf();
 plt.figure();
+
+days = 20
 plt.plot(predictions[-24*days:], "b-", label="predictions")
 plt.plot(expected[-24*days:], "r-", label="known values")
 plt.title(f"Predicted vs expected trend for the last {days} days of the test set")
 plt.legend(loc='upper right', fontsize='medium', frameon=True)
-plt.ylim(y_lim_lower, y_lim_upper)
 plt.savefig(os.path.join(directory, trend_file_name))
