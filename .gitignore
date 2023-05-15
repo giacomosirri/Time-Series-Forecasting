@@ -402,3 +402,5 @@ FodyWeavers.xsd
 /RealTests/Input/data-dates.parquet
 /RealTests/Input/data-values.parquet
 /RealTests/Input/global_config.json
+/RealTests/Input/training
+/RealTests/Input

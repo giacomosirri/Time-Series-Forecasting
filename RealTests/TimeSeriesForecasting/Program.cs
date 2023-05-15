@@ -72,7 +72,7 @@ namespace TimeSeriesForecasting
             }, trainLogOption, trainArgument);
 
             // Create command 'test'.
-            var testCommand = new Command("train", "Trains the neural network and tests it on the test set, " +
+            var testCommand = new Command("test", "Trains the neural network and tests it on the test set, " +
                                                    "providing output useful to understand the quality of the model.");
             var testArgument = new Argument<string>("input", "The relative or absolute path of the input directory.");
             testCommand.AddArgument(testArgument);
