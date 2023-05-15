@@ -34,8 +34,9 @@ namespace TimeSeriesForecasting
     internal class Program
     {
         internal const string Completion = "  COMPLETE\n";
-        private const string IOErrorMessage = "An error occurred when reading a directory or file. The program has been stopped.";
         internal const string DirectoryErrorMessage = "The directory you provided is not valid. The program has been stopped.";
+        private const string IOErrorMessage = "An error occurred when reading a directory or file. The program has been stopped.";
+        private const string GlobalConfigFile = "global_config.json";
 
         internal static bool IsLogEnabled { get; private set; }
 
@@ -48,6 +49,17 @@ namespace TimeSeriesForecasting
 
             // Create command line.
             var rootCommand = new RootCommand("App that creates, trains and runs a neural network for time series forecasting.");
+            var outputOption = new Option<string>(
+                name: "--output",
+                description: ""
+            )
+            {
+                IsRequired = false
+            };
+            outputOption.FromAmong("internal", "external");
+            outputOption.SetDefaultValue("copy");
+            outputOption.AddAlias("--o");
+            rootCommand.AddGlobalOption(outputOption);
 
             // Create command "train".
             var trainCommand = new Command("train", "Trains the neural network, i.e. changes its parameters according to the provided data, " +
@@ -64,36 +76,39 @@ namespace TimeSeriesForecasting
             trainCommand.AddOption(trainLogOption);
             var trainArgument = new Argument<string>("input", "The relative or absolute path of the input directory.");
             trainCommand.AddArgument(trainArgument);
-            trainCommand.SetHandler((bool log, string inputDirectoryPath) =>
+            trainCommand.SetHandler((bool log, string output, string inputDirectoryPath) =>
             {
                 IsLogEnabled = log;
                 GlobalConfiguration = GetConfigurationOrExit(inputDirectoryPath);
-                ProgramTrain.ExecuteTrainCommand(Path.GetFullPath(inputDirectoryPath));
-            }, trainLogOption, trainArgument);
+                string outputDir = GetOutputDirectory(output, inputDirectoryPath);
+                ProgramTrain.ExecuteTrainCommand(Path.GetFullPath(inputDirectoryPath), outputDir);
+            }, trainLogOption, outputOption, trainArgument);
 
             // Create command 'test'.
             var testCommand = new Command("test", "Trains the neural network and tests it on the test set, " +
-                                                   "providing output useful to understand the quality of the model.");
+                                                  "providing output useful to understand the quality of the model.");
             var testArgument = new Argument<string>("input", "The relative or absolute path of the input directory.");
             testCommand.AddArgument(testArgument);
-            testCommand.SetHandler((string inputDirectoryPath) =>
+            testCommand.SetHandler((string output, string inputDirectoryPath) =>
             {
                 // In test mode the log is always enabled, because testing a model and not getting any output would make no sense.
                 IsLogEnabled = true;
                 GlobalConfiguration = GetConfigurationOrExit(inputDirectoryPath);
-                ProgramTest.ExecuteTestCommand(Path.GetFullPath(inputDirectoryPath));
-            }, testArgument);
+                string outputDir = GetOutputDirectory(output, inputDirectoryPath);
+                ProgramTest.ExecuteTestCommand(Path.GetFullPath(inputDirectoryPath), outputDir);
+            }, outputOption, testArgument);
 
             // Create command "predict".
             var predictCommand = new Command("predict", "Predicts future values using a trained neural network.");
             var predictArgument = new Argument<string>("input", "The relative or absolute path of the input directory.");
             predictCommand.AddArgument(predictArgument);
-            predictCommand.SetHandler((string inputDirectoryPath) =>
+            predictCommand.SetHandler((string output, string inputDirectoryPath) =>
             {
                 IsLogEnabled = true;
                 GlobalConfiguration = GetConfigurationOrExit(inputDirectoryPath);
-                ProgramPredict.ExecutePredictCommand(Path.GetFullPath(inputDirectoryPath));
-            }, testArgument);
+                string outputDir = GetOutputDirectory(output, inputDirectoryPath);
+                ProgramPredict.ExecutePredictCommand(Path.GetFullPath(inputDirectoryPath), outputDir);
+            }, outputOption, testArgument);
 
             // Add the new commands to the root command.
             rootCommand.AddCommand(trainCommand);
@@ -118,7 +133,7 @@ namespace TimeSeriesForecasting
             try
             {
                 // Try to find the file "global_config.json" inside the input directory.
-                string globalConfigFile = Directory.GetFiles(Path.GetFullPath(inputDirectoryPath), "global_config.json").Single();
+                string globalConfigFile = Directory.GetFiles(Path.GetFullPath(inputDirectoryPath), GlobalConfigFile).Single();
                 // Then return the global configuration object obtained through the deserialization of the configuration file.
                 return GetConfiguration<GlobalConfiguration>(globalConfigFile);
             }
@@ -166,6 +181,20 @@ namespace TimeSeriesForecasting
         {
             Console.WriteLine(errorMessage);
             Environment.Exit(1);
+        }
+
+        /*
+         * This method returns the output directory based on the value specified by the user for the option 
+         * "output". This method also ensures that the requested output directory exists after its completion.
+         */
+        private static string GetOutputDirectory(string optionValue, string inputDirectory)
+        {
+            if (optionValue == "external")
+            {
+                string parentDir = Directory.GetParent(inputDirectory)!.FullName;
+                return Directory.CreateDirectory(Path.Combine(new string[] { parentDir, "Output" })).FullName;
+            }
+            else return inputDirectory;
         }
 
         /*
