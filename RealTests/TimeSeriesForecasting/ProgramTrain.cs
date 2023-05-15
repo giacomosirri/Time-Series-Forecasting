@@ -16,6 +16,8 @@ namespace TimeSeriesForecasting
      */
     internal class TrainingConfiguration
     {
+        private int[] _splits = new int[] { 70, 20, 10 };
+
         // The normalization method to apply to the training data.
         public string NormalizationMethod { internal get; set; } = "";
 
@@ -26,11 +28,22 @@ namespace TimeSeriesForecasting
         public DateTime? LastValidDate { internal get; set; }
 
         // This property is used by the JsonConvert object to fetch the split ratios array from the configuration file.
-        public int[] DatasetSplitRatios { private get; set; } = Array.Empty<int>();
+        public int[] DatasetSplitRatios 
+        { 
+            private get => _splits;
+            set
+            {
+                // Update the value of _splits only if the sum of the splits is 100.
+                if (value[0] + value[1] + value[2] == 100)
+                {
+                    _splits = value;
+                }
+            }
+        }
 
         // The fraction of data reserved for training, validation and test respectively.
         internal (int training, int validation, int test) DatasetSplitRatio
-            => (DatasetSplitRatios[0], DatasetSplitRatios[1], DatasetSplitRatios[2]) = (70, 20, 10);
+            => (DatasetSplitRatios[0], DatasetSplitRatios[1], DatasetSplitRatios[2]);
     }
 
 
@@ -65,7 +78,7 @@ namespace TimeSeriesForecasting
             string valuesFileAbsolutePath = Path.Combine(new string[] { inputDirectoryAbsolutePath, ValuesFile });
             string datesFileAbsolutePath = Path.Combine(new string[] { inputDirectoryAbsolutePath, DatesFile });
             string trainingDirectoryAbsolutePath = Path.Combine(new string[] { inputDirectoryAbsolutePath, TrainingSubdirectory });
-            string configFileAbsolutePath = Path.Combine(new string[] { inputDirectoryAbsolutePath, TrainingConfigFile });
+            string configFileAbsolutePath = Path.Combine(new string[] { trainingDirectoryAbsolutePath, TrainingConfigFile });
 
             // The model subdirectory may not exist yet. The code below creates this directory only if not already present.
             string modelDirectoryAbsolutePath = Path.Combine(new string[] { inputDirectoryAbsolutePath, ModelSubdirectory });
