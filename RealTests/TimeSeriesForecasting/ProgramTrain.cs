@@ -54,7 +54,6 @@ namespace TimeSeriesForecasting
         private const string TrainingSubdirectory = "training";
         private const string ModelSubdirectory = "model";
         private const string TrainingConfigFile = "training_config.json";
-        private const string ScriptName = "plot_loss_progress.py";
 
         // The test code is executed only if directly specified in the method call.
         private static bool _test = false;
@@ -163,7 +162,7 @@ namespace TimeSeriesForecasting
                 Console.WriteLine(Program.Completion);
 
                 Console.Write("Drawing a graph to show loss progress...");
-                (bool res, string? message) = Program.RunPythonScript(ScriptName, trainingDirectoryAbsolutePath);
+                (bool res, string? message) = Program.RunPythonScript("plot_loss_progress.py", trainingDirectoryAbsolutePath);
                 Console.WriteLine(res ? Program.Completion : message);
             }
 
@@ -192,7 +191,7 @@ namespace TimeSeriesForecasting
                 Console.WriteLine(Program.Completion);
 
                 Console.Write("Drawing a graph to compare predicted and expected output...");
-                (bool res, string? message) = Program.RunPythonScript(ScriptName, trainingDirectoryAbsolutePath);
+                (bool res, string? message) = Program.RunPythonScript("plot_predicted_vs_expected.py", trainingDirectoryAbsolutePath);
                 Console.WriteLine(res ? Program.Completion : message);
             }
         }

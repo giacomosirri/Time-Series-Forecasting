@@ -59,7 +59,7 @@ namespace TimeSeriesForecasting
             {
                 IsRequired = false
             };
-            trainLogOption.SetDefaultValue(true);
+            trainLogOption.SetDefaultValue(false);
             trainLogOption.AddAlias("--l");
             trainCommand.AddOption(trainLogOption);
             var trainArgument = new Argument<string>("input", "The relative or absolute path of the input directory.");
