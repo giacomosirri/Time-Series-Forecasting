@@ -57,7 +57,7 @@ namespace TimeSeriesForecasting
                 IsRequired = false
             };
             outputOption.FromAmong("internal", "external");
-            outputOption.SetDefaultValue("copy");
+            outputOption.SetDefaultValue("internal");
             outputOption.AddAlias("--o");
             rootCommand.AddGlobalOption(outputOption);
 
@@ -184,15 +184,24 @@ namespace TimeSeriesForecasting
         }
 
         /*
-         * This method returns the output directory based on the value specified by the user for the option 
-         * "output". This method also ensures that the requested output directory exists after its completion.
+         * This method returns the absolute path of the output directory based on the value specified by the user 
+         * for the option "output". This method also ensures that the requested output directory exists after its completion.
          */
         private static string GetOutputDirectory(string optionValue, string inputDirectory)
         {
             if (optionValue == "external")
             {
                 string parentDir = Directory.GetParent(inputDirectory)!.FullName;
-                return Directory.CreateDirectory(Path.Combine(new string[] { parentDir, "Output" })).FullName;
+                int i = 0;
+                while (true)
+                {
+                    string newDir = Path.Combine(new string[] { parentDir, $"Output{(i==0 ? "" : $" ({i})")}" });
+                    i++;
+                    if (!Directory.Exists(newDir))
+                    {
+                        return Directory.CreateDirectory(Path.Combine(new string[] { parentDir, newDir })).FullName;
+                    }
+                }
             }
             else return inputDirectory;
         }
