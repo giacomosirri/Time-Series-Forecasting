@@ -177,7 +177,7 @@ namespace TimeSeriesForecasting
         /*
          * This method prints the given error message to the standard output, then terminates this process.
          */
-        private static void StopProgram(string errorMessage)
+        internal static void StopProgram(string errorMessage)
         {
             Console.WriteLine(errorMessage);
             Environment.Exit(1);

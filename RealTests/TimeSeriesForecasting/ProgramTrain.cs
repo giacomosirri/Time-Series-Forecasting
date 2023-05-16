@@ -51,9 +51,11 @@ namespace TimeSeriesForecasting
     {
         private const string ValuesFile = "data-values.parquet";
         private const string DatesFile = "data-dates.parquet";
+        private const string TrainingConfigFile = "training_config.json";
+        private const string ValueRangesFile = "value_ranges.json";
+        private const string DataSubdirectory = "data";
         private const string TrainingSubdirectory = "training";
         private const string ModelSubdirectory = "model";
-        private const string TrainingConfigFile = "training_config.json";
 
         // The test code is executed only if directly specified in the method call.
         private static bool _test = false;
@@ -69,15 +71,26 @@ namespace TimeSeriesForecasting
             // Check if all necessary files and subdirectories exist and if they don't, terminate the program.
             if (!IsInputDirectoryValid(inputDirectoryAbsolutePath))
             {
-                Console.WriteLine(Program.DirectoryErrorMessage);
-                Environment.Exit(1);
+                Program.StopProgram(Program.DirectoryErrorMessage);
             }
 
             // The existence of these files has already been checked.
-            string valuesFileAbsolutePath = Path.Combine(new string[] { inputDirectoryAbsolutePath, ValuesFile });
-            string datesFileAbsolutePath = Path.Combine(new string[] { inputDirectoryAbsolutePath, DatesFile });
+            string inputDataDirectoryAbsolutePath = Path.Combine(new string[] { inputDirectoryAbsolutePath, DataSubdirectory });
+            string valuesFileAbsolutePath = Path.Combine(new string[] { inputDataDirectoryAbsolutePath, ValuesFile });
+            string datesFileAbsolutePath = Path.Combine(new string[] { inputDataDirectoryAbsolutePath, DatesFile });
             string inputTrainingDirectoryAbsolutePath = Path.Combine(new string[] { inputDirectoryAbsolutePath, TrainingSubdirectory });
             string configFileAbsolutePath = Path.Combine(new string[] { inputTrainingDirectoryAbsolutePath, TrainingConfigFile });
+
+            // The value ranges file may or may not exist since it is not strictly necessary.
+            string valueRangesFileAbsolutePath = Path.Combine(new string[] { inputDataDirectoryAbsolutePath, ValueRangesFile});
+            if (File.Exists(valueRangesFileAbsolutePath))
+            {
+                var res = Record.ReadValueRangesFromJsonFile(valueRangesFileAbsolutePath);
+                if (!res)
+                {
+                    Program.StopProgram(Program.DirectoryErrorMessage);
+                }
+            }
 
             // The model subdirectory may not exist yet. The code below creates this directory only if not already present.
             string modelDirectoryAbsolutePath = Path.Combine(new string[] { outputDirectoryAbsolutePath, ModelSubdirectory });
@@ -206,13 +219,15 @@ namespace TimeSeriesForecasting
         {
             try
             {
-                // A file called data-values.parquet must exist.
-                _ = Directory.GetFiles(directoryPath, ValuesFile).Single();
-                // A file called data-datetimes.parquet must exist.
-                _ = Directory.GetFiles(directoryPath, DatesFile).Single();
+                // A /data subdirectory must exist.
+                string dataDir = Directory.GetDirectories(directoryPath, DataSubdirectory).Single();
+                // A file called data-values.parquet must exist inside /data.
+                _ = Directory.GetFiles(dataDir, ValuesFile).Single();
+                // A file called data-datetimes.parquet must exist inside /data.
+                _ = Directory.GetFiles(dataDir, DatesFile).Single();
                 // A /training subdirectory must exist.
                 string trainingDir = Directory.GetDirectories(directoryPath, TrainingSubdirectory).Single();
-                // A file called training_config.json must exist inside the training subdirectory.
+                // A file called training_config.json must exist inside /training.
                 _ = Directory.GetFiles(trainingDir, TrainingConfigFile).Single();
                 // If all the necessary files and subdirectories have been found, then return true.
                 return true;
