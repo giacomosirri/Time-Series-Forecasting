@@ -9,6 +9,7 @@
 
   <ItemGroup>
     <PackageReference Include="libtorch-cpu-win-x64" Version="1.13.0.1" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
     <PackageReference Include="Parquet.Net" Version="4.8.0" />
     <PackageReference Include="TorchSharp" Version="0.99.4" />
   </ItemGroup>
