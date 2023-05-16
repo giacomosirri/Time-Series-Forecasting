@@ -155,51 +155,21 @@ namespace TimeSeriesForecasting
         {
             // Raw data cleanup, i.e. removal of clear measurement errors.
             _rawData.Rows.Cast<DataRow>().ToList().ForEach(row => _rawData.Columns.Cast<DataColumn>()
-                .Where(col => Record.GetUnitOfMeasureFromFeatureName(col.ColumnName) != null)
+                .Select(col => col.ColumnName)
+                .Where(colName => Record.ValueRanges.ContainsKey(colName))
                 .ToList()
-                .ForEach(col =>
+                .ForEach(colName =>
                 {
-                    string colName = col.ColumnName;
-                    string unit = Record.GetUnitOfMeasureFromFeatureName(colName)!;
+                    // Current value of the field.
                     double value = (double)row[colName];
-                    (double minValue, double maxValue) = Record.ValueRanges[unit];
+                    double minValue = Record.ValueRanges[colName].minValue ?? double.MinValue;
+                    double maxValue = Record.ValueRanges[colName].maxValue ?? double.MaxValue;
                     // Replace all values of a row that are outside the allowed values boundaries.
                     row[colName] = Math.Max(minValue, Math.Min(maxValue, value));
                 })
             );
             // Processed data uses only hourly values.
-            DataTable processedData = _rawData.AsEnumerable().Where(r => ((DateTime?)r.ItemArray[0])?.Minute == 0).CopyToDataTable();
-            // Feature engineering, performed only if not testing.
-#if !TEST
-            processedData.Columns.Add("wx (m/s)", typeof(double));
-            processedData.Columns.Add("wy (m/s)", typeof(double));
-            processedData.Columns.Add("max. wx (m/s)", typeof(double));
-            processedData.Columns.Add("max. wy (m/s)", typeof(double));
-            processedData.Columns.Add("day sin", typeof(double));
-            processedData.Columns.Add("day cos", typeof(double));
-            processedData.Columns.Add("year sin", typeof(double));
-            processedData.Columns.Add("year cos", typeof(double));
-            foreach (DataRow row in processedData.Rows)
-            {
-                double windVelocity = (double)row["wv (m/s)"];
-                double maximumWindVelocity = (double)row["max. wv (m/s)"];
-                double degreeInRadiants = (double)row["wd (deg)"] * Math.PI / 180;
-                row["wx (m/s)"] = windVelocity * Math.Cos(degreeInRadiants);
-                row["wy (m/s)"] = windVelocity * Math.Sin(degreeInRadiants);
-                row["max. wx (m/s)"] = maximumWindVelocity * Math.Cos(degreeInRadiants);
-                row["max. wy (m/s)"] = maximumWindVelocity * Math.Sin(degreeInRadiants);
-                double secondsSinceEpoch = ((DateTime)row["Date Time"]).ToUniversalTime().ToTimestamp().Seconds;
-                row["day sin"] = Math.Sin(secondsSinceEpoch * (2 * Math.PI / SecondsInDay));
-                row["day cos"] = Math.Cos(secondsSinceEpoch * (2 * Math.PI / SecondsInDay));
-                row["year sin"] = Math.Sin(secondsSinceEpoch * (2 * Math.PI / SecondsInYear));
-                row["year cos"] = Math.Cos(secondsSinceEpoch * (2 * Math.PI / SecondsInYear));
-            }
-            // Remove columns that do not matter for predictions.
-            processedData.Columns.Remove("wd (deg)");
-            processedData.Columns.Remove("max. wv (m/s)");
-            processedData.Columns.Remove("wv (m/s)");
-#endif
-            return processedData;
+            return _rawData.AsEnumerable().Where(r => ((DateTime?)r.ItemArray[0])?.Minute == 0).CopyToDataTable();
         }
 
         /*
