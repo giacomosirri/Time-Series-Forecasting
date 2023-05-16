@@ -74,15 +74,13 @@ namespace TimeSeriesForecasting
                 Program.StopProgram(Program.DirectoryErrorMessage);
             }
 
-            // The existence of these files has already been checked.
+            // The existence of the data files inside /data has already been checked.
             string inputDataDirectoryAbsolutePath = Path.Combine(new string[] { inputDirectoryAbsolutePath, DataSubdirectory });
             string valuesFileAbsolutePath = Path.Combine(new string[] { inputDataDirectoryAbsolutePath, ValuesFile });
             string datesFileAbsolutePath = Path.Combine(new string[] { inputDataDirectoryAbsolutePath, DatesFile });
-            string inputTrainingDirectoryAbsolutePath = Path.Combine(new string[] { inputDirectoryAbsolutePath, TrainingSubdirectory });
-            string configFileAbsolutePath = Path.Combine(new string[] { inputTrainingDirectoryAbsolutePath, TrainingConfigFile });
 
-            // The value ranges file may or may not exist since it is not strictly necessary.
-            string valueRangesFileAbsolutePath = Path.Combine(new string[] { inputDataDirectoryAbsolutePath, ValueRangesFile});
+            // The value ranges file is not strictly necessary for the program to work.
+            string valueRangesFileAbsolutePath = Path.Combine(new string[] { inputDataDirectoryAbsolutePath, ValueRangesFile });
             if (File.Exists(valueRangesFileAbsolutePath))
             {
                 var res = Record.ReadValueRangesFromJsonFile(valueRangesFileAbsolutePath);
@@ -92,15 +90,28 @@ namespace TimeSeriesForecasting
                 }
             }
 
+            // The training config file may not exist since all training configuration parameters have a default value.
+            string inputTrainingDirectoryAbsolutePath = Path.Combine(new string[] { inputDirectoryAbsolutePath, TrainingSubdirectory });
+            Directory.CreateDirectory(inputTrainingDirectoryAbsolutePath);
+            string configFileAbsolutePath = Path.Combine(new string[] { inputTrainingDirectoryAbsolutePath, TrainingConfigFile });
+            TrainingConfiguration trainingConfiguration;
+            if (File.Exists(configFileAbsolutePath))
+            {
+                // Load the training configuration from the config file.
+                trainingConfiguration = Program.GetConfiguration<TrainingConfiguration>(configFileAbsolutePath);
+            }
+            else
+            {
+                // Run with the default training configuration.
+                trainingConfiguration = new TrainingConfiguration();
+            }
+
             // The model subdirectory may not exist yet. The code below creates this directory only if not already present.
             string modelDirectoryAbsolutePath = Path.Combine(new string[] { outputDirectoryAbsolutePath, ModelSubdirectory });
             Directory.CreateDirectory(modelDirectoryAbsolutePath);
             // Same for the training output subdirectory.
             string outputTrainingDirectoryAbsolutePath = Path.Combine(new string[] { outputDirectoryAbsolutePath, TrainingSubdirectory });
             Directory.CreateDirectory(outputTrainingDirectoryAbsolutePath);
-
-            // Load the training configuration from the config file.
-            TrainingConfiguration trainingConfiguration = Program.GetConfiguration<TrainingConfiguration>(configFileAbsolutePath);
 
             Console.Write("Loading data from .parquet file...");
             var records = new ParquetDataLoader(valuesFileAbsolutePath, datesFileAbsolutePath).GetRecords();
@@ -225,10 +236,6 @@ namespace TimeSeriesForecasting
                 _ = Directory.GetFiles(dataDir, ValuesFile).Single();
                 // A file called data-datetimes.parquet must exist inside /data.
                 _ = Directory.GetFiles(dataDir, DatesFile).Single();
-                // A /training subdirectory must exist.
-                string trainingDir = Directory.GetDirectories(directoryPath, TrainingSubdirectory).Single();
-                // A file called training_config.json must exist inside /training.
-                _ = Directory.GetFiles(trainingDir, TrainingConfigFile).Single();
                 // If all the necessary files and subdirectories have been found, then return true.
                 return true;
             }

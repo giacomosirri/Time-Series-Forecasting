@@ -404,5 +404,4 @@ FodyWeavers.xsd
 /RealTests/Input/global_config.json
 /RealTests/Input/training
 /RealTests/Input
-/RealTests/Output/model
-/RealTests/Output/training
+/RealTests/Output*/*

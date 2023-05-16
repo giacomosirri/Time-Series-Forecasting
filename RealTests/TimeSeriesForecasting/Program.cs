@@ -80,8 +80,8 @@ namespace TimeSeriesForecasting
             {
                 IsLogEnabled = log;
                 GlobalConfiguration = GetConfigurationOrExit(inputDirectoryPath);
-                string outputDir = GetOutputDirectory(output, inputDirectoryPath);
-                ProgramTrain.ExecuteTrainCommand(Path.GetFullPath(inputDirectoryPath), outputDir);
+                string outputDirectoryPath = GetOutputDirectory(output, inputDirectoryPath);
+                ProgramTrain.ExecuteTrainCommand(Path.GetFullPath(inputDirectoryPath), outputDirectoryPath);
             }, trainLogOption, outputOption, trainArgument);
 
             // Create command 'test'.
@@ -94,8 +94,8 @@ namespace TimeSeriesForecasting
                 // In test mode the log is always enabled, because testing a model and not getting any output would make no sense.
                 IsLogEnabled = true;
                 GlobalConfiguration = GetConfigurationOrExit(inputDirectoryPath);
-                string outputDir = GetOutputDirectory(output, inputDirectoryPath);
-                ProgramTest.ExecuteTestCommand(Path.GetFullPath(inputDirectoryPath), outputDir);
+                string outputDirectoryPath = GetOutputDirectory(output, inputDirectoryPath);
+                ProgramTest.ExecuteTestCommand(Path.GetFullPath(inputDirectoryPath), outputDirectoryPath);
             }, outputOption, testArgument);
 
             // Create command "predict".
@@ -106,8 +106,8 @@ namespace TimeSeriesForecasting
             {
                 IsLogEnabled = true;
                 GlobalConfiguration = GetConfigurationOrExit(inputDirectoryPath);
-                string outputDir = GetOutputDirectory(output, inputDirectoryPath);
-                ProgramPredict.ExecutePredictCommand(Path.GetFullPath(inputDirectoryPath), outputDir);
+                string outputDirectoryPath = GetOutputDirectory(output, inputDirectoryPath);
+                ProgramPredict.ExecutePredictCommand(Path.GetFullPath(inputDirectoryPath), outputDirectoryPath);
             }, outputOption, testArgument);
 
             // Add the new commands to the root command.
@@ -195,7 +195,7 @@ namespace TimeSeriesForecasting
                 int i = 0;
                 while (true)
                 {
-                    string newDir = Path.Combine(new string[] { parentDir, $"Output{(i==0 ? "" : $" ({i})")}" });
+                    string newDir = Path.Combine(new string[] { parentDir, $"Output{(i==0 ? "" : $"({i})")}" });
                     i++;
                     if (!Directory.Exists(newDir))
                     {
