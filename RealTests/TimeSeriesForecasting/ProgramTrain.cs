@@ -19,7 +19,7 @@ namespace TimeSeriesForecasting
         private int[] _splits = new int[] { 70, 20, 10 };
 
         // The normalization method to apply to the training data.
-        public string NormalizationMethod { internal get; set; } = "";
+        public string NormalizationMethod { internal get; set; } = "None";
 
         // The first timestamp in temporal order to be considered during training.
         public DateTime? FirstValidDate { internal get; set; }

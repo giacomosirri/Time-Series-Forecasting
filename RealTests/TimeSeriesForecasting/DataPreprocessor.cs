@@ -1,5 +1,4 @@
-﻿using Google.Protobuf.WellKnownTypes;
-using MoreLinq;
+﻿using MoreLinq;
 using System.Data;
 using System.Diagnostics;
 using TimeSeriesForecasting.IO;
@@ -18,11 +17,8 @@ namespace TimeSeriesForecasting
             STANDARDIZATION
         }
 
-        private const double SecondsInDay = 24 * 60 * 60;
-        private const double SecondsInYear = 365.2425 * SecondsInDay;
-
         /*
-         * Performing transformations on large datasets is really resource expensive,
+         * Performing transformations on large datasets is very resource expensive,
          * so transformed data is cached in private fields instead of being re-calculated
          * every time it is needed.
          */

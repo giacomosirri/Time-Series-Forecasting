@@ -18,7 +18,7 @@ namespace TimeSeriesForecasting
 
         /// <summary>
         /// The number of time steps in each label, i.e. a value that the deep learning model has to predict.
-        /// For single-output models, this number is equal to 1. For multi-output models, this number is greater than 1.
+        /// For single-step models, this number is equal to 1. For multi-step models, this number is greater than 1.
         /// </summary>
         public int OutputWidth { get; set; }
 
