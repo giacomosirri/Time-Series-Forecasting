@@ -23,13 +23,11 @@ namespace TimeSeriesForecasting.NeuralNetwork
 
         public IList<float> LossProgress { get; }
 
-        public TimeSpan LastTrainingTime { get; }
-
         public void Fit(Tensor trainX, Tensor trainY, Tensor validX, Tensor validY);
 
         public void Fit(Tensor x, Tensor y);
 
-        public IDictionary<AccuracyMetric, double> EvaluateAccuracy(Tensor x, Tensor y);
+        public IDictionary<AccuracyMetric, IList<double>> EvaluateAccuracy(Tensor x, Tensor y);
 
         public Tensor Predict(Tensor x);
 

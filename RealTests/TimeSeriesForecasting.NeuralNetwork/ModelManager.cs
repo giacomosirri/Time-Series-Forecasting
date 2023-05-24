@@ -39,8 +39,6 @@ namespace TimeSeriesForecasting.NeuralNetwork
                 }
             }
         }
-        // How much time the last training took.
-        public TimeSpan LastTrainingTime { get; private set; }
 
         public ModelManager(NetworkModel model)
         {
@@ -66,7 +64,6 @@ namespace TimeSeriesForecasting.NeuralNetwork
             var optimizer = new Adam(_model.parameters(), _learningRate);
             Tensor[] batched_x = trainX.split(_batchSize);
             Tensor[] batched_y = trainY.split(_batchSize);
-            DateTime start = DateTime.Now;
             for (int i = 0; i < MaxEpochs; i++)
             {
                 float epochLoss = 0.0f;
@@ -88,23 +85,48 @@ namespace TimeSeriesForecasting.NeuralNetwork
                 // Add the average loss for all the batches in this epoch to the list of losses.
                 _losses.Add(epochLoss / batched_x.Length);
             }
-            DateTime end = DateTime.Now;
-            LastTrainingTime = end - start;
             IsTrained = true;
         }
 
-        public IDictionary<AccuracyMetric, double> EvaluateAccuracy(Tensor x, Tensor y)
+        public IDictionary<AccuracyMetric, IList<double>> EvaluateAccuracy(Tensor x, Tensor expectedOutput)
         {
-            var dict = new Dictionary<AccuracyMetric, double>();
+            var dict = new Dictionary<AccuracyMetric, IList<double>>()
+            {
+                { AccuracyMetric.MSE, new List<double>() },
+                { AccuracyMetric.RMSE, new List<double>() },
+                { AccuracyMetric.MAE, new List<double>() },
+                { AccuracyMetric.MAPE, new List<double>() },
+                { AccuracyMetric.R2, new List<double>() }
+            };
             Tensor predictedOutput = Predict(x);
-            Tensor error = predictedOutput - y;
-            dict.Add(AccuracyMetric.MSE, mean(square(error)).item<float>());
-            dict.Add(AccuracyMetric.RMSE, Math.Sqrt(mean(square(error)).item<float>()));
-            dict.Add(AccuracyMetric.MAE, mean(abs(error)).item<float>());
-            dict.Add(AccuracyMetric.MAPE, mean(abs(error / y)).item<float>());
-            var r2 = 1 - sum(square(error)).item<float>() / sum(square(y - mean(y))).item<float>();
-            var adjustedR2 = 1 - (1 - r2) * (x.size(0) - 1) / (x.size(0) - x.size(2) - 1);
-            dict.Add(AccuracyMetric.R2, adjustedR2);
+            long samples = predictedOutput.size(0);
+            long outputTimeSteps = predictedOutput.size(1);
+            long outputFeatures = predictedOutput.size(2);
+            Tensor expected = empty(samples * outputTimeSteps, outputFeatures);
+            Tensor predicted = empty(samples * outputTimeSteps, outputFeatures);
+            // Iterate over all the samples to properly fill expected and predicted tensors.
+            for (int i = 0; i < samples; i++)
+            {
+                long start = outputTimeSteps * i;
+                long stop = outputTimeSteps * (i + 1);
+                Tensor slice = arange(start, stop, 1); 
+                expected.index_copy_(0, slice, expectedOutput[i]);
+                predicted.index_copy_(0, slice, predictedOutput[i]);
+            }
+            // Iterate over all the features to calculate the different metrics using the precalculated tensors.
+            for (int i = 0; i < outputFeatures; i++)
+            {
+                Tensor currentFeatureExpectedValues = expected.swapaxes(0, 1)[i];
+                Tensor currentFeaturePredictedValues = predicted.swapaxes(0, 1)[i];
+                Tensor error = currentFeaturePredictedValues - currentFeatureExpectedValues;
+                dict[AccuracyMetric.MSE].Add(mean(square(error)).item<float>());
+                dict[AccuracyMetric.RMSE].Add(Math.Sqrt(mean(square(error)).item<float>()));
+                dict[AccuracyMetric.MAE].Add(mean(abs(error)).item<float>());
+                dict[AccuracyMetric.MAPE].Add(mean(abs(error / expectedOutput)).item<float>());
+                var r2 = 1 - sum(square(error)).item<float>() / sum(square(expectedOutput - mean(expectedOutput))).item<float>();
+                var adjustedR2 = 1 - (1 - r2) * (x.size(0) - 1) / (x.size(0) - x.size(2) - 1);
+                dict[AccuracyMetric.R2].Add(adjustedR2);
+            }
             return dict;
         }
 
@@ -114,25 +136,24 @@ namespace TimeSeriesForecasting.NeuralNetwork
             // Disabling autograd gradient calculation speeds up computation.
             using var _ = no_grad();
             Tensor[] batched_x = x.split(_batchSize);
-            // output.shape = [batchSize, outputTimeSteps, outputFeatures].
-            Tensor output = _model.forward(batched_x[0]);
+            // currentOutput.shape = [batchSize, outputTimeSteps, outputFeatures].
+            Tensor currentOutput = _model.forward(batched_x[0]);
             long start = 0;
             // Control that the stop index is not greater than the number of total batches.
             long stop = Math.Min(x.size(0), _batchSize);
-            // Initialize the output tensor to zeros.
-            Tensor y = zeros(x.size(0), output.size(1), output.size(2));
+            // Initialize the final output tensor to dirty values, since it is going to be overwritten.
+            Tensor y = empty(x.size(0), currentOutput.size(1), currentOutput.size(2));
             // Update the output tensor.
-            y.index_copy_(0, arange(start, stop, 1), output);
-            Console.WriteLine(y[0][0][0].item<float>());
+            y.index_copy_(0, arange(start, stop, 1), currentOutput);
             for (int i = 1; i < batched_x.Length; i++)
             {
-                output = _model.forward(batched_x[i]);
+                currentOutput = _model.forward(batched_x[i]);
                 start = _batchSize * i;
                 stop = Math.Min(x.size(0), _batchSize * (i + 1));
                 // Update the output tensor.
-                y.index_copy_(0, arange(start, stop, 1), output);
+                y.index_copy_(0, arange(start, stop, 1), currentOutput);
             }
-            return output;
+            return y;
         }
 
         public void Save(string directory) => _model.save(Path.Combine(new string[] { directory, "LSTM.model.bin" }));
