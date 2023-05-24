@@ -22,6 +22,8 @@ namespace TimeSeriesForecasting.NeuralNetwork
 
         private readonly TorchSharp.Modules.LSTM _rnn;
         private readonly Linear _linear;
+        private readonly long _outputTimeSteps;
+        private readonly long _outputFeatures;
 
         /*
          * Create a new RNN model with weights and biases initialized with this distribution:
@@ -29,8 +31,10 @@ namespace TimeSeriesForecasting.NeuralNetwork
          */
         public LSTM(long inputFeatures, long outputTimeSteps, long outputFeatures) : base(nameof(LSTM))
         {
+            _outputTimeSteps = outputTimeSteps;
+            _outputFeatures = outputFeatures;
             _rnn = LSTM(inputFeatures, HiddenSize, numLayers: Layers, batchFirst: true);
-            _linear = Linear(HiddenSize, outputFeatures);
+            _linear = Linear(HiddenSize, _outputTimeSteps * _outputFeatures);
             RegisterComponents();
         }
 
@@ -43,13 +47,15 @@ namespace TimeSeriesForecasting.NeuralNetwork
         public override Tensor forward(Tensor input)
         {
             // The second parameter of the forward method call is null, so RNN's hidden state is initialized to zeros.
+            // output.shape = [batchSize, inputTimeSteps, hiddenSize].
             (Tensor output, Tensor finalHiddenState, Tensor finalCellState) = _rnn.forward(input, null);
-            // Note that: LastTimeStepOutput = finalHiddenState[-1]
-            // See https://stackoverflow.com/questions/48302810/whats-the-difference-between-hidden-and-output-in-pytorch-lstm
-            // for reference.
+            // Note that: LastTimeStepOutput = finalHiddenState[-1].
+            // See https://stackoverflow.com/questions/48302810/whats-the-difference-between-hidden-and-output-in-pytorch-lstm for reference.
+            // lastTimeStepOutput.shape = [batchSize, hiddenSize] --> the input time step dimension is narrowed to 1 and then squeezed.
             var lastTimeStepOutput = output.narrow(1, output.size(1) - 1, 1).squeeze();
             // The last time step output is passed to a linear layer to get the final output of the RNN.
-            return _linear.forward(lastTimeStepOutput);
+            // finalOutput.shape = [batchSize, outputTimeStep, outputFeatures].
+            return _linear.forward(lastTimeStepOutput).reshape(-1, _outputTimeSteps, _outputFeatures);
         }
     }
 }
