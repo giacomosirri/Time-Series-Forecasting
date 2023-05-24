@@ -3,6 +3,7 @@ using static TorchSharp.torch;
 using TimeSeriesForecasting.IO;
 using static TimeSeriesForecasting.DataPreprocessor;
 using System.Data;
+using MoreLinq;
 
 namespace TimeSeriesForecasting
 {
@@ -190,15 +191,19 @@ namespace TimeSeriesForecasting
             // Train and test commands are differentiated by the following code.
             if (_test)
             {
-                /*
                 Console.Write("Assessing model performance on the test set...");
-                IDictionary<AccuracyMetric, double> metrics = model.EvaluateAccuracy(testInputTensor, testOutputTensor);
+                IDictionary<AccuracyMetric, IList<double>> metrics = model.EvaluateAccuracy(testInputTensor, testOutputTensor);
                 var metricsLogger = new TupleLogger<string, double>(Path.Combine(new string[] {outputTrainingDirectoryAbsolutePath, "metrics.txt"}));
-                metricsLogger.Prepare(metrics.Select(metric => (metric.Key.ToString(), metric.Value)).ToList(), null);
-                metricsLogger.Prepare(("Training time in seconds", model.LastTrainingTime.Seconds), null);
+                // Log the value of each metric for each feature.
+                metrics.ForEach(metric =>
+                {
+                    metric.Value.ForEach((double feature, int index) =>
+                    {
+                        metricsLogger.Prepare((metric.Key.ToString() + $" feature {index}", feature), null);
+                    });
+                });
                 metricsLogger.Write();
                 Console.WriteLine(Program.Completion);
-                */
 
                 Console.Write("Predicting new values...");
                 Tensor predictedOutput = model.Predict(testInputTensor);
@@ -213,9 +218,12 @@ namespace TimeSeriesForecasting
                 expectedLogger.Write();
                 Console.WriteLine(Program.Completion);
 
+                // Commented out code below currently does not work.
+                /*
                 Console.Write("Drawing a graph to compare predicted and expected output...");
                 (bool res, string? message) = Program.RunPythonScript("plot_predicted_vs_expected.py", outputTrainingDirectoryAbsolutePath);
                 Console.WriteLine(res ? Program.Completion : message);
+                */
             }
         }
 
