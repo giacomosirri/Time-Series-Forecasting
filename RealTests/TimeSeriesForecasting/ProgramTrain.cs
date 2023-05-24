@@ -133,23 +133,12 @@ namespace TimeSeriesForecasting
             DataTable testSet = dpp.GetTestSet();
             Console.WriteLine(Program.Completion);
 
-            Console.Write("Generating windows (batches) of data from the training, validation and test sets...");
+            Console.Write("Generating windows of data from the training, validation and test sets...");
             var singleStepWindow = new WindowGenerator(Program.GlobalConfiguration.InputWidth,
                 Program.GlobalConfiguration.OutputWidth, Program.GlobalConfiguration.Offset, Program.GlobalConfiguration.LabelColumns);
             (Tensor trainingInputTensor, Tensor trainingOutputTensor) = singleStepWindow.GenerateWindows<double>(trainingSet);
             (Tensor validationInputTensor, Tensor validationOutputTensor) = singleStepWindow.GenerateWindows<double>(validationSet);
             (Tensor testInputTensor, Tensor testOutputTensor) = singleStepWindow.GenerateWindows<double>(testSet);
-            Console.WriteLine(Program.Completion);
-
-            // Log training features and labels on file. Allows checking that the window generation algorithm is correct.
-            Console.Write("Logging training set features and labels on file...");
-            var featureLogger = new TensorLogger(Path.Combine(new string[] { TrainingSubdirectory, "training-features.txt" }));
-            featureLogger.Prepare(trainingInputTensor, "Training set features");
-            featureLogger.Write();
-            var labelLogger = new TensorLogger(Path.Combine(new string[] { TrainingSubdirectory, "training-labels.txt" }));
-            labelLogger.Prepare(trainingOutputTensor, 
-                $"Training set values to predict: {string.Join(", ", Program.GlobalConfiguration.LabelColumns)}");
-            labelLogger.Write();
             Console.WriteLine(Program.Completion);
 
             // The network model used is always LSTM.
@@ -176,6 +165,17 @@ namespace TimeSeriesForecasting
                 descriptionLogger.Prepare(("Description", description), null);
                 descriptionLogger.Write();
 
+                // Log training features and labels on file. Allows checking that the window generation algorithm is correct.
+                Console.Write("Logging training set features and labels on file...");
+                var featureLogger = new TensorLogger(Path.Combine(new string[] { inputTrainingDirectoryAbsolutePath, "training-features.txt" }));
+                featureLogger.Prepare(trainingInputTensor, "Training set features");
+                featureLogger.Write();
+                var labelLogger = new TensorLogger(Path.Combine(new string[] { inputTrainingDirectoryAbsolutePath, "training-labels.txt" }));
+                labelLogger.Prepare(trainingOutputTensor,
+                    $"Training set values to predict: {string.Join(", ", Program.GlobalConfiguration.LabelColumns)}");
+                labelLogger.Write();
+                Console.WriteLine(Program.Completion);
+
                 Console.Write("Logging the progress of the loss during training on file...");
                 var lossLogger = new TupleLogger<int, float>(Path.Combine(new string[] { outputTrainingDirectoryAbsolutePath, "loss_progress.txt" }));
                 lossLogger.Prepare(model.LossProgress.Select((value, index) => (index, value)).ToList(), "Loss after n epochs:");
@@ -190,6 +190,7 @@ namespace TimeSeriesForecasting
             // Train and test commands are differentiated by the following code.
             if (_test)
             {
+                /*
                 Console.Write("Assessing model performance on the test set...");
                 IDictionary<AccuracyMetric, double> metrics = model.EvaluateAccuracy(testInputTensor, testOutputTensor);
                 var metricsLogger = new TupleLogger<string, double>(Path.Combine(new string[] {outputTrainingDirectoryAbsolutePath, "metrics.txt"}));
@@ -197,17 +198,18 @@ namespace TimeSeriesForecasting
                 metricsLogger.Prepare(("Training time in seconds", model.LastTrainingTime.Seconds), null);
                 metricsLogger.Write();
                 Console.WriteLine(Program.Completion);
+                */
 
                 Console.Write("Predicting new values...");
-                Tensor output = model.Predict(testInputTensor);
+                Tensor predictedOutput = model.Predict(testInputTensor);
                 Console.WriteLine(Program.Completion);
 
                 Console.Write("Logging predicted and expected values on file...");
                 var predictionLogger = new TensorLogger(Path.Combine(new string[] { outputTrainingDirectoryAbsolutePath, "predictions.txt" }));
-                predictionLogger.Prepare(output.reshape(output.size(0), 1), "Predictions on the test set");
+                predictionLogger.Prepare(predictedOutput, "Predictions on the test set");
                 predictionLogger.Write();
                 var expectedLogger = new TensorLogger(Path.Combine(new string[] { outputTrainingDirectoryAbsolutePath, "expected.txt" }));
-                expectedLogger.Prepare(testOutputTensor.reshape(output.size(0), 1), "Expected values of the predicted variable");
+                expectedLogger.Prepare(testOutputTensor, "Expected values of the predicted variable");
                 expectedLogger.Write();
                 Console.WriteLine(Program.Completion);
 
