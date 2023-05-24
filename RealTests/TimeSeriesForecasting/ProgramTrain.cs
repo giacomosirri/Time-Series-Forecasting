@@ -141,27 +141,21 @@ namespace TimeSeriesForecasting
             (Tensor testInputTensor, Tensor testOutputTensor) = singleStepWindow.GenerateWindows<double>(testSet);
             Console.WriteLine(Program.Completion);
 
-            /*
-             * The commented out code below prints training input features and labels values on file and can be used
-             * to check that the window generation algorithm is correct.
-             */
-            /*
-            var featureLogger = new TensorLogger(LogDir + "training-features.txt");
-            Console.Write("Logging training set features on file...");
-            featureLogger.Log(trainingInputTensor, "Training set features");
-            Console.WriteLine(Completion);
-
-            var labelLogger = new TensorLogger(LogDir + "training-labels.txt");
-            Console.Write("Logging training set labels on file...");
-            labelLogger.Log(trainingOutputTensor, $"Training set values to predict: {string.Join(", ", config.LabelColumns)}");
-            Console.WriteLine(Completion);
-            */
+            // Log training features and labels on file. Allows checking that the window generation algorithm is correct.
+            Console.Write("Logging training set features and labels on file...");
+            var featureLogger = new TensorLogger(Path.Combine(new string[] { TrainingSubdirectory, "training-features.txt" }));
+            featureLogger.Prepare(trainingInputTensor, "Training set features");
+            featureLogger.Write();
+            var labelLogger = new TensorLogger(Path.Combine(new string[] { TrainingSubdirectory, "training-labels.txt" }));
+            labelLogger.Prepare(trainingOutputTensor, 
+                $"Training set values to predict: {string.Join(", ", Program.GlobalConfiguration.LabelColumns)}");
+            labelLogger.Write();
+            Console.WriteLine(Program.Completion);
 
             // The network model used is always LSTM.
+            Console.Write("Creating and training the model...");
             NetworkModel nn = new LSTM(trainingInputTensor.size(2), trainingOutputTensor.size(1), trainingOutputTensor.size(2));
             IModelManager model = new ModelManager(nn);
-
-            Console.Write("Training the model...");
             model.Fit(trainingInputTensor, trainingOutputTensor, validationInputTensor, validationOutputTensor);
             Console.WriteLine(Program.Completion);
 

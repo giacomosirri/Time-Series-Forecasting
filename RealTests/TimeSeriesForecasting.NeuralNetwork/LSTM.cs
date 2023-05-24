@@ -44,6 +44,7 @@ namespace TimeSeriesForecasting.NeuralNetwork
         public LSTM(long inputFeatures, long outputTimeSteps, long outputFeatures, string path)
             : this(inputFeatures, outputTimeSteps, outputFeatures) => load(path);
 
+        // input.shape = [batchSize, inputTimeStep, inputFeatures].
         public override Tensor forward(Tensor input)
         {
             // The second parameter of the forward method call is null, so RNN's hidden state is initialized to zeros.

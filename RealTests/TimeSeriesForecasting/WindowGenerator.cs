@@ -91,7 +91,7 @@ namespace TimeSeriesForecasting
                                 .Skip(startIndex + InputWidth + Offset - 1)
                                 .Take(OutputWidth)
                                 .Select(dr => dr.ItemArray
-                                    // Labels are all the values in the LabelColumns columns.
+                                    // Labels are all the LabelColumns columns.
                                     .Where((_, i) => LabelColumns.Contains(table.Columns[i].ColumnName))
                                     .Select(item => (T)item!)
                                     .ToArray())
@@ -99,22 +99,16 @@ namespace TimeSeriesForecasting
                 features.Add(feature);
                 labels.Add(label);
             }
-            T[][][] featuresArr = features.ToArray();
-            int featuresBatchSize = featuresArr.GetLength(0);
-            int inputTimeSteps = featuresArr[0].GetLength(0);
-            int featuresSize = featuresArr[0][0].GetLength(0);
-            T[][][] labelsArr = labels.ToArray();
-            int labelsBatchSize = labelsArr.GetLength(0);
-            int outputTimeSteps = labelsArr[0].GetLength(0);
-            int labelsSize = labelsArr[0][0].GetLength(0);
-            T[] flattenedFeatures = featuresArr.SelectMany(x => x.SelectMany(y => y)).ToArray();
+            int inputSamples = features.Count;
+            int inputTimeSteps = features[0].GetLength(0);
+            int inputFeatures = features[0][0].GetLength(0);
+            int outputSamples = labels.Count;
+            int outputTimeSteps = labels[0].GetLength(0);
+            int outputLabels = labels[0][0].GetLength(0);
+            T[] flattenedFeatures = features.SelectMany(x => x.SelectMany(y => y)).ToArray();
             T[] flattenedLabels = labels.SelectMany(x => x.SelectMany(y => y)).ToArray();
-            Tensor featuresTensor = from_array(flattenedFeatures)
-                                    .reshape(featuresBatchSize, inputTimeSteps, featuresSize)
-                                    .to_type(float32);
-            Tensor labelsTensor = from_array(flattenedLabels)
-                                    .reshape(labelsBatchSize, outputTimeSteps, labelsSize)
-                                    .to_type(float32);
+            Tensor featuresTensor = from_array(flattenedFeatures).reshape(inputSamples, inputTimeSteps, inputFeatures).to_type(float32);
+            Tensor labelsTensor = from_array(flattenedLabels).reshape(outputSamples, outputTimeSteps, outputLabels).to_type(float32);
             return Tuple.Create(featuresTensor, labelsTensor);
         }
     }
