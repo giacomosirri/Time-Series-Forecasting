@@ -96,13 +96,12 @@ namespace TimeSeriesForecasting.NeuralNetwork
         public IDictionary<AccuracyMetric, double> EvaluateAccuracy(Tensor x, Tensor y)
         {
             var dict = new Dictionary<AccuracyMetric, double>();
-            Tensor expectedOutput = y.squeeze();
             Tensor predictedOutput = Predict(x);
-            Tensor error = predictedOutput - expectedOutput;
+            Tensor error = predictedOutput - y;
             dict.Add(AccuracyMetric.MSE, mean(square(error)).item<float>());
             dict.Add(AccuracyMetric.RMSE, Math.Sqrt(mean(square(error)).item<float>()));
             dict.Add(AccuracyMetric.MAE, mean(abs(error)).item<float>());
-            dict.Add(AccuracyMetric.MAPE, mean(abs(error / expectedOutput)).item<float>());
+            dict.Add(AccuracyMetric.MAPE, mean(abs(error / y)).item<float>());
             var r2 = 1 - sum(square(error)).item<float>() / sum(square(y - mean(y))).item<float>();
             var adjustedR2 = 1 - (1 - r2) * (x.size(0) - 1) / (x.size(0) - x.size(2) - 1);
             dict.Add(AccuracyMetric.R2, adjustedR2);
@@ -115,16 +114,25 @@ namespace TimeSeriesForecasting.NeuralNetwork
             // Disabling autograd gradient calculation speeds up computation.
             using var _ = no_grad();
             Tensor[] batched_x = x.split(_batchSize);
-            Tensor y = empty(x.size(0));
-            for (int i = 0; i < batched_x.Length; i++)
+            // output.shape = [batchSize, outputTimeSteps, outputFeatures].
+            Tensor output = _model.forward(batched_x[0]);
+            long start = 0;
+            // Control that the stop index is not greater than the number of total batches.
+            long stop = Math.Min(x.size(0), _batchSize);
+            // Initialize the output tensor to zeros.
+            Tensor y = zeros(x.size(0), output.size(1), output.size(2));
+            // Update the output tensor.
+            y.index_copy_(0, arange(start, stop, 1), output);
+            Console.WriteLine(y[0][0][0].item<float>());
+            for (int i = 1; i < batched_x.Length; i++)
             {
-                long start = _batchSize * i;
-                // Control that the stop index is not greater than the number of total batches.
-                long stop = Math.Min(x.size(0), _batchSize * (i + 1));
-                // Create the predicted output tensor.
-                y.index_copy_(0, arange(start, stop, 1), _model.forward(batched_x[i]).squeeze());
+                output = _model.forward(batched_x[i]);
+                start = _batchSize * i;
+                stop = Math.Min(x.size(0), _batchSize * (i + 1));
+                // Update the output tensor.
+                y.index_copy_(0, arange(start, stop, 1), output);
             }
-            return y;
+            return output;
         }
 
         public void Save(string directory) => _model.save(Path.Combine(new string[] { directory, "LSTM.model.bin" }));
