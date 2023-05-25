@@ -1,7 +1,7 @@
 ﻿using TorchSharp;
 using static TorchSharp.torch;
 
-namespace TimeSeriesForecasting.NeuralNetwork
+namespace TimeSeriesForecasting.ANN
 {
     internal class Baseline : NeuralNetwork
     {

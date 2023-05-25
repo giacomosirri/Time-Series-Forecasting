@@ -2,7 +2,7 @@
 using TorchSharp.Modules;
 using static TorchSharp.torch;
 
-namespace TimeSeriesForecasting.NeuralNetwork
+namespace TimeSeriesForecasting.ANN
 {
     public class ModelManager : IModelManager
     {

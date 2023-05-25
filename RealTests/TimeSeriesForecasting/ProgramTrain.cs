@@ -1,4 +1,4 @@
-﻿using TimeSeriesForecasting.NeuralNetwork;
+﻿using TimeSeriesForecasting.ANN;
 using static TorchSharp.torch;
 using TimeSeriesForecasting.IO;
 using static TimeSeriesForecasting.DataPreprocessor;
@@ -144,7 +144,7 @@ namespace TimeSeriesForecasting
 
             // The network model used is always LSTM.
             Console.Write("Creating and training the model...");
-            NeuralNetwork.NeuralNetwork nn = new LSTM(trainingInputTensor.size(2), trainingOutputTensor.size(1), trainingOutputTensor.size(2));
+            NeuralNetwork nn = new LSTM(trainingInputTensor.size(2), trainingOutputTensor.size(1), trainingOutputTensor.size(2));
             IModelManager model = new ModelManager(nn);
             model.Fit(trainingInputTensor, trainingOutputTensor, validationInputTensor, validationOutputTensor);
             Console.WriteLine(Program.Completion);

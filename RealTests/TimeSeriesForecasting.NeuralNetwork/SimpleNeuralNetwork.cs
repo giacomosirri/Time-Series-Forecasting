@@ -2,7 +2,7 @@
 using static TorchSharp.torch;
 using static TorchSharp.torch.nn;
 
-namespace TimeSeriesForecasting.NeuralNetwork
+namespace TimeSeriesForecasting.ANN
 {
     public class SimpleNeuralNetwork : NeuralNetwork
     {

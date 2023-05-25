@@ -1,7 +1,7 @@
 ﻿using System.ComponentModel;
 using static TorchSharp.torch;
 
-namespace TimeSeriesForecasting.NeuralNetwork
+namespace TimeSeriesForecasting.ANN
 {
     public enum AccuracyMetric
     {

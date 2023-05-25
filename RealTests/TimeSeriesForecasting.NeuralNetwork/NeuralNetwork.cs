@@ -1,7 +1,7 @@
 ﻿using static TorchSharp.torch;
 using static TorchSharp.torch.nn;
 
-namespace TimeSeriesForecasting.NeuralNetwork
+namespace TimeSeriesForecasting.ANN
 {
     /// <summary>
     /// This class is the base class for all the neural networks implemented in this project.

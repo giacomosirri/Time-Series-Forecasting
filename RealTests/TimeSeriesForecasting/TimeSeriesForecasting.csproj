@@ -32,7 +32,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\TimeSeriesForecasting.IO\TimeSeriesForecasting.IO.csproj" />
-    <ProjectReference Include="..\TimeSeriesForecasting.NeuralNetwork\TimeSeriesForecasting.NeuralNetwork.csproj" />
+    <ProjectReference Include="..\TimeSeriesForecasting.NeuralNetwork\TimeSeriesForecasting.ANN.csproj" />
   </ItemGroup>
 
 </Project>
