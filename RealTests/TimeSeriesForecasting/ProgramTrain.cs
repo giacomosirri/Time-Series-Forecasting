@@ -149,21 +149,24 @@ namespace TimeSeriesForecasting
             model.Fit(trainingInputTensor, trainingOutputTensor, validationInputTensor, validationOutputTensor);
             Console.WriteLine(Program.Completion);
 
-            Console.Write("Saving the model on file...");
+            Console.Write("Saving the model's parameters and summary on file...");
             model.Save(modelDirectoryAbsolutePath);
+            var modelLogger = new StringLogger(Path.Combine(new string[] { modelDirectoryAbsolutePath, "model_summary.txt" }));
+            modelLogger.Prepare(model.Summarize(), "A summary of the model layers and learnable parameters");
+            modelLogger.Write();
             Console.WriteLine(Program.Completion);
 
             if (Program.IsLogEnabled)
             {
                 // Create a README inside the current subdirectory.
-                var descriptionLogger = new TupleLogger<string, string>(Path.Combine(new string[] { outputTrainingDirectoryAbsolutePath, "README.md" }));
+                var descriptionLogger = new StringLogger(Path.Combine(new string[] { outputTrainingDirectoryAbsolutePath, "README.md" }));
                 string description = $"\nThis is a LSTM model trained " +
                     $"on data {(trainingConfiguration.FirstValidDate.HasValue || trainingConfiguration.LastValidDate.HasValue ? $"ranging {(trainingConfiguration.FirstValidDate.HasValue ? $"from {trainingConfiguration.FirstValidDate?.ToString("yyyy-MM-dd")}" : "")} " + $"{(trainingConfiguration.LastValidDate.HasValue ? $"to {trainingConfiguration.LastValidDate?.ToString("yyyy-MM-dd")}" : "")}" : "")} " +
                     $"{(trainingConfiguration.NormalizationMethod == "None" ? "" : $"preprocessed using {trainingConfiguration.NormalizationMethod}")}. " +
                     $"The model tries to predict the next {Program.GlobalConfiguration.OutputWidth} value of the variable(s) " +
                     $"{string.Join(", ", Program.GlobalConfiguration.LabelColumns)} {Program.GlobalConfiguration.Offset} hour into the future, " +
                     $"using the previous {Program.GlobalConfiguration.InputWidth} hour of data.";
-                descriptionLogger.Prepare(("Description", description), null);
+                descriptionLogger.Prepare(description, "Description");
                 descriptionLogger.Write();
 
                 // Log training features and labels on file. Allows checking that the window generation algorithm is correct.
