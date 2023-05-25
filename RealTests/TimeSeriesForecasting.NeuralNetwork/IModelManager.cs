@@ -31,6 +31,8 @@ namespace TimeSeriesForecasting.NeuralNetwork
 
         public Tensor Predict(Tensor x);
 
+        public string Summarize();
+
         public void Save(string directory);
     }
 }
