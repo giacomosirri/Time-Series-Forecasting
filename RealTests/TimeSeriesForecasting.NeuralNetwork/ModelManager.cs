@@ -6,17 +6,9 @@ namespace TimeSeriesForecasting.NeuralNetwork
 {
     public class ModelManager : IModelManager
     {
-        /*
-         * MaxEpochs and Arrest values can be declared as const, because they are not hyperparameters.
-         * Their values are set so as not to affect how the model behaves. In particular, MaxEpochs is 
-         * large enough for a reasonably simple model to converge, and Arrest is so close to 0 that 
-         * the model can be considered stable when the loss difference between two iterations is smaller 
-         * than that value (currently not in use).
-         */
-        private const int MaxEpochs = 50;
-        private const double Arrest = 1e-4;
+        private const int Epochs = 50;
 
-        private readonly NetworkModel _model;       
+        private readonly NeuralNetwork _model;       
         // Type of features, type of labels --> type of the result.
         private readonly Loss<Tensor, Tensor, Tensor> _lossFunction;
         private readonly IList<float> _losses = new List<float>();
@@ -25,6 +17,7 @@ namespace TimeSeriesForecasting.NeuralNetwork
         private readonly int _batchSize = 64;
 
         public bool IsTrained { get; private set; } = false;
+
         public IList<float> LossProgress
         {
             get
@@ -40,22 +33,22 @@ namespace TimeSeriesForecasting.NeuralNetwork
             }
         }
 
-        public ModelManager(NetworkModel model)
+        public ModelManager(NeuralNetwork model)
         {
             _model = model;
             _lossFunction = new MSELoss();
         }
 
-        public void Fit(Tensor trainX, Tensor trainY, Tensor validX, Tensor validY)
+        public void Fit(Tensor trainX, Tensor trainY, Tensor valX, Tensor valY)
         {
-            TuneHyperparameters(validX, validY);
+            TuneHyperparameters(valX, valY);
             Fit(trainX, trainY);
         }
 
         private void TuneHyperparameters(Tensor x, Tensor y)
         {
-            // hyperparameters to be tuned: batch_size and learning_rate
-            // (might use a learning rate scheduler instead).
+            // Hyperparameters to be tuned: batch_size and learning_rate (might use a learning rate scheduler instead).
+            // Not implemented yet.
         }
 
         public void Fit(Tensor trainX, Tensor trainY)
@@ -64,7 +57,7 @@ namespace TimeSeriesForecasting.NeuralNetwork
             var optimizer = new Adam(_model.parameters(), _learningRate);
             Tensor[] batched_x = trainX.split(_batchSize);
             Tensor[] batched_y = trainY.split(_batchSize);
-            for (int i = 0; i < MaxEpochs; i++)
+            for (int i = 0; i < Epochs; i++)
             {
                 float epochLoss = 0.0f;
                 for (int j = 0; j < batched_x.Length; j++)
