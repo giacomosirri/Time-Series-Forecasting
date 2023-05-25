@@ -15,6 +15,7 @@ namespace TimeSeriesForecasting.ANN
             /*
              * When the seed is set manually, the weights of the models are always initialized to the same values.
              * This allows comparisons between different executions with different hyperparameters.
+             * Using a specific parameters initialization function instead of setting them randomly would be a better choice.
              */
             manual_seed(42);
         }
