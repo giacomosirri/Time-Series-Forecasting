@@ -4,7 +4,7 @@ using static TorchSharp.torch;
 
 namespace TimeSeriesForecasting.ANN
 {
-    public class ModelManager : IModelManager
+    public class NeuralNetworkModel : INeuralNetworkModel
     {
         private const int Epochs = 50;
 
@@ -33,7 +33,7 @@ namespace TimeSeriesForecasting.ANN
             }
         }
 
-        public ModelManager(NeuralNetwork model)
+        public NeuralNetworkModel(NeuralNetwork model)
         {
             _model = model;
             _lossFunction = new MSELoss();

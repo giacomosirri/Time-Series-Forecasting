@@ -1,5 +1,4 @@
-﻿using TorchSharp.Modules;
-using static TorchSharp.torch;
+﻿using static TorchSharp.torch;
 using static TorchSharp.torch.nn;
 
 namespace TimeSeriesForecasting.ANN
@@ -21,7 +20,7 @@ namespace TimeSeriesForecasting.ANN
         internal int Layers { get; } = 1;
 
         private readonly TorchSharp.Modules.LSTM _rnn;
-        private readonly Linear _linear;
+        private readonly TorchSharp.Modules.Linear _linear;
         private readonly long _outputTimeSteps;
         private readonly long _outputFeatures;
 

@@ -17,7 +17,7 @@ namespace TimeSeriesForecasting.ANN
         R2
     }
 
-    public interface IModelManager
+    public interface INeuralNetworkModel
     {
         public bool IsTrained { get; }
 
