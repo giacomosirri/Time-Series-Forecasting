@@ -145,8 +145,8 @@ namespace TimeSeriesForecasting
             // The network model used is always LSTM.
             Console.Write("Creating and training the model...");
             NeuralNetwork nn = new LSTM(trainingInputTensor.size(2), trainingOutputTensor.size(1), trainingOutputTensor.size(2));
-            INeuralNetworkModel model = new NeuralNetworkModel(nn);
-            model.Fit(trainingInputTensor, trainingOutputTensor, validationInputTensor, validationOutputTensor);
+            INeuralNetworkModel model = NeuralNetworkModel.Compile(nn);
+            model.Fit(trainingInputTensor, trainingOutputTensor, validationInputTensor, validationOutputTensor, null, null, null);
             Console.WriteLine(Program.Completion);
 
             Console.Write("Saving the model's parameters and summary on file...");

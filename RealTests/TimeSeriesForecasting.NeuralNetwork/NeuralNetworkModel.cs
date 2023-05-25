@@ -18,6 +18,11 @@ namespace TimeSeriesForecasting.ANN
             SGD, ADAM, ADAMAX, ADAGRAD, RMSPROP
         }
 
+        // Default hyperparameters value.
+        private const int DefaultEpochs = 50;
+        private const int DefaultBatchSize = 32;
+        private const double DefaultLearningRate = 1e-5;
+
         private readonly NeuralNetwork _model;
         private readonly Loss<Tensor, Tensor, Tensor> _lossFunction;
         private readonly Optimizer _optimizer;
@@ -57,18 +62,21 @@ namespace TimeSeriesForecasting.ANN
         }
 
 
-        public void Fit(Tensor trainX, Tensor trainY, Tensor valX, Tensor valY, int epochs, int batchSize, double learningRate)
+        public void Fit(Tensor trainX, Tensor trainY, Tensor valX, Tensor valY, int? epochs, int? batchSize, double? learningRate)
         {
             Fit(trainX, trainY, epochs, batchSize, learningRate);
         }
 
-        public void Fit(Tensor trainX, Tensor trainY, int epochs, int batchSize, double learningRate)
+        public void Fit(Tensor trainX, Tensor trainY, int? epochs, int? batchSize, double? learningRate)
         {
             _model.train();
-            optim.Optimizer optimizer = GetOptimizer(learningRate);
-            Tensor[] batched_x = trainX.split(batchSize);
-            Tensor[] batched_y = trainY.split(batchSize);
-            for (int i = 0; i < epochs; i++)
+            int e = epochs.HasValue ? epochs.Value : DefaultEpochs;
+            int bs = batchSize.HasValue ? batchSize.Value : DefaultBatchSize;
+            double lr = learningRate.HasValue ? learningRate.Value : DefaultLearningRate;
+            optim.Optimizer optimizer = GetOptimizer(lr);
+            Tensor[] batched_x = trainX.split(bs);
+            Tensor[] batched_y = trainY.split(bs);
+            for (int i = 0; i < e; i++)
             {
                 float epochLoss = 0.0f;
                 for (int j = 0; j < batched_x.Length; j++)
@@ -90,7 +98,7 @@ namespace TimeSeriesForecasting.ANN
                 _losses.Add(epochLoss / batched_x.Length);
             }
             IsTrained = true;
-            _lastUsedBatchSize = batchSize;
+            _lastUsedBatchSize = bs;
         }
 
         private optim.Optimizer GetOptimizer(double learningRate)
