@@ -145,16 +145,50 @@ namespace TimeSeriesForecasting
             // Create command "test".
             var testCommand = new Command("test", "Trains the neural network and tests it on the test set, " +
                                                   "providing output useful to understand the quality of the model.");
+
+            var testBatchSizeOption = new Option<int?>(
+                name: "--batch_size",
+                description: "Specifies the batch size."
+            )
+            {
+                IsRequired = false
+            };
+            testBatchSizeOption.SetDefaultValue(null);
+
+            var testEpochsOption = new Option<int?>(
+                name: "--epochs",
+                description: "Specifies the number of epochs."
+            )
+            {
+                IsRequired = false
+            };
+            testEpochsOption.SetDefaultValue(null);
+
+            var testLearningRateOption = new Option<double?>(
+                name: "--learning_rate",
+                description: "Specifies the learning rate."
+            )
+            {
+                IsRequired = false
+            };
+            testLearningRateOption.SetDefaultValue(null);
+
+            testCommand.AddOption(testBatchSizeOption);
+            testCommand.AddOption(testEpochsOption);
+            testCommand.AddOption(testLearningRateOption);
+
             var testArgument = new Argument<string>("input", "The relative or absolute path of the input directory.");
             testCommand.AddArgument(testArgument);
-            testCommand.SetHandler((string output, string inputDirectoryPath) =>
+
+            testCommand.SetHandler((string output, int? batchSize, int? epochs, double? learningRate, string inputDirectoryPath) =>
             {
                 // In test mode the log is always enabled, because testing a model and not getting any output would make no sense.
                 IsLogEnabled = true;
                 GlobalConfiguration = GetConfigurationOrExit(inputDirectoryPath);
+                var hyperparameters = new TrainingHyperparameters(batchSize, epochs, learningRate);
                 string outputDirectoryPath = GetOutputDirectory(output, inputDirectoryPath);
-                ProgramTest.ExecuteTestCommand(Path.GetFullPath(inputDirectoryPath), outputDirectoryPath);
-            }, outputOption, testArgument);
+                ProgramTest.ExecuteTestCommand(Path.GetFullPath(inputDirectoryPath), outputDirectoryPath, hyperparameters);
+            }, outputOption, testBatchSizeOption, testEpochsOption, testLearningRateOption, testArgument);
 
             // Create command "predict".
             var predictCommand = new Command("predict", "Predicts future values using a trained neural network.");

@@ -61,10 +61,11 @@ namespace TimeSeriesForecasting
         // The test code is executed only if directly specified in the method call.
         private static bool _test = false;
 
-        internal static void ExecuteTrainCommand(string inputDirectoryAbsolutePath, string outputDirectoryAbsolutePath, bool test)
+        internal static void ExecuteTrainCommand(string inputDirectoryAbsolutePath, 
+            string outputDirectoryAbsolutePath, TrainingHyperparameters hyperparameters, bool test)
         {
             _test = test;
-            ExecuteTrainCommand(inputDirectoryAbsolutePath, outputDirectoryAbsolutePath, null);
+            ExecuteTrainCommand(inputDirectoryAbsolutePath, outputDirectoryAbsolutePath, hyperparameters);
         }
 
         internal static void ExecuteTrainCommand(string inputDirectoryAbsolutePath, 

@@ -9,7 +9,10 @@
          * training and testing, as the latter still needs the input and expected output to be retrieved from 
          * the dataset provided by the user, using the same split ratios too.
          */
-        internal static void ExecuteTestCommand(string inputDirectoryAbsolutePath, string outputDirectoryAbsolutePath) => 
-            ProgramTrain.ExecuteTrainCommand(inputDirectoryAbsolutePath, outputDirectoryAbsolutePath, true); 
+        internal static void ExecuteTestCommand(string inputDirectoryAbsolutePath,
+            string outputDirectoryAbsolutePath, TrainingHyperparameters hyperparameters)
+        {
+            ProgramTrain.ExecuteTrainCommand(inputDirectoryAbsolutePath, outputDirectoryAbsolutePath, hyperparameters, true);
+        }
     }
 }
