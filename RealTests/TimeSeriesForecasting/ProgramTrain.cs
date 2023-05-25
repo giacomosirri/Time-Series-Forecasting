@@ -158,17 +158,6 @@ namespace TimeSeriesForecasting
 
             if (Program.IsLogEnabled)
             {
-                // Create a README inside the current subdirectory.
-                var descriptionLogger = new StringLogger(Path.Combine(new string[] { outputTrainingDirectoryAbsolutePath, "README.md" }));
-                string description = $"\nThis is a LSTM model trained " +
-                    $"on data {(trainingConfiguration.FirstValidDate.HasValue || trainingConfiguration.LastValidDate.HasValue ? $"ranging {(trainingConfiguration.FirstValidDate.HasValue ? $"from {trainingConfiguration.FirstValidDate?.ToString("yyyy-MM-dd")}" : "")} " + $"{(trainingConfiguration.LastValidDate.HasValue ? $"to {trainingConfiguration.LastValidDate?.ToString("yyyy-MM-dd")}" : "")}" : "")} " +
-                    $"{(trainingConfiguration.NormalizationMethod == "None" ? "" : $"preprocessed using {trainingConfiguration.NormalizationMethod}")}. " +
-                    $"The model tries to predict the next {Program.GlobalConfiguration.OutputWidth} value of the variable(s) " +
-                    $"{string.Join(", ", Program.GlobalConfiguration.LabelColumns)} {Program.GlobalConfiguration.Offset} hour into the future, " +
-                    $"using the previous {Program.GlobalConfiguration.InputWidth} hour of data.";
-                descriptionLogger.Prepare(description, "Description");
-                descriptionLogger.Write();
-
                 // Log training features and labels on file. Allows checking that the window generation algorithm is correct.
                 Console.Write("Logging training set features and labels on file...");
                 var featureLogger = new TensorLogger(Path.Combine(new string[] { inputTrainingDirectoryAbsolutePath, "training-features.txt" }));
@@ -194,20 +183,6 @@ namespace TimeSeriesForecasting
             // Train and test commands are differentiated by the following code.
             if (_test)
             {
-                Console.Write("Assessing model performance on the test set...");
-                IDictionary<AccuracyMetric, IList<double>> metrics = model.EvaluateAccuracy(testInputTensor, testOutputTensor);
-                var metricsLogger = new TupleLogger<string, double>(Path.Combine(new string[] {outputTrainingDirectoryAbsolutePath, "metrics.txt"}));
-                // Log the value of each metric for each feature.
-                metrics.ForEach(metric =>
-                {
-                    metric.Value.ForEach((double feature, int index) =>
-                    {
-                        metricsLogger.Prepare((metric.Key.ToString() + $" feature {index}", feature), null);
-                    });
-                });
-                metricsLogger.Write();
-                Console.WriteLine(Program.Completion);
-
                 Console.Write("Predicting new values...");
                 Tensor predictedOutput = model.Predict(testInputTensor);
                 Console.WriteLine(Program.Completion);
@@ -221,12 +196,19 @@ namespace TimeSeriesForecasting
                 expectedLogger.Write();
                 Console.WriteLine(Program.Completion);
 
-                // Commented out code below currently does not work.
-                /*
-                Console.Write("Drawing a graph to compare predicted and expected output...");
-                (bool res, string? message) = Program.RunPythonScript("plot_predicted_vs_expected.py", outputTrainingDirectoryAbsolutePath);
-                Console.WriteLine(res ? Program.Completion : message);
-                */
+                Console.Write("Assessing model performance on the test set...");
+                IDictionary<AccuracyMetric, IList<double>> metrics = model.Evaluate(predictedOutput, testOutputTensor);
+                var metricsLogger = new TupleLogger<string, double>(Path.Combine(new string[] { outputTrainingDirectoryAbsolutePath, "metrics.txt" }));
+                // Log the value of each metric for each feature.
+                metrics.ForEach(metric =>
+                {
+                    metric.Value.ForEach((double feature, int index) =>
+                    {
+                        metricsLogger.Prepare((metric.Key.ToString() + $" feature {index}", feature), null);
+                    });
+                });
+                metricsLogger.Write();
+                Console.WriteLine(Program.Completion);
             }
         }
 
