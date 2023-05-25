@@ -41,6 +41,14 @@ namespace TimeSeriesForecasting.ANN
             }
         }
 
+        public static NeuralNetworkModel Compile(NeuralNetwork model) => new(model, LossFunction.MSE, Optimizer.SGD);
+
+        public static NeuralNetworkModel Compile(NeuralNetwork model, LossFunction loss) => new(model, loss, Optimizer.SGD);
+
+        public static NeuralNetworkModel Compile(NeuralNetwork model, Optimizer optimizer) => new(model, LossFunction.MSE, optimizer);
+
+        public static NeuralNetworkModel Compile(NeuralNetwork model, LossFunction loss, Optimizer optimizer) => new(model, loss, optimizer);
+
         private NeuralNetworkModel(NeuralNetwork model, LossFunction loss, Optimizer optimizer)
         {
             _model = model;
