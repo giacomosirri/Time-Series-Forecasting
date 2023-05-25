@@ -88,7 +88,7 @@ namespace TimeSeriesForecasting.NeuralNetwork
             IsTrained = true;
         }
 
-        public IDictionary<AccuracyMetric, IList<double>> EvaluateAccuracy(Tensor x, Tensor expectedOutput)
+        public IDictionary<AccuracyMetric, IList<double>> Evaluate(Tensor predictedOutput, Tensor expectedOutput)
         {
             var dict = new Dictionary<AccuracyMetric, IList<double>>()
             {
@@ -98,7 +98,6 @@ namespace TimeSeriesForecasting.NeuralNetwork
                 { AccuracyMetric.MAPE, new List<double>() },
                 { AccuracyMetric.R2, new List<double>() }
             };
-            Tensor predictedOutput = Predict(x);
             long samples = predictedOutput.size(0);
             long outputTimeSteps = predictedOutput.size(1);
             long outputFeatures = predictedOutput.size(2);
@@ -124,10 +123,15 @@ namespace TimeSeriesForecasting.NeuralNetwork
                 dict[AccuracyMetric.MAE].Add(mean(abs(error)).item<float>());
                 dict[AccuracyMetric.MAPE].Add(mean(abs(error / expectedOutput)).item<float>());
                 var r2 = 1 - sum(square(error)).item<float>() / sum(square(expectedOutput - mean(expectedOutput))).item<float>();
-                var adjustedR2 = 1 - (1 - r2) * (x.size(0) - 1) / (x.size(0) - x.size(2) - 1);
-                dict[AccuracyMetric.R2].Add(adjustedR2);
+                dict[AccuracyMetric.R2].Add(r2);
             }
             return dict;
+        }
+
+        public IDictionary<AccuracyMetric, IList<double>> PredictAndEvaluate(Tensor x, Tensor expectedOutput)
+        {
+            Tensor predictedOutput = Predict(x);
+            return Evaluate(predictedOutput, expectedOutput);
         }
 
         public Tensor Predict(Tensor x)
@@ -158,6 +162,6 @@ namespace TimeSeriesForecasting.NeuralNetwork
 
         public void Save(string directory) => _model.save(Path.Combine(new string[] { directory, "LSTM.model.bin" }));
 
-        public string Summarize() => _model.ToString()!;
+        public string Summarize() => string.Join(", ", _model.named_modules().Select(module => module.name).ToList());
     }
 }
