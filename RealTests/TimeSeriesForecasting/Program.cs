@@ -31,6 +31,23 @@ namespace TimeSeriesForecasting
     }
 
 
+    internal class TrainingHyperparameters
+    {
+        internal int? BatchSize { get; private set; }
+
+        internal int? Epochs { get; private set; }
+
+        internal double? LearningRate { get; private set; }
+
+        internal TrainingHyperparameters(int? batchSize, int? epochs, double? learningRate)
+        {
+            BatchSize = batchSize;
+            Epochs = epochs;
+            LearningRate = learningRate;
+        }
+    }
+
+
     internal class Program
     {
         internal const string Completion = "  COMPLETE\n";
@@ -47,11 +64,14 @@ namespace TimeSeriesForecasting
             DateTime startTime = DateTime.Now;
             Console.WriteLine($"Program is running...    {startTime}\n");
 
+
             // Create command line.
             var rootCommand = new RootCommand("App that creates, trains and runs a neural network for time series forecasting.");
+
             var outputOption = new Option<string>(
                 name: "--output",
-                description: ""
+                description: "internal means that the output is placed inside the same directory you provided as input, while " +
+                "external means that the app creates a new directory and places all the output there."
             )
             {
                 IsRequired = false
@@ -59,11 +79,14 @@ namespace TimeSeriesForecasting
             outputOption.FromAmong("internal", "external");
             outputOption.SetDefaultValue("internal");
             outputOption.AddAlias("--o");
+
             rootCommand.AddGlobalOption(outputOption);
+
 
             // Create command "train".
             var trainCommand = new Command("train", "Trains the neural network, i.e. changes its parameters according to the provided data, " +
                                                     "but does not test the new trained model on the test set.");
+
             var trainLogOption = new Option<bool>(
                 name: "--log",
                 description: "if true, outputs some data and charts useful to understand the result of the training process."
@@ -73,18 +96,53 @@ namespace TimeSeriesForecasting
             };
             trainLogOption.SetDefaultValue(false);
             trainLogOption.AddAlias("--l");
+
+            var trainBatchSizeOption = new Option<int?>(
+                name: "--batch_size",
+                description: "Specifies the batch size."
+            )
+            {
+                IsRequired = false
+            };
+            trainBatchSizeOption.SetDefaultValue(null);
+
+            var trainEpochsOption = new Option<int?>(
+                name: "--epochs",
+                description: "Specifies the number of epochs."
+            )
+            {
+                IsRequired = false
+            };
+            trainEpochsOption.SetDefaultValue(null);
+
+            var trainLearningRateOption = new Option<double?>(
+                name: "--learning_rate",
+                description: "Specifies the learning rate."
+            )
+            {
+                IsRequired = false
+            };
+            trainLearningRateOption.SetDefaultValue(null);
+
             trainCommand.AddOption(trainLogOption);
+            trainCommand.AddOption(trainBatchSizeOption);
+            trainCommand.AddOption(trainEpochsOption);
+            trainCommand.AddOption(trainLearningRateOption);
+
             var trainArgument = new Argument<string>("input", "The relative or absolute path of the input directory.");
             trainCommand.AddArgument(trainArgument);
-            trainCommand.SetHandler((bool log, string output, string inputDirectoryPath) =>
+
+            trainCommand.SetHandler((bool log, int? batchSize, int? epochs, double? learningRate, string output, string inputDirectoryPath) =>
             {
                 IsLogEnabled = log;
                 GlobalConfiguration = GetConfigurationOrExit(inputDirectoryPath);
+                var hyperparameters = new TrainingHyperparameters(batchSize, epochs, learningRate);
                 string outputDirectoryPath = GetOutputDirectory(output, inputDirectoryPath);
-                ProgramTrain.ExecuteTrainCommand(Path.GetFullPath(inputDirectoryPath), outputDirectoryPath);
-            }, trainLogOption, outputOption, trainArgument);
+                ProgramTrain.ExecuteTrainCommand(Path.GetFullPath(inputDirectoryPath), outputDirectoryPath, hyperparameters);
+            }, trainLogOption, trainBatchSizeOption, trainEpochsOption, trainLearningRateOption, outputOption, trainArgument);
 
-            // Create command 'test'.
+
+            // Create command "test".
             var testCommand = new Command("test", "Trains the neural network and tests it on the test set, " +
                                                   "providing output useful to understand the quality of the model.");
             var testArgument = new Argument<string>("input", "The relative or absolute path of the input directory.");

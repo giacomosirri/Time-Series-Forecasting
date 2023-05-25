@@ -64,10 +64,11 @@ namespace TimeSeriesForecasting
         internal static void ExecuteTrainCommand(string inputDirectoryAbsolutePath, string outputDirectoryAbsolutePath, bool test)
         {
             _test = test;
-            ExecuteTrainCommand(inputDirectoryAbsolutePath, outputDirectoryAbsolutePath);
+            ExecuteTrainCommand(inputDirectoryAbsolutePath, outputDirectoryAbsolutePath, null);
         }
 
-        internal static void ExecuteTrainCommand(string inputDirectoryAbsolutePath, string outputDirectoryAbsolutePath)
+        internal static void ExecuteTrainCommand(string inputDirectoryAbsolutePath, 
+            string outputDirectoryAbsolutePath, TrainingHyperparameters hyperparameters)
         {
             // Check if all necessary files and subdirectories exist and if they don't, terminate the program.
             if (!IsInputDirectoryValid(inputDirectoryAbsolutePath))
@@ -146,7 +147,8 @@ namespace TimeSeriesForecasting
             Console.Write("Creating and training the model...");
             NeuralNetwork nn = new LSTM(trainingInputTensor.size(2), trainingOutputTensor.size(1), trainingOutputTensor.size(2));
             INeuralNetworkModel model = NeuralNetworkModel.Compile(nn);
-            model.Fit(trainingInputTensor, trainingOutputTensor, validationInputTensor, validationOutputTensor, null, null, null);
+            model.Fit(trainingInputTensor, trainingOutputTensor, validationInputTensor, validationOutputTensor, 
+                hyperparameters.Epochs, hyperparameters.BatchSize, hyperparameters.LearningRate);
             Console.WriteLine(Program.Completion);
 
             Console.Write("Saving the model's parameters and summary on file...");
