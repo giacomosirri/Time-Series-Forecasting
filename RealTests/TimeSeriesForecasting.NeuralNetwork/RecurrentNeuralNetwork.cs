@@ -4,7 +4,7 @@ using static TorchSharp.torch.nn;
 
 namespace TimeSeriesForecasting.NeuralNetwork
 {
-    public class RecurrentNeuralNetwork : NetworkModel
+    public class RecurrentNeuralNetwork : NeuralNetwork
     {
         /* 
          * The number of features in the hidden state, i.e. the number of neurons in a layer.

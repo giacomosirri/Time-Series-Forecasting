@@ -4,7 +4,7 @@ using static TorchSharp.torch.nn;
 
 namespace TimeSeriesForecasting.NeuralNetwork
 {
-    public class SimpleNeuralNetwork : NetworkModel
+    public class SimpleNeuralNetwork : NeuralNetwork
     {
         private readonly Linear _linear;
 

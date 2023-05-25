@@ -3,7 +3,7 @@ using static TorchSharp.torch;
 
 namespace TimeSeriesForecasting.NeuralNetwork
 {
-    internal class Baseline : NetworkModel
+    internal class Baseline : NeuralNetwork
     {
         public Baseline() : base(nameof(Baseline))
         {

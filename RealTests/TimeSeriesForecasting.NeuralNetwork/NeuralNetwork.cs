@@ -8,9 +8,9 @@ namespace TimeSeriesForecasting.NeuralNetwork
     /// It is a subclass of <see cref="Module{Tensor, Tensor}"/> as all networks work with 
     /// <see cref="Tensor"/>s as inputs and outputs.
     /// </summary>
-    public abstract class NetworkModel : Module<Tensor, Tensor>
+    public abstract class NeuralNetwork : Module<Tensor, Tensor>
     {
-        protected NetworkModel(string name) : base(name)
+        protected NeuralNetwork(string name) : base(name)
         {
             /*
              * When the seed is set manually, the weights of the models are always initialized to the same values.
