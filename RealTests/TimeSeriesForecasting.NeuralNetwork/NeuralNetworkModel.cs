@@ -6,15 +6,23 @@ namespace TimeSeriesForecasting.ANN
 {
     public class NeuralNetworkModel : INeuralNetworkModel
     {
-        private const int Epochs = 50;
+        // All the loss functions that can be used in the context of this class.
+        public enum LossFunction
+        {
+            MSE, L1
+        }
 
-        private readonly NeuralNetwork _model;       
-        // Type of features, type of labels --> type of the result.
+        // All the optimizers that can be used in the context of this class.
+        public enum Optimizer
+        {
+            SGD, ADAM, ADAMAX, ADAGRAD, RMSPROP
+        }
+
+        private readonly NeuralNetwork _model;
         private readonly Loss<Tensor, Tensor, Tensor> _lossFunction;
+        private readonly Optimizer _optimizer;
         private readonly IList<float> _losses = new List<float>();
-        // Hyperparameters
-        private readonly double _learningRate = 1e-5;
-        private readonly int _batchSize = 64;
+        private int _lastUsedBatchSize;
 
         public bool IsTrained { get; private set; } = false;
 
@@ -33,31 +41,26 @@ namespace TimeSeriesForecasting.ANN
             }
         }
 
-        public NeuralNetworkModel(NeuralNetwork model)
+        private NeuralNetworkModel(NeuralNetwork model, LossFunction loss, Optimizer optimizer)
         {
             _model = model;
-            _lossFunction = new MSELoss();
+            _lossFunction = (loss == LossFunction.MSE) ? new MSELoss() : new L1Loss();
+            _optimizer = optimizer;
         }
 
-        public void Fit(Tensor trainX, Tensor trainY, Tensor valX, Tensor valY)
+
+        public void Fit(Tensor trainX, Tensor trainY, Tensor valX, Tensor valY, int epochs, int batchSize, double learningRate)
         {
-            TuneHyperparameters(valX, valY);
-            Fit(trainX, trainY);
+            Fit(trainX, trainY, epochs, batchSize, learningRate);
         }
 
-        private void TuneHyperparameters(Tensor x, Tensor y)
-        {
-            // Hyperparameters to be tuned: batch_size and learning_rate (might use a learning rate scheduler instead).
-            // Not implemented yet.
-        }
-
-        public void Fit(Tensor trainX, Tensor trainY)
+        public void Fit(Tensor trainX, Tensor trainY, int epochs, int batchSize, double learningRate)
         {
             _model.train();
-            var optimizer = new Adam(_model.parameters(), _learningRate);
-            Tensor[] batched_x = trainX.split(_batchSize);
-            Tensor[] batched_y = trainY.split(_batchSize);
-            for (int i = 0; i < Epochs; i++)
+            optim.Optimizer optimizer = GetOptimizer(learningRate);
+            Tensor[] batched_x = trainX.split(batchSize);
+            Tensor[] batched_y = trainY.split(batchSize);
+            for (int i = 0; i < epochs; i++)
             {
                 float epochLoss = 0.0f;
                 for (int j = 0; j < batched_x.Length; j++)
@@ -79,6 +82,20 @@ namespace TimeSeriesForecasting.ANN
                 _losses.Add(epochLoss / batched_x.Length);
             }
             IsTrained = true;
+            _lastUsedBatchSize = batchSize;
+        }
+
+        private optim.Optimizer GetOptimizer(double learningRate)
+        {
+            return _optimizer switch
+            {
+                Optimizer.SGD => new SGD(_model.parameters(), learningRate),
+                Optimizer.ADAM => new Adam(_model.parameters(), learningRate),
+                Optimizer.ADAMAX => new Adamax(_model.parameters(), learningRate),
+                Optimizer.ADAGRAD => new Adagrad(_model.parameters(), learningRate),
+                Optimizer.RMSPROP => new RMSProp(_model.parameters(), learningRate),
+                _ => new SGD(_model.parameters(), learningRate),
+            };
         }
 
         public IDictionary<AccuracyMetric, IList<double>> Evaluate(Tensor predictedOutput, Tensor expectedOutput)
@@ -127,17 +144,23 @@ namespace TimeSeriesForecasting.ANN
             return Evaluate(predictedOutput, expectedOutput);
         }
 
-        public Tensor Predict(Tensor x)
+        public Tensor Predict(Tensor x) => Predict(x, _lastUsedBatchSize);
+
+        public Tensor Predict(Tensor x, int batchSize)
         {
+            if (!IsTrained)
+            {
+                throw new InvalidOperationException("The model cannot be used to predict new values if it has not been trained yet.");
+            }
             _model.eval();
             // Disabling autograd gradient calculation speeds up computation.
             using var _ = no_grad();
-            Tensor[] batched_x = x.split(_batchSize);
+            Tensor[] batched_x = x.split(batchSize);
             // currentOutput.shape = [batchSize, outputTimeSteps, outputFeatures].
             Tensor currentOutput = _model.forward(batched_x[0]);
             long start = 0;
             // Control that the stop index is not greater than the number of total batches.
-            long stop = Math.Min(x.size(0), _batchSize);
+            long stop = Math.Min(x.size(0), batchSize);
             // Initialize the final output tensor to dirty values, since it is going to be overwritten.
             Tensor y = empty(x.size(0), currentOutput.size(1), currentOutput.size(2));
             // Update the output tensor.
@@ -145,8 +168,8 @@ namespace TimeSeriesForecasting.ANN
             for (int i = 1; i < batched_x.Length; i++)
             {
                 currentOutput = _model.forward(batched_x[i]);
-                start = _batchSize * i;
-                stop = Math.Min(x.size(0), _batchSize * (i + 1));
+                start = batchSize * i;
+                stop = Math.Min(x.size(0), batchSize * (i + 1));
                 // Update the output tensor.
                 y.index_copy_(0, arange(start, stop, 1), currentOutput);
             }

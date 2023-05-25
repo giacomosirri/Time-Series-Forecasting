@@ -23,15 +23,17 @@ namespace TimeSeriesForecasting.ANN
 
         public IList<float> LossProgress { get; }
 
-        public void Fit(Tensor trainX, Tensor trainY, Tensor validX, Tensor validY);
+        public void Fit(Tensor trainX, Tensor trainY, Tensor validX, Tensor validY, int epochs, int batchSize, double learningRate);
 
-        public void Fit(Tensor x, Tensor y);
+        public void Fit(Tensor x, Tensor y, int epochs, int batchSize, double learningRate);
 
         public IDictionary<AccuracyMetric, IList<double>> Evaluate(Tensor predictedOutput, Tensor expectedOutput);
 
         public IDictionary<AccuracyMetric, IList<double>> PredictAndEvaluate(Tensor x, Tensor expectedOutput);
 
         public Tensor Predict(Tensor x);
+
+        public Tensor Predict(Tensor x, int batchSize);
 
         public string Summarize();
 
