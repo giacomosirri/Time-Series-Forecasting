@@ -190,17 +190,32 @@ namespace TimeSeriesForecasting
                 ProgramTest.ExecuteTestCommand(Path.GetFullPath(inputDirectoryPath), outputDirectoryPath, hyperparameters);
             }, outputOption, testBatchSizeOption, testEpochsOption, testLearningRateOption, testArgument);
 
+
             // Create command "predict".
             var predictCommand = new Command("predict", "Predicts future values using a trained neural network.");
+
+            var predictBatchSizeOption = new Option<int?>(
+                name: "--batch_size",
+                description: "Specifies the batch size."
+            )
+            {
+                IsRequired = false
+            };
+            predictBatchSizeOption.SetDefaultValue(null);
+
+            predictCommand.AddOption(predictBatchSizeOption);
+
             var predictArgument = new Argument<string>("input", "The relative or absolute path of the input directory.");
             predictCommand.AddArgument(predictArgument);
-            predictCommand.SetHandler((string output, string inputDirectoryPath) =>
+
+            predictCommand.SetHandler((string output, int? batchSize, string inputDirectoryPath) =>
             {
                 IsLogEnabled = true;
                 GlobalConfiguration = GetConfigurationOrExit(inputDirectoryPath);
                 string outputDirectoryPath = GetOutputDirectory(output, inputDirectoryPath);
-                ProgramPredict.ExecutePredictCommand(Path.GetFullPath(inputDirectoryPath), outputDirectoryPath);
-            }, outputOption, testArgument);
+                ProgramPredict.ExecutePredictCommand(Path.GetFullPath(inputDirectoryPath), outputDirectoryPath, batchSize);
+            }, outputOption, predictBatchSizeOption, testArgument);
+
 
             // Add the new commands to the root command.
             rootCommand.AddCommand(trainCommand);
@@ -209,9 +224,9 @@ namespace TimeSeriesForecasting
             // Process the command line and invoke the command selected by the user.
             rootCommand.Invoke(args);
 
+
             DateTime endTime = DateTime.Now;
             Console.WriteLine($"Program is completed...    {endTime}\n");
-
             TimeSpan elapsedTime = endTime - startTime;
             Console.WriteLine($"Elapsed time: {elapsedTime}");
         }
