@@ -46,7 +46,7 @@ namespace TimeSeriesForecasting
             Console.Write("Generating windows of data from the input set...");
             var windowGenerator = new WindowGenerator(Program.GlobalConfiguration.InputWidth,
                 Program.GlobalConfiguration.OutputWidth, Program.GlobalConfiguration.Offset, Program.GlobalConfiguration.LabelColumns);
-            (Tensor inputTensor, _) = windowGenerator.GenerateWindows<Tensor>(inputSet);
+            (Tensor inputTensor, _) = windowGenerator.GenerateWindows<double>(inputSet);
             Console.WriteLine(Program.Completion);
 
             Console.Write("Loading the model from file...");

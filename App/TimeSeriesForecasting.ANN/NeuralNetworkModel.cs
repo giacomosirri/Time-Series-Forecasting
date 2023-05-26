@@ -163,10 +163,6 @@ namespace TimeSeriesForecasting.ANN
 
         public Tensor Predict(Tensor x, int batchSize)
         {
-            if (!IsTrained)
-            {
-                throw new InvalidOperationException("The model cannot be used to predict new values if it has not been trained yet.");
-            }
             _model.eval();
             // Disabling autograd gradient calculation speeds up computation.
             using var _ = no_grad();
