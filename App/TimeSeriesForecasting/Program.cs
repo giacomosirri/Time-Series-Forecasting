@@ -50,6 +50,10 @@ namespace TimeSeriesForecasting
 
     internal class Program
     {
+        internal static readonly string ValuesFile = "data-values.parquet";
+        internal static readonly string DatesFile = "data-dates.parquet";
+        internal static readonly string DataSubdirectory = "data";
+
         internal const string Completion = "  COMPLETE\n";
         internal const string DirectoryErrorMessage = "The directory you provided is not valid. The program has been stopped.";
         private const string IOErrorMessage = "An error occurred when reading a directory or file. The program has been stopped.";
@@ -229,6 +233,29 @@ namespace TimeSeriesForecasting
             Console.WriteLine($"Program is completed...    {endTime}\n");
             TimeSpan elapsedTime = endTime - startTime;
             Console.WriteLine($"Elapsed time: {elapsedTime}");
+        }
+
+        /*
+         * This method checks if the given directory path represents a valid directory for the scope of this class.
+         */
+        internal static bool IsUserDirectoryValidAsInput(string directoryPath)
+        {
+            try
+            {
+                // A /data subdirectory must exist.
+                string dataDir = Directory.GetDirectories(directoryPath, DataSubdirectory).Single();
+                // A file called data-values.parquet must exist inside /data.
+                _ = Directory.GetFiles(dataDir, ValuesFile).Single();
+                // A file called data-datetimes.parquet must exist inside /data.
+                _ = Directory.GetFiles(dataDir, DatesFile).Single();
+                // If all the necessary files and subdirectories have been found, then return true.
+                return true;
+            }
+            catch (Exception ex) when (ex is ArgumentNullException || ex is InvalidOperationException)
+            {
+                // If any necessary file or subdirectory is not found, then return false.
+                return false;
+            }
         }
 
         /*

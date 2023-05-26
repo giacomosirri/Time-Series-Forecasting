@@ -50,11 +50,9 @@ namespace TimeSeriesForecasting
 
     internal class ProgramTrain
     {
-        private const string ValuesFile = "data-values.parquet";
-        private const string DatesFile = "data-dates.parquet";
+
         private const string TrainingConfigFile = "training_config.json";
         private const string ValueRangesFile = "value_ranges.json";
-        private const string DataSubdirectory = "data";
         private const string TrainingSubdirectory = "training";
         private const string ModelSubdirectory = "model";
 
@@ -72,15 +70,15 @@ namespace TimeSeriesForecasting
             string outputDirectoryAbsolutePath, TrainingHyperparameters hyperparameters)
         {
             // Check if all necessary files and subdirectories exist and if they don't, terminate the program.
-            if (!IsInputDirectoryValid(inputDirectoryAbsolutePath))
+            if (!Program.IsUserDirectoryValidAsInput(inputDirectoryAbsolutePath))
             {
                 Program.StopProgram(Program.DirectoryErrorMessage);
             }
 
             // The existence of the data files inside /data has already been checked.
-            string inputDataDirectoryAbsolutePath = Path.Combine(new string[] { inputDirectoryAbsolutePath, DataSubdirectory });
-            string valuesFileAbsolutePath = Path.Combine(new string[] { inputDataDirectoryAbsolutePath, ValuesFile });
-            string datesFileAbsolutePath = Path.Combine(new string[] { inputDataDirectoryAbsolutePath, DatesFile });
+            string inputDataDirectoryAbsolutePath = Path.Combine(new string[] { inputDirectoryAbsolutePath, Program.DataSubdirectory });
+            string valuesFileAbsolutePath = Path.Combine(new string[] { inputDataDirectoryAbsolutePath, Program.ValuesFile });
+            string datesFileAbsolutePath = Path.Combine(new string[] { inputDataDirectoryAbsolutePath, Program.DatesFile });
 
             // The value ranges file is not strictly necessary for the program to work.
             string valueRangesFileAbsolutePath = Path.Combine(new string[] { inputDataDirectoryAbsolutePath, ValueRangesFile });
@@ -137,11 +135,11 @@ namespace TimeSeriesForecasting
             Console.WriteLine(Program.Completion);
 
             Console.Write("Generating windows of data from the training, validation and test sets...");
-            var singleStepWindow = new WindowGenerator(Program.GlobalConfiguration.InputWidth,
+            var windowGenerator = new WindowGenerator(Program.GlobalConfiguration.InputWidth,
                 Program.GlobalConfiguration.OutputWidth, Program.GlobalConfiguration.Offset, Program.GlobalConfiguration.LabelColumns);
-            (Tensor trainingInputTensor, Tensor trainingOutputTensor) = singleStepWindow.GenerateWindows<double>(trainingSet);
-            (Tensor validationInputTensor, Tensor validationOutputTensor) = singleStepWindow.GenerateWindows<double>(validationSet);
-            (Tensor testInputTensor, Tensor testOutputTensor) = singleStepWindow.GenerateWindows<double>(testSet);
+            (Tensor trainingInputTensor, Tensor trainingOutputTensor) = windowGenerator.GenerateWindows<double>(trainingSet);
+            (Tensor validationInputTensor, Tensor validationOutputTensor) = windowGenerator.GenerateWindows<double>(validationSet);
+            (Tensor testInputTensor, Tensor testOutputTensor) = windowGenerator.GenerateWindows<double>(testSet);
             Console.WriteLine(Program.Completion);
 
             // The network model used is always LSTM.
@@ -187,7 +185,9 @@ namespace TimeSeriesForecasting
             if (_test)
             {
                 Console.Write("Predicting new values...");
-                Tensor predictedOutput = model.Predict(testInputTensor);
+                // If the user has specified the batch size then use it, otherwise rely on the default value.
+                Tensor predictedOutput = hyperparameters.BatchSize.HasValue ? 
+                    model.Predict(testInputTensor, hyperparameters.BatchSize.Value) : model.Predict(testInputTensor);
                 Console.WriteLine(Program.Completion);
 
                 Console.Write("Logging predicted and expected values on file...");
@@ -212,29 +212,6 @@ namespace TimeSeriesForecasting
                 });
                 metricsLogger.Write();
                 Console.WriteLine(Program.Completion);
-            }
-        }
-
-        /*
-         * This method checks if the given directory path represents a valid directory for the scope of this class.
-         */
-        private static bool IsInputDirectoryValid(string directoryPath)
-        {
-            try
-            {
-                // A /data subdirectory must exist.
-                string dataDir = Directory.GetDirectories(directoryPath, DataSubdirectory).Single();
-                // A file called data-values.parquet must exist inside /data.
-                _ = Directory.GetFiles(dataDir, ValuesFile).Single();
-                // A file called data-datetimes.parquet must exist inside /data.
-                _ = Directory.GetFiles(dataDir, DatesFile).Single();
-                // If all the necessary files and subdirectories have been found, then return true.
-                return true;
-            }
-            catch (Exception ex) when (ex is ArgumentNullException || ex is InvalidOperationException) 
-            {
-                // If any necessary file or subdirectory is not found, then return false.
-                return false;
             }
         }
     }

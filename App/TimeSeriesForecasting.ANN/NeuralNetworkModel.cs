@@ -61,7 +61,6 @@ namespace TimeSeriesForecasting.ANN
             _optimizer = optimizer;
         }
 
-
         public void Fit(Tensor trainX, Tensor trainY, Tensor valX, Tensor valY, int? epochs, int? batchSize, double? learningRate)
         {
             Fit(trainX, trainY, epochs, batchSize, learningRate);
