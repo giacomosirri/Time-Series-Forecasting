@@ -59,6 +59,8 @@ namespace TimeSeriesForecasting.ANN
             _model = model;
             _lossFunction = (loss == LossFunction.MSE) ? new MSELoss() : new L1Loss();
             _optimizer = optimizer;
+            // Until Fit is called, the batch size is set to the default, so that the model can predict even before training.
+            _lastUsedBatchSize = DefaultBatchSize;
         }
 
         public void Fit(Tensor trainX, Tensor trainY, Tensor valX, Tensor valY, int? epochs, int? batchSize, double? learningRate)
