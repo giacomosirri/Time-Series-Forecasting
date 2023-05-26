@@ -14,7 +14,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TimeSeriesForecasting.IO", 
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TimeSeriesForecasting.ANN", "TimeSeriesForecasting.NeuralNetwork\TimeSeriesForecasting.ANN.csproj", "{70F71822-582B-4F85-AA5A-9CBFCEA6F067}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TestTimeSeriesForecasting", "TestTimeSeriesForecasting\TestTimeSeriesForecasting.csproj", "{6B8515AB-E771-4064-97D6-FEC057859EE5}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TimeSeriesForecasting.Test", "TestTimeSeriesForecasting\TimeSeriesForecasting.Test.csproj", "{6B8515AB-E771-4064-97D6-FEC057859EE5}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
