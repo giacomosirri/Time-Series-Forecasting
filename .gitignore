@@ -398,5 +398,7 @@ FodyWeavers.xsd
 *.sln.iml
 
 /App/TimeSeriesForecasting/Properties/launchSettings.json
-/App/Input/
-/App/Input/*
+/App/Test*/
+/App/Test*/*
+/App/Input*/
+/App/Input*/*
