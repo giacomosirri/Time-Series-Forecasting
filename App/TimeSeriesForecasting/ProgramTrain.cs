@@ -50,11 +50,9 @@ namespace TimeSeriesForecasting
 
     internal class ProgramTrain
     {
-
         private const string TrainingConfigFile = "training_config.json";
         private const string ValueRangesFile = "value_ranges.json";
         private const string TrainingSubdirectory = "training";
-        private const string ModelSubdirectory = "model";
 
         // The test code is executed only if directly specified in the method call.
         private static bool _test = false;
@@ -70,7 +68,7 @@ namespace TimeSeriesForecasting
             string outputDirectoryAbsolutePath, TrainingHyperparameters hyperparameters)
         {
             // Check if all necessary files and subdirectories exist and if they don't, terminate the program.
-            if (!Program.IsUserDirectoryValidAsInput(inputDirectoryAbsolutePath))
+            if (!Program.IsUserDataSubdirectoryValid(inputDirectoryAbsolutePath))
             {
                 Program.StopProgram(Program.DirectoryErrorMessage);
             }
@@ -108,7 +106,7 @@ namespace TimeSeriesForecasting
             }
 
             // The model subdirectory may not exist yet. The code below creates this directory only if not already present.
-            string modelDirectoryAbsolutePath = Path.Combine(new string[] { outputDirectoryAbsolutePath, ModelSubdirectory });
+            string modelDirectoryAbsolutePath = Path.Combine(new string[] { outputDirectoryAbsolutePath, Program.ModelSubdirectory });
             Directory.CreateDirectory(modelDirectoryAbsolutePath);
             // Same for the training output subdirectory.
             string outputTrainingDirectoryAbsolutePath = Path.Combine(new string[] { outputDirectoryAbsolutePath, TrainingSubdirectory });

@@ -53,6 +53,7 @@ namespace TimeSeriesForecasting
         internal static readonly string ValuesFile = "data-values.parquet";
         internal static readonly string DatesFile = "data-dates.parquet";
         internal static readonly string DataSubdirectory = "data";
+        internal static readonly string ModelSubdirectory = "model";
 
         internal const string Completion = "  COMPLETE\n";
         internal const string DirectoryErrorMessage = "The directory you provided is not valid. The program has been stopped.";
@@ -236,9 +237,9 @@ namespace TimeSeriesForecasting
         }
 
         /*
-         * This method checks if the given directory path represents a valid directory for the scope of this class.
+         * This method checks if the given directory path contains a valid /data subdirectory.
          */
-        internal static bool IsUserDirectoryValidAsInput(string directoryPath)
+        internal static bool IsUserDataSubdirectoryValid(string directoryPath)
         {
             try
             {
