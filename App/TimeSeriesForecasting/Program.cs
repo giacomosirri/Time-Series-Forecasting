@@ -219,7 +219,7 @@ namespace TimeSeriesForecasting
                 GlobalConfiguration = GetConfigurationOrExit(inputDirectoryPath);
                 string outputDirectoryPath = GetOutputDirectory(output, inputDirectoryPath);
                 ProgramPredict.ExecutePredictCommand(Path.GetFullPath(inputDirectoryPath), outputDirectoryPath, batchSize);
-            }, outputOption, predictBatchSizeOption, testArgument);
+            }, outputOption, predictBatchSizeOption, predictArgument);
 
 
             // Add the new commands to the root command.

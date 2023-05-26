@@ -27,6 +27,7 @@ namespace TimeSeriesForecasting
 
             // Create directory for prediction output, if it does not exist yet.
             string predictionDirectoryAbsolutePath = Path.Combine(new string[] { outputDirectoryAbsolutePath, PredictionSubdirectory });
+            Directory.CreateDirectory(predictionDirectoryAbsolutePath);
 
             Console.Write("Loading data from .parquet file...");
             var records = new ParquetDataLoader(valuesFileAbsolutePath, datesFileAbsolutePath).GetRecords();
