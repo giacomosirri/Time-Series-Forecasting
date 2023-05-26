@@ -396,12 +396,7 @@ FodyWeavers.xsd
 
 # JetBrains Rider
 *.sln.iml
-/RealTests/TimeSeriesForecasting/Properties/launchSettings.json
-/RealTests/Input/config.json
-/RealTests/Input/training/training_config.json
-/RealTests/Input/data-dates.parquet
-/RealTests/Input/data-values.parquet
-/RealTests/Input/global_config.json
-/RealTests/Input/training
-/RealTests/Input
-/RealTests/Output*/*
+
+/App/TimeSeriesForecasting/Properties/launchSettings.json
+/App/Input/
+/App/Input/*
